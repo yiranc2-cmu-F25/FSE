@@ -28,7 +28,11 @@
       <div
         class="absolute top-[5%] flex w-11/12 items-center justify-start gap-1"
       >
-        <img src="image-13.png" alt="Logo" class="w-20" />
+        <img
+          src="./images/icons/logos/ESN-red-cross.png"
+          alt="Logo"
+          class="w-20"
+        />
         <div
           class="font-poppins-bold bg-[linear-gradient(0deg,rgba(37,48,77,1)_0%,rgba(86,112,179,1)_100%)] bg-clip-text text-center text-3xl text-transparent [-webkit-background-clip:text] [-webkit-text-fill-color:transparent]"
         >
@@ -63,31 +67,49 @@
 
         <div class="flex items-center gap-2 border-t border-gray-300 py-1">
           <% if (user.status === 'ok') { %>
-          <img src="ok_icon.svg" alt="ok" class="h-6 w-6" />
+          <img
+            src="./images/icons/status/ok-status-icon.svg"
+            alt="ok"
+            class="h-6 w-6"
+          />
           <p class="font-poppins-regular text-sm text-black">
             I'm safe — no help needed.
           </p>
           <% } else if (user.status === 'help') { %>
-          <img src="help_icon.svg" alt="help" class="h-6 w-6" />
+          <img
+            src="./images/icons/status/help-status-icon.svg"
+            alt="help"
+            class="h-6 w-6"
+          />
           <p class="font-poppins-regular text-sm text-black">
             Need help, not life-threatening.
           </p>
           <% } else if (user.status === 'emergency') { %>
-          <img src="emergency_icon.svg" alt="emergency" class="h-6 w-6" />
+          <img
+            src="./images/icons/status/emergency-status-icon.svg"
+            alt="emergency"
+            class="h-6 w-6"
+          />
           <p class="font-poppins-regular text-sm text-black">
             Urgent danger — need help now.
           </p>
           <% } else { %>
-          <img src="unknown_icon.svg" alt="unknown" class="h-6 w-6" />
+          <img
+            src="./images/icons/status/unknown-status-icon.svg"
+            alt="unknown"
+            class="h-6 w-6"
+          />
           <p class="font-poppins-regular text-sm text-black">No status set.</p>
           <% } %>
         </div>
       </div>
       <button
         class="font-poppins-semibold absolute top-[75%] h-12 w-5/6 bg-[#d65841] text-lg text-white"
+        id="btn-logout"
       >
         Log Out
       </button>
     </div>
+    <script src="/js/profile.js"></script>
   </body>
 </html>

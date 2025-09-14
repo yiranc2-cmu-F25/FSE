@@ -19,22 +19,56 @@
         font-family: "Poppins", Helvetica;
         font-weight: 400;
       }
+      @keyframes wiggle {
+        0%,
+        100% {
+          transform: translateX(0);
+        }
+        15% {
+          transform: translateX(-6px);
+        }
+        30% {
+          transform: translateX(6px);
+        }
+        45% {
+          transform: translateX(-5px);
+        }
+        60% {
+          transform: translateX(5px);
+        }
+        75% {
+          transform: translateX(-3px);
+        }
+        90% {
+          transform: translateX(3px);
+        }
+      }
+      .shake {
+        animation: wiggle 0.35s ease-in-out;
+      }
     </style>
   </head>
+
   <body class="min-h-screen bg-white">
     <div
       class="relative mx-auto flex h-screen w-full max-w-md flex-col items-center justify-center"
     >
+      <!-- Header -->
       <div
         class="absolute top-[5%] flex w-11/12 items-center justify-start gap-1"
       >
-        <img src="image-13.png" alt="Logo" class="w-20" />
+        <img
+          src="/images/icons/logos/ESN-red-cross.png"
+          alt="Logo"
+          class="w-20"
+        />
         <div
           class="font-poppins-bold bg-[linear-gradient(0deg,rgba(37,48,77,1)_0%,rgba(86,112,179,1)_100%)] bg-clip-text text-center text-3xl text-transparent [-webkit-background-clip:text] [-webkit-text-fill-color:transparent]"
         >
           ESN
         </div>
       </div>
+
       <p
         class="font-poppins-semibold absolute top-[15%] text-center text-xl leading-normal text-black"
       >
@@ -45,34 +79,72 @@
       >
         Join ESN network to start helping community
       </p>
+
+      <!-- Illustration -->
       <div
         class="absolute top-[30%] flex w-full items-center justify-center px-2"
       >
-        <img src="vector.svg" alt="vector" class="h-44" />
-      </div>
-      <div
-        class="absolute top-[55%] flex h-12 w-5/6 items-center rounded-full bg-white px-4 shadow-md"
-      >
-        <input
-          type="text"
-          placeholder="Enter Your User Name"
-          class="font-poppins-regular w-full border-none text-sm text-gray-500 outline-none"
+        <img
+          src="/images/photos/bg-photos/enter-credential.svg"
+          alt="vector"
+          class="h-44"
         />
       </div>
-      <div
-        class="absolute top-[65%] flex h-12 w-5/6 items-center rounded-full bg-white px-4 shadow-md"
-      >
-        <input
-          type="password"
-          placeholder="Enter Password"
-          class="font-poppins-regular w-full border-none text-sm text-gray-500 outline-none"
-        />
+
+      <!-- Username -->
+      <div class="absolute top-[51%] w-5/6 px-1">
+        <p
+          id="err-username"
+          class="font-poppins-regular mb-1 hidden text-xs text-red-600"
+          role="alert"
+          aria-live="assertive"
+        ></p>
+        <div
+          id="wrap-username"
+          class="flex h-12 items-center rounded-full bg-white px-4 shadow-md"
+        >
+          <input
+            id="username"
+            type="text"
+            autocomplete="username"
+            placeholder="Enter Your User Name"
+            class="font-poppins-regular w-full border-none text-sm text-gray-700 outline-none"
+          />
+        </div>
       </div>
+
+      <!-- Password -->
+      <div class="absolute top-[63%] w-5/6 px-1">
+        <p
+          id="err-password"
+          class="font-poppins-regular mb-1 hidden text-xs text-red-600"
+          role="alert"
+          aria-live="assertive"
+        ></p>
+        <div
+          id="wrap-password"
+          class="flex h-12 items-center rounded-full bg-white px-4 shadow-md"
+        >
+          <input
+            id="password"
+            type="password"
+            autocomplete="current-password"
+            placeholder="Enter Password"
+            class="font-poppins-regular w-full border-none text-sm text-gray-700 outline-none"
+          />
+        </div>
+      </div>
+
+      <!-- Submit -->
       <button
-        class="font-poppins-semibold absolute top-[75%] h-12 w-5/6 bg-[#d65841] text-lg text-white"
+        id="btn-join"
+        class="font-poppins-semibold absolute top-[75%] h-12 w-5/6 rounded-md bg-[#d65841] text-lg text-white"
       >
         Join Community
       </button>
     </div>
+
+    <!-- Link the external module -->
+    <script type="module" src="/js/joinCommunity.js"></script>
   </body>
 </html>
