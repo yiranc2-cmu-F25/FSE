@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Confirm Registration</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap");
+      .font-poppins-bold {
+        font-family: "Poppins", Helvetica;
+        font-weight: 700;
+      }
+      .font-poppins-semibold {
+        font-family: "Poppins", Helvetica;
+        font-weight: 600;
+      }
+      .font-poppins-regular {
+        font-family: "Poppins", Helvetica;
+        font-weight: 400;
+      }
+    </style>
+  </head>
+  <body class="min-h-screen bg-white">
+    <div
+      class="relative mx-auto flex h-screen w-full max-w-md flex-col items-center justify-center"
+    >
+      <div
+        class="absolute top-[5%] flex w-11/12 items-center justify-start gap-1"
+      >
+        <img src="image-13.png" alt="Logo" class="w-20" />
+        <div
+          class="font-poppins-bold bg-[linear-gradient(0deg,rgba(37,48,77,1)_0%,rgba(86,112,179,1)_100%)] bg-clip-text text-center text-3xl text-transparent [-webkit-background-clip:text] [-webkit-text-fill-color:transparent]"
+        >
+          ESN
+        </div>
+      </div>
+      <p
+        class="font-poppins-semibold absolute top-[15%] text-center text-xl leading-normal text-black"
+      >
+        Just one more step
+      </p>
+      <p
+        class="font-poppins-regular absolute top-[20%] w-5/6 text-center text-sm leading-normal text-gray-500"
+      >
+        Understand each ESN status before we start
+      </p>
+      <div class="absolute top-[25%] w-3/4 space-y-6">
+        <div class="flex flex-col">
+          <p class="font-poppins-semibold text-base">OK</p>
+          <div class="flex items-center gap-2 border-t border-gray-300 py-1">
+            <img src="ok_icon.svg" alt="ok" class="h-6 w-6" />
+            <p class="font-poppins-regular text-sm text-black">
+              I'm safe — no help needed.
+            </p>
+          </div>
+        </div>
+        <div class="flex flex-col">
+          <p class="font-poppins-semibold text-base">HELP</p>
+          <div class="flex items-center gap-2 border-t border-gray-300 py-1">
+            <img src="help_icon.svg" alt="help" class="h-6 w-6" />
+            <p class="font-poppins-regular text-sm text-black">
+              Need help, not life-threatening.
+            </p>
+          </div>
+        </div>
+        <div class="flex flex-col">
+          <p class="font-poppins-semibold text-base">Emergency</p>
+          <div class="flex items-center gap-2 border-t border-gray-300 py-1">
+            <img src="emergency_icon.svg" alt="emergency" class="h-6 w-6" />
+            <p class="font-poppins-regular text-sm text-black">
+              Urgent danger — need help now.
+            </p>
+          </div>
+        </div>
+        <div class="flex flex-col">
+          <p class="font-poppins-semibold text-base">UNKNOWN</p>
+          <div class="flex items-center gap-2 border-t border-gray-300 py-1">
+            <img src="unknown_icon.svg" alt="unknown" class="h-6 w-6" />
+            <p class="font-poppins-regular text-sm text-black">
+              No status set.
+            </p>
+          </div>
+        </div>
+      </div>
+      <p
+        class="font-poppins-regular absolute top-[65%] w-5/6 text-center text-sm leading-normal text-gray-500"
+      >
+        You can always review more detailed status explanation in app at
+        anytime.
+      </p>
+      <button
+        class="font-poppins-semibold absolute top-[75%] h-12 w-5/6 bg-[#d65841] text-lg text-white"
+      >
+        I Understand
+      </button>
+    </div>
+  </body>
+</html>

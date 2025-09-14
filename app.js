@@ -19,7 +19,15 @@ app.use(express.urlencoded({ extended: true }));
 app.get("/", (req, res) => {
   // res.render("splashPage");
   // res.render("joinCommunity");
-  res.render("confirmRegistration");
+  // res.render("confirmRegistration");
+  // res.render("acknowledgement");
+  res.render("profile", {
+    user: {
+      username: "James Bond",
+      status: "emergency",
+      image: "image-23.png",
+    },
+  });
 });
 
 // Start server
