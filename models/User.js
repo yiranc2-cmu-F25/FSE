@@ -1,41 +1,43 @@
-const mongoose = require("mongoose");
-const brcypt = require("bcrypt");
-const ForbiddenUsernames = require("../config/ForbiddenUsernamesConfig");
+import mongoose  from "mongoose";
+import bcrypt  from "bcrypt";
+import { ForbiddenUsernames }  from "../config/ForbiddenUsernamesConfig.js";
+import { USER_ROLE } from "../constants/userRole.js";
+import { USER_STATUS } from "../constants/userStatus.js";
+import { SHARED_STATUS } from "../constants/sharedStatus.js";
 
 const UserSchema = new mongoose.Schema({
     username: { type: String, required: true, unique: true , trim: true, minlength: 3,lowercase: true
         , validate:{
-            validator: function(v){
+            validator: (v) => {
                 return !ForbiddenUsernames.includes(v) && !v.includes('.') ;
             },
             message: props => `${props.value} is not allowed as a username. Please choose another one.`
         }
     },
     password: { type: String, required: true, minlength:4},
-    sharedstatus: {type:Number, enum: [0 , 1, 2 , 3] ,default:0 }, // 0: undefined , 1:Ok , 2:Help , 3:Emergency
-    status: {type:Number, enum: [0 , 1] ,default:0 }, // 0: active, 1: inactive 
-    role: {type:Number, enum: [0 , 1 , 2] ,default:0 }, // 0: citizen, 1: coordinator , 2: admin
+    sharedstatus: {type:Number, enum: Object.values(SHARED_STATUS) ,default:0 },
+    status: {type:Number, enum: Object.values(USER_STATUS) ,default:0 },
+    role: {type:Number, enum: Object.values(USER_ROLE) ,default:0 },
     createdAt: { type: Date, default: Date.now },
 });
 
 
-UserSchema.pre("save", async function(next){
+UserSchema.pre("save", async function () {
     if(this.isModified("password") || this.isNew){
-        this.password = await brcypt.hash(this.password, 10)
+        this.password = await bcrypt.hash(this.password, 10)
     }
-    next();
 });
 
 
-UserSchema.methods.validatePassword = async function(password){
+UserSchema.methods.validatePassword = async function (password) {
     try{
-        return await brcypt.compare(password, this.password);
+        return await bcrypt.compare(password, this.password);
     }catch(e){
         throw new Error('Password validation error');
     }
 };
 
-UsuerSchema.methods.toJSON = function(){
+UserSchema.methods.toJSON = function () {
     const user = this.toObject();
     return {
         _id: user._id,
@@ -46,15 +48,13 @@ UsuerSchema.methods.toJSON = function(){
     };
 };
 
-
-
 UserSchema.static.findByUsername = function(username){
     return this.findOne({ username });
 };
 
 const User = mongoose.model("User", UserSchema);
 
-module.exports = User;
+export default User;
 
 
 

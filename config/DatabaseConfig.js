@@ -1,6 +1,4 @@
-require("dotenv").config();
-
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 class DatabaseConfig {
     constructor(){
@@ -51,3 +49,5 @@ class DatabaseConfig {
         }
     }
 }
+
+export default new DatabaseConfig();
