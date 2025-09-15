@@ -2,13 +2,10 @@
   "name": "f25-fse-sa2",
   "version": "1.0.0",
   "description": "This is your team's repo for the ESN Application, the group project conducted in 18652.",
-  "main": "index.js",
+  "main": "app.js",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node --watch app.js",
-    "build:css": "tailwindcss -i ./src/styles.css -o ./build/styles.css --watch",
-    "format:ejs": "prettier --write \"views/**/*.ejs\"",
-    "format:html": "prettier --write \"views/**/*.html\""
+    "start": "node app.js"
   },
   "repository": {
     "type": "git",
@@ -17,12 +14,13 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
   "bugs": {
     "url": "https://github.com/cmu-fse-o1/f25-fse-sa2/issues"
   },
   "homepage": "https://github.com/cmu-fse-o1/f25-fse-sa2#readme",
   "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.7",
     "cross-env": "^10.0.0",
     "dotenv": "^17.2.2",
     "ejs": "^3.1.10",

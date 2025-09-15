@@ -1,8 +1,21 @@
-const express = require("express");
-const path = require("path");
+import dotenv from "dotenv";
+dotenv.config();
+
+import express from "express";
+import cookieParser from "cookie-parser";
+import mongoose from "mongoose";
+import path from "path";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
+import authRoutes from "./routes/authRoutes.js";
+import pageRoutes from "./routes/pageRoutes.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+await mongoose.connect(process.env.MONGO_URI);
 
 const app = express();
-const PORT = process.env.PORT || 3001;
 
 // Set EJS as the template engine
 app.set("view engine", "ejs");
@@ -14,47 +27,12 @@ app.set("views", path.join(__dirname, "views"));
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
-// Routes
-// app.get("/", (req, res) => {
-//   // res.render("splashPage");
-//   // res.render("joinCommunity");
-//   // res.render("confirmRegistration");
-//   // res.render("acknowledgement");
-//   res.render("profile", {
-//     user: {
-//       username: "James Bond",
-//       status: "emergency",
-//       image: "image-23.png",
-//     },
-//   });
-// });
-app.get("/", (req, res) => {
-  res.render("splashPage");
-});
+app.use("/api/auth", authRoutes);
+app.use("/", pageRoutes);
 
-app.get("/join", (req, res) => {
-  res.render("joinCommunity");
-});
-app.get("/confirm", (req, res) => {
-  res.render("confirmRegistration");
-});
-app.get("/acknowledgement", (req, res) => {
-  res.render("acknowledgement");
-});
-app.get("/profile", (req, res) => {
-  res.render("profile", {
-    user: {
-      username: "James Bond",
-      status: "ok",
-      image: "./images/photos/user-profiles/user1-james.png",
-    },
-  });
-});
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`Frontend server running on http://localhost:${PORT}`);
+app.listen(process.env.PORT || 3000, () => {
+  console.log("Server running");
 });
-
-module.exports = app;

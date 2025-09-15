@@ -128,7 +128,11 @@ async function onConfirmClick(e) {
     //   username: pending.u,
     //   password: pwd,
     // });
-    const { res, data } = { res: { ok: true }, data: { ok: true } }; // --- IGNORE ---
+    const { res, data } = await postJSON(API.register, {
+      username: pending.u,
+      password: pwd,
+    });
+    //const { res, data } = { res: { ok: true }, data: { ok: true } }; // --- IGNORE ---
     if (res.ok && (data?.ok ?? true)) {
       clearPending();
       window.location.href = NEXT_ROUTE_AFTER_OK;
