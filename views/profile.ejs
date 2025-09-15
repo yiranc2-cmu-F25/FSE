@@ -40,33 +40,22 @@
         </div>
       </div>
       <img
-        src="<%= user.image %>"
+        id="avatar"
         alt="Profile"
         class="absolute top-[15%] h-56 w-56 rounded-full shadow-lg"
       />
       <p
+        id="username"
         class="font-poppins-semibold absolute top-[45%] text-center text-xl leading-normal text-black"
-      >
-        <%= user.username %>
-      </p>
-      <div class="absolute top-[55%] flex w-5/6 flex-col">
+      ></p>
+      <div id="status-ok" class="absolute top-[55%] hidden w-5/6 flex-col">
         <div class="flex items-center justify-between gap-2 py-1">
           <p class="font-poppins-semibold text-sm text-gray-700">
             Current Status
           </p>
-          <% if (user.status === 'ok') { %>
           <p class="font-poppins-semibold text-sm text-green-500">OK</p>
-          <% } else if (user.status === 'help') { %>
-          <p class="font-poppins-semibold text-sm text-yellow-500">HELP</p>
-          <% } else if (user.status === 'emergency') { %>
-          <p class="font-poppins-semibold text-sm text-red-500">Emergency</p>
-          <% } else { %>
-          <p class="font-poppins-semibold text-sm text-black">Unknown</p>
-          <% } %>
         </div>
-
         <div class="flex items-center gap-2 border-t border-gray-300 py-1">
-          <% if (user.status === 'ok') { %>
           <img
             src="./images/icons/status/ok-status-icon.svg"
             alt="ok"
@@ -75,7 +64,16 @@
           <p class="font-poppins-regular text-sm text-black">
             I'm safe — no help needed.
           </p>
-          <% } else if (user.status === 'help') { %>
+        </div>
+      </div>
+      <div id="status-help" class="absolute top-[55%] hidden w-5/6 flex-col">
+        <div class="flex items-center justify-between gap-2 py-1">
+          <p class="font-poppins-semibold text-sm text-gray-700">
+            Current Status
+          </p>
+          <p class="font-poppins-semibold text-sm text-yellow-500">HELP</p>
+        </div>
+        <div class="flex items-center gap-2 border-t border-gray-300 py-1">
           <img
             src="./images/icons/status/help-status-icon.svg"
             alt="help"
@@ -84,7 +82,19 @@
           <p class="font-poppins-regular text-sm text-black">
             Need help, not life-threatening.
           </p>
-          <% } else if (user.status === 'emergency') { %>
+        </div>
+      </div>
+      <div
+        id="status-emergency"
+        class="absolute top-[55%] hidden w-5/6 flex-col"
+      >
+        <div class="flex items-center justify-between gap-2 py-1">
+          <p class="font-poppins-semibold text-sm text-gray-700">
+            Current Status
+          </p>
+          <p class="font-poppins-semibold text-sm text-red-500">Emergency</p>
+        </div>
+        <div class="flex items-center gap-2 border-t border-gray-300 py-1">
           <img
             src="./images/icons/status/emergency-status-icon.svg"
             alt="emergency"
@@ -93,14 +103,22 @@
           <p class="font-poppins-regular text-sm text-black">
             Urgent danger — need help now.
           </p>
-          <% } else { %>
+        </div>
+      </div>
+      <div id="status-unknown" class="absolute top-[55%] hidden w-5/6 flex-col">
+        <div class="flex items-center justify-between gap-2 py-1">
+          <p class="font-poppins-semibold text-sm text-gray-700">
+            Current Status
+          </p>
+          <p class="font-poppins-semibold text-sm text-black">Unknown</p>
+        </div>
+        <div class="flex items-center gap-2 border-t border-gray-300 py-1">
           <img
             src="./images/icons/status/unknown-status-icon.svg"
             alt="unknown"
             class="h-6 w-6"
           />
           <p class="font-poppins-regular text-sm text-black">No status set.</p>
-          <% } %>
         </div>
       </div>
       <button

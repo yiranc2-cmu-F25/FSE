@@ -16,7 +16,7 @@ export async function register(req, res) {
 
 		const user = await User.create({ username, password });
 
-		setAuthCookie(res, { username: user.username }, EXPIRATION_TIME);
+		setAuthCookie(res, username, EXPIRATION_TIME);
 		return res.status(201).json({
 			message: "User successfully registered",
 			username: user.username
@@ -39,7 +39,7 @@ export async function login(req, res) {
 			return res.status(401).json({ error: "Invalid password" });
 		}
 
-		setAuthCookie(res, { username: username }, EXPIRATION_TIME);
+		setAuthCookie(res, username, EXPIRATION_TIME);
 		return res.json({ username: username, ok : true});
 	} catch (err) {
 		console.error("Login error:", err);
@@ -59,7 +59,7 @@ export async function getMe(req, res) {
 			role: user.role,
 			image:
 			user.avatar ||
-			"../images/photos/user-profiles/user1-james.png",
+			"images/photos/user-profiles/user1-james.png",
 		});
 	} catch (err) {
 		console.error("Get user profile error:", err);
@@ -70,7 +70,6 @@ export async function getMe(req, res) {
 export async function logout(req, res) {
 	try {
 		clearAuthCookie(res);
-		res.json({ ok: true });
 	} catch (err) {
 		console.error("Logout error:", err);
 		return res.status(500).json({ status: "error", message: "Server error" });

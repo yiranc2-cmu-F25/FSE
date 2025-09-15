@@ -172,6 +172,7 @@ async function handleSubmit(e) {
 				JSON.stringify({ u: uname, ts: Date.now() }),
 			);
 			window.location.href = "/confirm";
+			return;
 		}
 
 		if (d1.status === "exists") {

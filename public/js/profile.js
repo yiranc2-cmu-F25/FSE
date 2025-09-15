@@ -1,4 +1,21 @@
 // ----- DOM helpers -----------------------------------------------------------
+function showStatusBlock(status) {
+  const statuses = ["ok", "help", "emergency", "unknown"];
+  statuses.forEach(s => {
+    const el = document.getElementById(`status-${s}`);
+    if (el) {
+      el.classList.add("hidden");
+      el.classList.remove("flex");
+    }
+  });
+  const showId = `status-${["ok", "help", "emergency"].includes(status) ? status : "unknown"}`;
+  const showEl = document.getElementById(showId);
+  if (showEl) {
+    showEl.classList.remove("hidden");
+    showEl.classList.add("flex");
+  }
+}
+
 window.addEventListener("DOMContentLoaded", async () => {
   try {
     const res = await fetch("/api/auth/me", { credentials: "include" });
@@ -6,8 +23,9 @@ window.addEventListener("DOMContentLoaded", async () => {
     const user = await res.json();
 
     document.getElementById("username").textContent = user.username;
-    document.getElementById("status").textContent = user.status;
     document.getElementById("avatar").src = user.image;
+
+    showStatusBlock(user.status);
   } catch (err) {
     console.error("Failed to load profile", err);
   }
