@@ -17,15 +17,6 @@ export function auth(req, res, next) {
     }
 }
 
-// helper function to sign a new token
-// example useage: signToken(username, 2);
-// export function signToken(username, expiresInHr) {
-//     const expiresIn = `${expiresInHr}h`;
-//     const token = jwt.sign({ username: username }, JWT_SECRET, { expiresIn: expiresIn });
-//     return token;
-// }
-
-
 export function setAuthCookie(res, username, expiresInHr) {
     const expiresIn = `${expiresInHr}h`;
     const token = jwt.sign({ username: username }, JWT_SECRET, { expiresIn: expiresIn });
