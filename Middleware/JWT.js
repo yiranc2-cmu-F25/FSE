@@ -1,4 +1,6 @@
 import jwt from 'jsonwebtoken';
+import dotenv from "dotenv";
+dotenv.config();
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const isProd = process.env.NODE_ENV === "production";
@@ -35,8 +37,9 @@ export function setAuthCookie(res, username, expiresInHr) {
 export function clearAuthCookie(res) {
     res.clearCookie("jwt_token", { 
         httpOnly: true, 
-        secure: true, 
-        sameSite: "lax", 
+        secure: isProd, 
+        sameSite: isProd ? "lax" : "lax",
         path: "/" 
     });
+    res.json({ ok: true });
 }

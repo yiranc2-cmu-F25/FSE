@@ -19,13 +19,7 @@ router.get("/acknowledgement", (req, res) => {
 });
 
 router.get("/profile", (req, res) => {
-  res.render("profile", {
-    user: {
-      username: "James Bond",
-      status: "ok",
-      image: "./images/photos/user-profiles/user1-james.png",
-    },
-  });
+  res.render("profile");
 });
 
 export default router;

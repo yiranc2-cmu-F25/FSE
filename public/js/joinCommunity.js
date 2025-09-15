@@ -118,84 +118,91 @@ async function postJSON(url, body) {
 
 // ----- Main submit flow ------------------------------------------------------
 async function handleSubmit(e) {
-  e.preventDefault();
+	e.preventDefault();
 
-  // 1) Client-side length checks
-  const { ok, uname, pwd } = clientValidate();
-  if (!ok) return;
+	// 1) Client-side length checks
+	const { ok, uname, pwd } = clientValidate();
+	if (!ok) return;
 
-  ui.btn.setAttribute("disabled", "true");
+	ui.btn.setAttribute("disabled", "true");
 
-  try {
-    // 2) Ask server about the username status
-    // TODO: Comment this back for integration
-    // const { res: r1, data: d1 } = await postJSON(API.usernameStatus, {
-    //   username: uname,
-    // });
-    // 1. Testing 'available' user flow: NEXT page is /confirm
-    // const { res: r1, data: d1 } = {
-    //   res: { ok: true },
-    //   data: { status: "available" },
-    // };
-    // 2. Testing 'reserved' user flow: stay on page, show username error
-    // const { res: r1, data: d1 } = {
-    //   res: { ok: true },
-    //   data: { status: "reserved" },
-    // };
-    // 3. Testing 'exists' user flow: send Login request to db to verify password; Next page is /profile if correct
-    const { res: r1, data: d1 } = {
-      res: { ok: true },
-      data: { status: "exists" },
-    };
+	try {
+		// 2) Ask server about the username status
+		// TODO: Comment this back for integration
+		// const { res: r1, data: d1 } = await postJSON(API.usernameStatus, {
+		//   username: uname,
+		// });
+		// 1. Testing 'available' user flow: NEXT page is /confirm
+		// const { res: r1, data: d1 } = {
+		//   res: { ok: true },
+		//   data: { status: "available" },
+		// };
+		// 2. Testing 'reserved' user flow: stay on page, show username error
+		// const { res: r1, data: d1 } = {
+		//   res: { ok: true },
+		//   data: { status: "reserved" },
+		// };
+		// 3. Testing 'exists' user flow: send Login request to db to verify password; Next page is /profile if correct
+		// const { res: r1, data: d1 } = {
+		//   res: { ok: true },
+		//   data: { status: "exists" },
+		// };
+		const { res: r1, data: d1 } = await postJSON(API.usernameStatus, {
+			username: uname,
+		});
 
-    if (!r1.ok) {
-      // If server cannot even validate username, show generic error on username
-      showError(
-        "username",
-        d1?.message || "Unable to validate username. Please try again.",
-      );
-      return;
-    }
+		if (!r1.ok) {
+			// If server cannot even validate username, show generic error on username
+			showError(
+				"username",
+				d1?.message || "Unable to validate username. Please try again.",
+			);
+			return;
+		}
 
-    if (d1.status === "reserved") {
-      // Reserved/banned → username error, per rule
-      showError("username", d1.message || "This username is not allowed.");
-      return;
-    }
+		if (d1.status === "reserved") {
+			// Reserved/banned → username error, per rule
+			showError("username", d1.message || "This username is not allowed.");
+			return;
+		}
 
-    if (d1.status === "available") {
-      sessionStorage.setItem(
-        "pendingUser",
-        JSON.stringify({ u: uname, ts: Date.now() }),
-      );
-      window.location.href = "/confirm";
-    }
+		if (d1.status === "available") {
+			sessionStorage.setItem(
+				"pendingUser",
+				JSON.stringify({ u: uname, ts: Date.now() }),
+			);
+			window.location.href = "/confirm";
+		}
 
-    if (d1.status === "exists") {
-      // Existing user → login. Do NOT show username error if incorrect password.
-      // TODO: Comment this back for integration
-      // const { res: r3, data: d3 } = await postJSON(API.login, {
-      //   username: uname,
-      //   password: pwd,
-      // });
-      const { res: r3, data: d3 } = { res: { ok: true }, data: { ok: true } }; // for testing, assume always correct
-      if (r3.ok && d3?.ok) {
-        window.location.href = NEXT_ROUTE_AFTER_LOGIN_VALIDATION;
-        return;
-      }
-      // Password or other login error → show on password field
-      showError("password", d3?.message || "Incorrect password.");
-      return;
-    }
+		if (d1.status === "exists") {
+		// Existing user → login. Do NOT show username error if incorrect password.
+		// TODO: Comment this back for integration
+		// const { res: r3, data: d3 } = await postJSON(API.login, {
+		//   username: uname,
+		//   password: pwd,
+		// });
+		const { res: r3, data: d3 } = await postJSON(API.login, {
+		  username: uname,
+		  password: pwd,
+		});
+		//const { res: r3, data: d3 } = { res: { ok: true }, data: { ok: true } }; // for testing, assume always correct
+		if (r3.ok && d3?.ok) {
+			window.location.href = NEXT_ROUTE_AFTER_LOGIN_VALIDATION;
+			return;
+		}
+		// Password or other login error → show on password field
+		showError("password", d3?.message || "Incorrect password.");
+		return;
+		}
 
-    // Unexpected status
-    showError("username", "Unexpected server response. Please try again.");
-  } catch (err) {
-    // Network/unknown error → show username error (entry point)
-    showError("username", "Network error. Please check your connection.");
-  } finally {
-    ui.btn.removeAttribute("disabled");
-  }
+		// Unexpected status
+		showError("username", "Unexpected server response. Please try again.");
+	} catch (err) {
+		// Network/unknown error → show username error (entry point)
+		showError("username", "Network error. Please check your connection.");
+	} finally {
+		ui.btn.removeAttribute("disabled");
+	}
 }
 
 // ----- Wire up events --------------------------------------------------------

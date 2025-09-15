@@ -11,13 +11,13 @@ const UserSchema = new mongoose.Schema({
             validator: (v) => {
                 return !ForbiddenUsernames.includes(v) && !v.includes('.') ;
             },
-            message: props => `${props.value} is not allowed as a username. Please choose another one.`
+            message: props => `${props.value} is not allowed as a username.`
         }
     },
     password: { type: String, required: true, minlength:4},
-    sharedstatus: {type:Number, enum: Object.values(SHARED_STATUS) ,default:0 },
-    status: {type:Number, enum: Object.values(USER_STATUS) ,default:0 },
-    role: {type:Number, enum: Object.values(USER_ROLE) ,default:0 },
+    sharedstatus: {type:String, enum: Object.values(SHARED_STATUS) , default: SHARED_STATUS.UNDEFINED},
+    status: {type:String, enum: Object.values(USER_STATUS) ,default: USER_STATUS.ACTIVE},
+    role: {type:String, enum: Object.values(USER_ROLE) ,default: USER_ROLE.CITIZEN},
     createdAt: { type: Date, default: Date.now },
 });
 
@@ -48,7 +48,7 @@ UserSchema.methods.toJSON = function () {
     };
 };
 
-UserSchema.static.findByUsername = function(username){
+UserSchema.statics.findByUsername = function(username){
     return this.findOne({ username });
 };
 
