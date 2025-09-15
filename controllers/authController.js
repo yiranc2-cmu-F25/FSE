@@ -1,6 +1,6 @@
 import User from "../models/User.js";
 import { isUsernameValid, isPasswordValid } from "../utils/validators.js";
-import { setAuthCookie, clearAuthCookie } from "../middleware/JWT.js";
+import { setAuthCookie, clearAuthCookie } from "../middleware/jwt.js";
 import { ForbiddenUsernames }  from "../config/ForbiddenUsernamesConfig.js";
 import dotenv from "dotenv";
 dotenv.config();
