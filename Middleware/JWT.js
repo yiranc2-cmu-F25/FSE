@@ -21,7 +21,7 @@ export function auth(req, res, next) {
 
 export function setAuthCookie(res, username, expiresInHr) {
     const expiresIn = `${expiresInHr}h`;
-    const token = jwt.sign({ username: username }, JWT_SECRET, { expiresIn: expiresIn });
+    const token = jwt.sign({ username }, JWT_SECRET, { expiresIn: expiresIn });
 
     res.cookie("jwt_token", token, {
         httpOnly: true,
