@@ -1,133 +1,133 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Confirm Registration</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-      @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap");
-      .font-poppins-bold {
-        font-family: "Poppins", Helvetica;
-        font-weight: 700;
-      }
-      .font-poppins-semibold {
-        font-family: "Poppins", Helvetica;
-        font-weight: 600;
-      }
-      .font-poppins-regular {
-        font-family: "Poppins", Helvetica;
-        font-weight: 400;
-      }
-    </style>
-  </head>
-  <body class="min-h-screen bg-white">
-    <div
-      class="relative mx-auto flex h-screen w-full max-w-md flex-col items-center justify-center"
-    >
-      <div
-        class="absolute top-[5%] flex w-11/12 items-center justify-start gap-1"
-      >
-        <img
-          src="./images/icons/logos/ESN-red-cross.png"
-          alt="Logo"
-          class="w-20"
-        />
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Confirm Registration</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+        @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap");
+        .font-poppins-bold {
+            font-family: "Poppins", Helvetica;
+            font-weight: 700;
+        }
+        .font-poppins-semibold {
+            font-family: "Poppins", Helvetica;
+            font-weight: 600;
+        }
+        .font-poppins-regular {
+            font-family: "Poppins", Helvetica;
+            font-weight: 400;
+        }
+        </style>
+    </head>
+    <body class="min-h-screen bg-white">
         <div
-          class="font-poppins-bold bg-[linear-gradient(0deg,rgba(37,48,77,1)_0%,rgba(86,112,179,1)_100%)] bg-clip-text text-center text-3xl text-transparent [-webkit-background-clip:text] [-webkit-text-fill-color:transparent]"
+        class="relative mx-auto flex h-screen w-full max-w-md flex-col items-center justify-center"
         >
-          ESN
+        <div
+            class="absolute top-[5%] flex w-11/12 items-center justify-start gap-1"
+        >
+            <img
+            src="./images/icons/logos/ESN-red-cross.png"
+            alt="Logo"
+            class="w-20"
+            />
+            <div
+            class="font-poppins-bold bg-[linear-gradient(0deg,rgba(37,48,77,1)_0%,rgba(86,112,179,1)_100%)] bg-clip-text text-center text-3xl text-transparent [-webkit-background-clip:text] [-webkit-text-fill-color:transparent]"
+            >
+            ESN
+            </div>
         </div>
-      </div>
-      <img
-        id="avatar"
-        alt="Profile"
-        class="absolute top-[15%] h-56 w-56 rounded-full shadow-lg"
-      />
-      <p
-        id="username"
-        class="font-poppins-semibold absolute top-[45%] text-center text-xl leading-normal text-black"
-      ></p>
-      <div id="status-ok" class="absolute top-[55%] hidden w-5/6 flex-col">
-        <div class="flex items-center justify-between gap-2 py-1">
-          <p class="font-poppins-semibold text-sm text-gray-700">
-            Current Status
-          </p>
-          <p class="font-poppins-semibold text-sm text-green-500">OK</p>
+        <img
+            id="avatar"
+            alt="Profile"
+            class="absolute top-[15%] h-56 w-56 rounded-full shadow-lg"
+        />
+        <p
+            id="username"
+            class="font-poppins-semibold absolute top-[45%] text-center text-xl leading-normal text-black"
+        ></p>
+        <div id="status-ok" class="absolute top-[55%] hidden w-5/6 flex-col">
+            <div class="flex items-center justify-between gap-2 py-1">
+            <p class="font-poppins-semibold text-sm text-gray-700">
+                Current Status
+            </p>
+            <p class="font-poppins-semibold text-sm text-green-500">OK</p>
+            </div>
+            <div class="flex items-center gap-2 border-t border-gray-300 py-1">
+            <img
+                src="./images/icons/status/ok-status-icon.svg"
+                alt="ok"
+                class="h-6 w-6"
+            />
+            <p class="font-poppins-regular text-sm text-black">
+                I'm safe — no help needed.
+            </p>
+            </div>
         </div>
-        <div class="flex items-center gap-2 border-t border-gray-300 py-1">
-          <img
-            src="./images/icons/status/ok-status-icon.svg"
-            alt="ok"
-            class="h-6 w-6"
-          />
-          <p class="font-poppins-regular text-sm text-black">
-            I'm safe — no help needed.
-          </p>
+        <div id="status-help" class="absolute top-[55%] hidden w-5/6 flex-col">
+            <div class="flex items-center justify-between gap-2 py-1">
+            <p class="font-poppins-semibold text-sm text-gray-700">
+                Current Status
+            </p>
+            <p class="font-poppins-semibold text-sm text-yellow-500">HELP</p>
+            </div>
+            <div class="flex items-center gap-2 border-t border-gray-300 py-1">
+            <img
+                src="./images/icons/status/help-status-icon.svg"
+                alt="help"
+                class="h-6 w-6"
+            />
+            <p class="font-poppins-regular text-sm text-black">
+                Need help, not life-threatening.
+            </p>
+            </div>
         </div>
-      </div>
-      <div id="status-help" class="absolute top-[55%] hidden w-5/6 flex-col">
-        <div class="flex items-center justify-between gap-2 py-1">
-          <p class="font-poppins-semibold text-sm text-gray-700">
-            Current Status
-          </p>
-          <p class="font-poppins-semibold text-sm text-yellow-500">HELP</p>
+        <div
+            id="status-emergency"
+            class="absolute top-[55%] hidden w-5/6 flex-col"
+        >
+            <div class="flex items-center justify-between gap-2 py-1">
+            <p class="font-poppins-semibold text-sm text-gray-700">
+                Current Status
+            </p>
+            <p class="font-poppins-semibold text-sm text-red-500">Emergency</p>
+            </div>
+            <div class="flex items-center gap-2 border-t border-gray-300 py-1">
+            <img
+                src="./images/icons/status/emergency-status-icon.svg"
+                alt="emergency"
+                class="h-6 w-6"
+            />
+            <p class="font-poppins-regular text-sm text-black">
+                Urgent danger — need help now.
+            </p>
+            </div>
         </div>
-        <div class="flex items-center gap-2 border-t border-gray-300 py-1">
-          <img
-            src="./images/icons/status/help-status-icon.svg"
-            alt="help"
-            class="h-6 w-6"
-          />
-          <p class="font-poppins-regular text-sm text-black">
-            Need help, not life-threatening.
-          </p>
+        <div id="status-unknown" class="absolute top-[55%] hidden w-5/6 flex-col">
+            <div class="flex items-center justify-between gap-2 py-1">
+            <p class="font-poppins-semibold text-sm text-gray-700">
+                Current Status
+            </p>
+            <p class="font-poppins-semibold text-sm text-black">Unknown</p>
+            </div>
+            <div class="flex items-center gap-2 border-t border-gray-300 py-1">
+            <img
+                src="./images/icons/status/unknown-status-icon.svg"
+                alt="unknown"
+                class="h-6 w-6"
+            />
+            <p class="font-poppins-regular text-sm text-black">No status set.</p>
+            </div>
         </div>
-      </div>
-      <div
-        id="status-emergency"
-        class="absolute top-[55%] hidden w-5/6 flex-col"
-      >
-        <div class="flex items-center justify-between gap-2 py-1">
-          <p class="font-poppins-semibold text-sm text-gray-700">
-            Current Status
-          </p>
-          <p class="font-poppins-semibold text-sm text-red-500">Emergency</p>
+        <button
+            class="font-poppins-semibold absolute top-[75%] h-12 w-5/6 bg-[#d65841] text-lg text-white"
+            id="btn-logout"
+        >
+            Log Out
+        </button>
         </div>
-        <div class="flex items-center gap-2 border-t border-gray-300 py-1">
-          <img
-            src="./images/icons/status/emergency-status-icon.svg"
-            alt="emergency"
-            class="h-6 w-6"
-          />
-          <p class="font-poppins-regular text-sm text-black">
-            Urgent danger — need help now.
-          </p>
-        </div>
-      </div>
-      <div id="status-unknown" class="absolute top-[55%] hidden w-5/6 flex-col">
-        <div class="flex items-center justify-between gap-2 py-1">
-          <p class="font-poppins-semibold text-sm text-gray-700">
-            Current Status
-          </p>
-          <p class="font-poppins-semibold text-sm text-black">Unknown</p>
-        </div>
-        <div class="flex items-center gap-2 border-t border-gray-300 py-1">
-          <img
-            src="./images/icons/status/unknown-status-icon.svg"
-            alt="unknown"
-            class="h-6 w-6"
-          />
-          <p class="font-poppins-regular text-sm text-black">No status set.</p>
-        </div>
-      </div>
-      <button
-        class="font-poppins-semibold absolute top-[75%] h-12 w-5/6 bg-[#d65841] text-lg text-white"
-        id="btn-logout"
-      >
-        Log Out
-      </button>
-    </div>
-    <script src="/js/profile.js"></script>
-  </body>
+        <script src="/js/profile.js"></script>
+    </body>
 </html>

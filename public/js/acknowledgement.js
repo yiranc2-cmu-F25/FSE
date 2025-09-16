@@ -4,36 +4,36 @@ const NEXT = "/profile";
 const HOME = "/";
 
 function init() {
-  const btn = $("#btn-understand");
-  if (btn) {
-    btn.addEventListener("click", async (e) => {
-      e.preventDefault();
-      await Logout();
-      // window.location.href = NEXT;
-    });
-  }
+    const btn = $("#btn-understand");
+    if (btn) {
+        btn.addEventListener("click", async (e) => {
+        e.preventDefault();
+        await Logout();
+        // window.location.href = NEXT;
+        });
+    }
 }
 // ----- Logout utilities ------------------------------------------------------
 async function Logout() {
-  await backendLogout();
-  await clearClientState();
-  window.location.href = HOME;
+    await backendLogout();
+    await clearClientState();
+    window.location.href = HOME;
 }
 async function backendLogout() {
-  try {
-    const res = await fetch("/api/auth/logout", {
-      method: "POST",
-      credentials: "include",
-    });
-    return res.ok;
-  } catch (err) {
-    console.error("logout error", err);
-    return false;
-  }
+    try {
+        const res = await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+        });
+        return res.ok;
+    } catch (err) {
+        console.error("logout error", err);
+        return false;
+    }
 }
 async function clearClientState() {
-  sessionStorage.clear();
-  localStorage.clear();
+    sessionStorage.clear();
+    localStorage.clear();
 }
 
 window.addEventListener("DOMContentLoaded", init);
