@@ -1,213 +1,213 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Join Community</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-      @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap");
-      .font-poppins-bold {
-        font-family: "Poppins", Helvetica;
-        font-weight: 700;
-      }
-      .font-poppins-semibold {
-        font-family: "Poppins", Helvetica;
-        font-weight: 600;
-      }
-      .font-poppins-regular {
-        font-family: "Poppins", Helvetica;
-        font-weight: 400;
-      }
-      @keyframes wiggle {
-        0%,
-        100% {
-          transform: translateX(0);
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Join Community</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+        @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap");
+        .font-poppins-bold {
+            font-family: "Poppins", Helvetica;
+            font-weight: 700;
         }
-        15% {
-          transform: translateX(-6px);
+        .font-poppins-semibold {
+            font-family: "Poppins", Helvetica;
+            font-weight: 600;
         }
-        30% {
-          transform: translateX(6px);
+        .font-poppins-regular {
+            font-family: "Poppins", Helvetica;
+            font-weight: 400;
         }
-        45% {
-          transform: translateX(-5px);
+        @keyframes wiggle {
+            0%,
+            100% {
+            transform: translateX(0);
+            }
+            15% {
+            transform: translateX(-6px);
+            }
+            30% {
+            transform: translateX(6px);
+            }
+            45% {
+            transform: translateX(-5px);
+            }
+            60% {
+            transform: translateX(5px);
+            }
+            75% {
+            transform: translateX(-3px);
+            }
+            90% {
+            transform: translateX(3px);
+            }
         }
-        60% {
-          transform: translateX(5px);
+        .shake {
+            animation: wiggle 0.35s ease-in-out;
         }
-        75% {
-          transform: translateX(-3px);
-        }
-        90% {
-          transform: translateX(3px);
-        }
-      }
-      .shake {
-        animation: wiggle 0.35s ease-in-out;
-      }
-    </style>
-  </head>
+        </style>
+    </head>
 
-  <body class="min-h-screen bg-white">
-    <div
-      class="relative mx-auto flex h-screen w-full max-w-md flex-col items-center justify-center"
-    >
-      <!-- Header -->
-      <div
-        class="absolute top-[5%] flex w-11/12 items-center justify-start gap-1"
-      >
-        <img
-          src="/images/icons/logos/ESN-red-cross.png"
-          alt="Logo"
-          class="w-20"
-        />
+    <body class="min-h-screen bg-white">
         <div
-          class="font-poppins-bold bg-[linear-gradient(0deg,rgba(37,48,77,1)_0%,rgba(86,112,179,1)_100%)] bg-clip-text text-center text-3xl text-transparent [-webkit-background-clip:text] [-webkit-text-fill-color:transparent]"
+        class="relative mx-auto flex h-screen w-full max-w-md flex-col items-center justify-center"
         >
-          ESN
-        </div>
-      </div>
-
-      <p
-        class="font-poppins-semibold absolute top-[15%] text-center text-xl leading-normal text-black"
-      >
-        We're glad you are here
-      </p>
-      <p
-        class="font-poppins-regular absolute top-[20%] text-center text-sm leading-normal text-gray-500"
-      >
-        Join ESN network to start helping community
-      </p>
-
-      <!-- Illustration -->
-      <div
-        class="absolute top-[30%] flex w-full items-center justify-center px-2"
-      >
-        <img
-          src="/images/photos/bg-photos/enter-credential.svg"
-          alt="vector"
-          class="h-44"
-        />
-      </div>
-
-      <!-- Username -->
-      <div class="absolute top-[51%] w-5/6 px-1">
-        <p
-          id="err-username"
-          class="font-poppins-regular mb-1 hidden text-xs text-red-600"
-          role="alert"
-          aria-live="assertive"
-        ></p>
-        <div
-          id="wrap-username"
-          class="flex h-12 items-center rounded-full bg-white px-4 shadow-md"
-        >
-          <input
-            id="username"
-            type="text"
-            autocomplete="username"
-            placeholder="Enter Your User Name"
-            class="font-poppins-regular w-full border-none text-sm text-gray-700 outline-none"
-          />
-        </div>
-      </div>
-
-      <!-- Password -->
-      <div class="absolute top-[63%] w-5/6 px-1">
-        <p
-          id="err-password"
-          class="font-poppins-regular mb-1 hidden text-xs text-red-600"
-          role="alert"
-          aria-live="assertive"
-        ></p>
-        <div
-          id="wrap-password"
-          class="flex h-12 items-center rounded-full bg-white px-4 shadow-md"
-        >
-          <input
-            id="password"
-            type="password"
-            autocomplete="current-password"
-            placeholder="Enter Password"
-            class="font-poppins-regular w-full border-none text-sm text-gray-700 outline-none"
-          />
-        </div>
-      </div>
-
-      <!-- Submit -->
-      <button
-        id="btn-join"
-        class="font-poppins-semibold absolute top-[75%] h-12 w-5/6 rounded-md bg-[#d65841] text-lg text-white"
-      >
-        Join Community
-      </button>
-    </div>
-
-    <!-- Confirm Account Modal -->
-    <div
-      id="confirm-modal"
-      class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="confirm-title"
-    >
-      <div class="mx-4 w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
         <!-- Header -->
-        <div class="mb-4 flex items-start gap-3">
-          <img
+        <div
+            class="absolute top-[5%] flex w-11/12 items-center justify-start gap-1"
+        >
+            <img
             src="/images/icons/logos/ESN-red-cross.png"
-            alt="ESN"
-            class="h-8 w-8"
-          />
-          <h2 id="confirm-title" class="text-xl font-semibold text-gray-900">
-            Create ESN Account?
-          </h2>
+            alt="Logo"
+            class="w-20"
+            />
+            <div
+            class="font-poppins-bold bg-[linear-gradient(0deg,rgba(37,48,77,1)_0%,rgba(86,112,179,1)_100%)] bg-clip-text text-center text-3xl text-transparent [-webkit-background-clip:text] [-webkit-text-fill-color:transparent]"
+            >
+            ESN
+            </div>
         </div>
 
-        <!-- Copy -->
-        <p class="mb-4 text-sm text-gray-600">
-          Your ESN status will be visible to connected members, and you’ll see
-          others’ statuses in real time.
+        <p
+            class="font-poppins-semibold absolute top-[15%] text-center text-xl leading-normal text-black"
+        >
+            We're glad you are here
+        </p>
+        <p
+            class="font-poppins-regular absolute top-[20%] text-center text-sm leading-normal text-gray-500"
+        >
+            Join ESN network to start helping community
         </p>
 
-        <!-- Username preview -->
-        <label class="mb-1 block text-xs text-gray-500">Account name</label>
+        <!-- Illustration -->
         <div
-          class="mb-6 flex h-11 items-center rounded-full bg-white px-4 shadow"
+            class="absolute top-[30%] flex w-full items-center justify-center px-2"
         >
-          <input
-            id="confirm-username"
-            type="text"
-            readonly
-            class="w-full border-none text-sm text-gray-800 outline-none"
-          />
+            <img
+            src="/images/photos/bg-photos/enter-credential.svg"
+            alt="vector"
+            class="h-44"
+            />
         </div>
 
-        <!-- Actions -->
-        <div class="flex items-center justify-end gap-3">
-          <button
-            id="confirm-cancel"
-            class="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
-            type="button"
-          >
-            Cancel
-          </button>
-          <button
-            id="confirm-submit"
-            class="rounded-lg bg-[#d65841] px-4 py-2 text-sm font-semibold text-white hover:opacity-95"
-            type="button"
-          >
-            Create Account
-          </button>
+        <!-- Username -->
+        <div class="absolute top-[51%] w-5/6 px-1">
+            <p
+            id="err-username"
+            class="font-poppins-regular mb-1 hidden text-xs text-red-600"
+            role="alert"
+            aria-live="assertive"
+            ></p>
+            <div
+            id="wrap-username"
+            class="flex h-12 items-center rounded-full bg-white px-4 shadow-md"
+            >
+            <input
+                id="username"
+                type="text"
+                autocomplete="username"
+                placeholder="Enter Your User Name"
+                class="font-poppins-regular w-full border-none text-sm text-gray-700 outline-none"
+            />
+            </div>
         </div>
 
-        <!-- Inline error (optional) -->
-        <p id="confirm-error" class="mt-3 hidden text-sm text-red-600"></p>
-      </div>
-    </div>
+        <!-- Password -->
+        <div class="absolute top-[63%] w-5/6 px-1">
+            <p
+            id="err-password"
+            class="font-poppins-regular mb-1 hidden text-xs text-red-600"
+            role="alert"
+            aria-live="assertive"
+            ></p>
+            <div
+            id="wrap-password"
+            class="flex h-12 items-center rounded-full bg-white px-4 shadow-md"
+            >
+            <input
+                id="password"
+                type="password"
+                autocomplete="current-password"
+                placeholder="Enter Password"
+                class="font-poppins-regular w-full border-none text-sm text-gray-700 outline-none"
+            />
+            </div>
+        </div>
 
-    <!-- Link the external module -->
-    <script type="module" src="/js/joinCommunity.js"></script>
-  </body>
+        <!-- Submit -->
+        <button
+            id="btn-join"
+            class="font-poppins-semibold absolute top-[75%] h-12 w-5/6 rounded-md bg-[#d65841] text-lg text-white"
+        >
+            Join Community
+        </button>
+        </div>
+
+        <!-- Confirm Account Modal -->
+        <div
+        id="confirm-modal"
+        class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="confirm-title"
+        >
+        <div class="mx-4 w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+            <!-- Header -->
+            <div class="mb-4 flex items-start gap-3">
+            <img
+                src="/images/icons/logos/ESN-red-cross.png"
+                alt="ESN"
+                class="h-8 w-8"
+            />
+            <h2 id="confirm-title" class="text-xl font-semibold text-gray-900">
+                Create ESN Account?
+            </h2>
+            </div>
+
+            <!-- Copy -->
+            <p class="mb-4 text-sm text-gray-600">
+            Your ESN status will be visible to connected members, and you’ll see
+            others’ statuses in real time.
+            </p>
+
+            <!-- Username preview -->
+            <label class="mb-1 block text-xs text-gray-500">Account name</label>
+            <div
+            class="mb-6 flex h-11 items-center rounded-full bg-white px-4 shadow"
+            >
+            <input
+                id="confirm-username"
+                type="text"
+                readonly
+                class="w-full border-none text-sm text-gray-800 outline-none"
+            />
+            </div>
+
+            <!-- Actions -->
+            <div class="flex items-center justify-end gap-3">
+            <button
+                id="confirm-cancel"
+                class="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
+                type="button"
+            >
+                Cancel
+            </button>
+            <button
+                id="confirm-submit"
+                class="rounded-lg bg-[#d65841] px-4 py-2 text-sm font-semibold text-white hover:opacity-95"
+                type="button"
+            >
+                Create Account
+            </button>
+            </div>
+
+            <!-- Inline error (optional) -->
+            <p id="confirm-error" class="mt-3 hidden text-sm text-red-600"></p>
+        </div>
+        </div>
+
+        <!-- Link the external module -->
+        <script type="module" src="/js/joinCommunity.js"></script>
+    </body>
 </html>

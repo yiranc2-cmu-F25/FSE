@@ -43,7 +43,7 @@ class DatabaseConfig {
 			console.log("Database disconnected successfully");
 		}
 		} catch (e) {
-		console.error("Database disconnection error:", e);
+			console.error("Database disconnection error:", e);
 		throw e;
 		}
 	}
