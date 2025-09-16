@@ -1,7 +1,7 @@
 // ----- DOM helpers -----------------------------------------------------------
 function showStatusBlock(status) {
   const statuses = ["ok", "help", "emergency", "unknown"];
-  statuses.forEach(s => {
+  statuses.forEach((s) => {
     const el = document.getElementById(`status-${s}`);
     if (el) {
       el.classList.add("hidden");
@@ -18,14 +18,15 @@ function showStatusBlock(status) {
 
 window.addEventListener("DOMContentLoaded", async () => {
   try {
-    const res = await fetch("/api/auth/me", { credentials: "include" });
-    if (!res.ok) return;
-    const user = await res.json();
+    // const res = await fetch("/api/auth/me", { credentials: "include" });
+    // if (!res.ok) return;
+    // const user = await res.json();
 
-    document.getElementById("username").textContent = user.username;
-    document.getElementById("avatar").src = user.image;
+    // document.getElementById("username").textContent = user.username;
+    // document.getElementById("avatar").src = user.image;
 
-    showStatusBlock(user.status);
+    // showStatusBlock(user.status);
+    await Logout();
   } catch (err) {
     console.error("Failed to load profile", err);
   }
@@ -34,38 +35,43 @@ window.addEventListener("DOMContentLoaded", async () => {
 const $ = (s) => document.querySelector(s);
 const HOME = "/";
 async function onLogout(e) {
-	e.preventDefault();
-	// 1) tell server to invalidate session/token
-	// TODO: await backendLogout();
-	// 2) wipe client side
-	// TODO: await clearClientState();
-	// 3) go home
-	await backendLogout();
-	await clearClientState();
-	window.location.href = HOME;
+  e.preventDefault();
+  // 1) tell server to invalidate session/token
+  // TODO: await backendLogout();
+  // 2) wipe client side
+  // TODO: await clearClientState();
+  // 3) go home
+  await backendLogout();
+  await clearClientState();
+  window.location.href = HOME;
+}
+async function Logout() {
+  await backendLogout();
+  await clearClientState();
+  window.location.href = HOME;
 }
 
 async function backendLogout() {
-	try {
-		const res = await fetch("/api/auth/logout", {
-		method: "POST",
-		credentials: "include",
-		});
-		return res.ok;
-	} catch (err) {
-		console.error("logout error", err);
-		return false;
-	}
+  try {
+    const res = await fetch("/api/auth/logout", {
+      method: "POST",
+      credentials: "include",
+    });
+    return res.ok;
+  } catch (err) {
+    console.error("logout error", err);
+    return false;
+  }
 }
 
 async function clearClientState() {
-	sessionStorage.clear();
-	localStorage.clear();
+  sessionStorage.clear();
+  localStorage.clear();
 }
 
 function init() {
-	const btn = $("#btn-logout");
-	if (btn) btn.addEventListener("click", onLogout);
+  const btn = $("#btn-logout");
+  if (btn) btn.addEventListener("click", onLogout);
 }
 
 window.addEventListener("DOMContentLoaded", init);
