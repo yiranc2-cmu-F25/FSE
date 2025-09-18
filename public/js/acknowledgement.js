@@ -1,6 +1,6 @@
 // public/js/acknowledgement.js
 const $ = (s) => document.querySelector(s);
-const NEXT = "/profile";
+const NEXT = "/profiles";
 const HOME = "/";
 
 function init() {

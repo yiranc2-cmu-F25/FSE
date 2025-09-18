@@ -24,7 +24,7 @@
  */
 
 const API = {
-    register: "/api/auth/register",
+    register: "/api/auth/registrations",
 };
 const NEXT_ROUTE_AFTER_OK = "/acknowledgement";
 const MAX_AGE_MS = 5 * 60 * 1000; // 5 minutes
@@ -107,6 +107,7 @@ async function onConfirmClick(e) {
 
     const pending = getPending();
     if (!pending) {
+        //TODO: change name to RESTful
         window.location.href = "/join";
         return;
     }
@@ -152,6 +153,7 @@ async function onConfirmClick(e) {
 function init() {
     const pending = getPending();
     if (!pending) {
+        //TODO: change name to RESTful
         window.location.href = "/join";
         return;
     }
