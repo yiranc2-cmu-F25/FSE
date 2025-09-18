@@ -5,10 +5,10 @@ import { usernameStatus } from "../controllers/authController.js";
 
 const router = Router();
 
-router.post("/register",  register);
+router.post("/registrations",  register);
 router.post("/login", login);
 router.post("/username-status", usernameStatus);
-router.get("/me", auth, getMe);
+router.get("/accounts", auth, getMe);
 router.post("/logout", auth, logout);
 
 

@@ -6,19 +6,20 @@ router.get("/", (req, res) => {
     res.render("splashPage");
 });
 
+//TODO: change name to RESTful
 router.get("/join", (req, res) => {
     res.render("joinCommunity");
 });
 
-router.get("/confirm", (req, res) => {
+router.get("/confirmations", (req, res) => {
     res.render("confirmRegistration");
 });
 
-router.get("/acknowledgement", (req, res) => {
+router.get("/acknowledgements", (req, res) => {
     res.render("acknowledgement");
 });
 
-router.get("/profile", (req, res) => {
+router.get("/profiles", (req, res) => {
     res.render("profile");
 });
 
