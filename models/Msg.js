@@ -29,9 +29,14 @@ const MessageSchema = new mongoose.Schema({
     }
 });
 
-// Static method to find messages by receiver in time order
-MessageSchema.statics.getMsg = function(receiver) {
+// Static method to find private messages by receiver in time order
+MessageSchema.statics.getPrivateMsg = function(receiver) {
     return this.find({ receiver }).sort({ timestamp: 1 });
+};
+
+// Static method to find public messages by receiver in time order
+MessageSchema.statics.getPublicMsg = function() {
+    return this.find({ receiver: "public" }).sort({ timestamp: 1 });
 };
 
 const Message = mongoose.model("Message", MessageSchema);
