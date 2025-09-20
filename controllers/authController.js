@@ -80,8 +80,7 @@ export async function usernameStatus(req, res) {
 	try {
 		const { username } = req.body;
 
-		const filteredName = username.trim().toLowerCase();
-		if (ForbiddenUsernames.includes(filteredName)) {
+		if (!isUsernameValid(username)) {
 			return res.json({
 				status: "reserved",
 				reason: "banned_username",

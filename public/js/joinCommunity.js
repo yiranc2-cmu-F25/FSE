@@ -8,12 +8,12 @@
 
 const API = {
     usernameStatus: "/api/auth/username-status",
-    register: "/api/auth/register",
+    register: "/api/auth/registrations",
     login: "/api/auth/login",
 };
 const HOME = "/";
-const NEXT_ROUTE_AFTER_LOGIN_VALIDATION = "/profile";
-const NEXT_ROUTE_AFTER_REGISTER_VALIDATION = "/acknowledgement";
+const NEXT_ROUTE_AFTER_LOGIN_VALIDATION = "/profiles";
+const NEXT_ROUTE_AFTER_REGISTER_VALIDATION = "/acknowledgements";
 
 // ----- DOM helpers -----------------------------------------------------------
 const $ = (s) => document.querySelector(s);
