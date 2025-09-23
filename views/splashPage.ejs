@@ -4,22 +4,7 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>Splash Page</title>
-        <script src="https://cdn.tailwindcss.com"></script>
-        <style>
-        @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap");
-        .font-poppins-bold {
-            font-family: "Poppins", Helvetica;
-            font-weight: 700;
-        }
-        .font-poppins-semibold {
-            font-family: "Poppins", Helvetica;
-            font-weight: 600;
-        }
-        .font-poppins-regular {
-            font-family: "Poppins", Helvetica;
-            font-weight: 400;
-        }
-        </style>
+        <%- include('partials/head') %>
     </head>
     <body class="min-h-screen bg-white">
         <div
@@ -40,22 +25,22 @@
             alt="Logo"
             class="mb-2 w-24"
             />
-            <div class="font-poppins-bold text-5xl text-white">ESN</div>
+            <div class="font-poppins font-bold text-5xl text-white">ESN</div>
         </div>
         <p
-            class="font-poppins-regular absolute top-[60%] w-5/6 text-center text-base leading-relaxed text-white"
+            class="font-poppins absolute top-[60%] w-5/6 text-center text-base leading-relaxed text-white"
         >
             Your community's network for real-time alerts and help during
             emergencies.
         </p>
         <p
-            class="font-poppins-regular absolute top-[70%] w-5/6 text-center text-base leading-relaxed text-white"
+            class="font-poppins absolute top-[70%] w-5/6 text-center text-base leading-relaxed text-white"
         >
             Let's help each other out.
         </p>
         <button
             id="join-community-btn"
-            class="font-poppins-semibold absolute top-[80%] h-12 w-5/6 bg-white text-lg text-[#d65841]"
+            class="font-poppins font-semibold absolute top-[80%] h-12 w-5/6 bg-white text-lg text-theme"
             type="button"
         >
             Join Community

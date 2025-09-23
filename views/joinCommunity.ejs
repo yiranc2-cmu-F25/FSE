@@ -4,49 +4,7 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>Join Community</title>
-        <script src="https://cdn.tailwindcss.com"></script>
-        <style>
-        @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap");
-        .font-poppins-bold {
-            font-family: "Poppins", Helvetica;
-            font-weight: 700;
-        }
-        .font-poppins-semibold {
-            font-family: "Poppins", Helvetica;
-            font-weight: 600;
-        }
-        .font-poppins-regular {
-            font-family: "Poppins", Helvetica;
-            font-weight: 400;
-        }
-        @keyframes wiggle {
-            0%,
-            100% {
-            transform: translateX(0);
-            }
-            15% {
-            transform: translateX(-6px);
-            }
-            30% {
-            transform: translateX(6px);
-            }
-            45% {
-            transform: translateX(-5px);
-            }
-            60% {
-            transform: translateX(5px);
-            }
-            75% {
-            transform: translateX(-3px);
-            }
-            90% {
-            transform: translateX(3px);
-            }
-        }
-        .shake {
-            animation: wiggle 0.35s ease-in-out;
-        }
-        </style>
+        <%- include('partials/head') %>
     </head>
 
     <body class="min-h-screen bg-white">
@@ -63,19 +21,19 @@
             class="w-20"
             />
             <div
-            class="font-poppins-bold bg-[linear-gradient(0deg,rgba(37,48,77,1)_0%,rgba(86,112,179,1)_100%)] bg-clip-text text-center text-3xl text-transparent [-webkit-background-clip:text] [-webkit-text-fill-color:transparent]"
+            class="font-poppins font-bold bg-[linear-gradient(0deg,rgba(37,48,77,1)_0%,rgba(86,112,179,1)_100%)] bg-clip-text text-center text-3xl text-transparent [-webkit-background-clip:text] [-webkit-text-fill-color:transparent]"
             >
             ESN
             </div>
         </div>
 
         <p
-            class="font-poppins-semibold absolute top-[15%] text-center text-xl leading-normal text-black"
+            class="font-poppins font-semibold absolute top-[15%] text-center text-xl leading-normal text-black"
         >
             We're glad you are here
         </p>
         <p
-            class="font-poppins-regular absolute top-[20%] text-center text-sm leading-normal text-gray-500"
+            class="font-poppins absolute top-[20%] text-center text-sm leading-normal text-gray-500"
         >
             Join ESN network to start helping community
         </p>
@@ -95,7 +53,7 @@
         <div class="absolute top-[51%] w-5/6 px-1">
             <p
             id="err-username"
-            class="font-poppins-regular mb-1 hidden text-xs text-red-600"
+            class="font-poppins mb-1 hidden text-xs text-red-600"
             role="alert"
             aria-live="assertive"
             ></p>
@@ -108,7 +66,7 @@
                 type="text"
                 autocomplete="username"
                 placeholder="Enter Your User Name"
-                class="font-poppins-regular w-full border-none text-sm text-gray-700 outline-none"
+                class="font-poppins w-full border-none text-sm text-gray-700 outline-none"
             />
             </div>
         </div>
@@ -117,7 +75,7 @@
         <div class="absolute top-[63%] w-5/6 px-1">
             <p
             id="err-password"
-            class="font-poppins-regular mb-1 hidden text-xs text-red-600"
+            class="font-poppins mb-1 hidden text-xs text-red-600"
             role="alert"
             aria-live="assertive"
             ></p>
@@ -130,7 +88,7 @@
                 type="password"
                 autocomplete="current-password"
                 placeholder="Enter Password"
-                class="font-poppins-regular w-full border-none text-sm text-gray-700 outline-none"
+                class="font-poppins w-full border-none text-sm text-gray-700 outline-none"
             />
             </div>
         </div>
@@ -138,7 +96,7 @@
         <!-- Submit -->
         <button
             id="btn-join"
-            class="font-poppins-semibold absolute top-[75%] h-12 w-5/6 rounded-md bg-[#d65841] text-lg text-white"
+            class="font-poppins font-semibold absolute top-[75%] h-12 w-5/6 rounded-md bg-theme text-lg text-white"
         >
             Join Community
         </button>
@@ -195,7 +153,7 @@
             </button>
             <button
                 id="confirm-submit"
-                class="rounded-lg bg-[#d65841] px-4 py-2 text-sm font-semibold text-white hover:opacity-95"
+                class="rounded-lg bg-theme px-4 py-2 text-sm font-semibold text-white hover:opacity-95"
                 type="button"
             >
                 Create Account

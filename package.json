@@ -5,7 +5,8 @@
     "main": "app.js",
     "type": "module",
     "scripts": {
-        "start": "node --watch app.js"
+        "start": "node --watch app.js",
+        "build:css": "npx tailwindcss -i public/css/input.css -o public/css/output.css --watch"
     },
     "repository": {
         "type": "git",
