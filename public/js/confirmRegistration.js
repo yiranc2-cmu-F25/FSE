@@ -108,7 +108,7 @@ async function onConfirmClick(e) {
     const pending = getPending();
     if (!pending) {
         //TODO: change name to RESTful
-        window.location.href = "/community";
+        window.location.href = "/communities";
         return;
     }
 
@@ -154,7 +154,7 @@ function init() {
     const pending = getPending();
     if (!pending) {
         //TODO: change name to RESTful
-        window.location.href = "/community";
+        window.location.href = "/communities";
         return;
     }
     // Show username from previous step
