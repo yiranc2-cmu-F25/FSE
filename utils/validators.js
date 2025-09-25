@@ -7,4 +7,5 @@ export const isUsernameValid = (u) => {
     !u.includes(".")
   );
 };
+
 export const isPasswordValid = (p) => typeof p === "string" && p.length >= 4;
