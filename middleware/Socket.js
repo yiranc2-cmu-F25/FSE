@@ -11,9 +11,8 @@ class Socket{
 
             socket.on('join', (username) => {
                 this.users.set(socket.id, username);
-                this.boradcastUserJoin(username);
+                this.brocastUserJoin(username);
                 console.log(`${username} joined the chat.`);
-                this.boradcastUserJoin(username);
                 this.broadcastUserList();
             });
 
@@ -22,7 +21,7 @@ class Socket{
                 if(username){
                     this.users.delete(socket.id);
                     console.log('Client disconnected:', socket.id);
-                    this.boradcastUserLeave(username);
+                    this.brocastUserLeave(username);
                     this.broadcastUserList();
                 }else{
                     console.log('Unknown client disconnected:', socket.id);
@@ -31,16 +30,16 @@ class Socket{
         });
     }
     
-    boradcastMessage(message){
-        this,io.emit('message', message);
+    brocastMessage(message){
+        this.io.emit('message', message);
     }
 
-    boradcastUserJoin(username){
-        this,io.emit('user_join', { username, timestamp: new Date() });
+    brocastUserJoin(username){
+        this.io.emit('user_join', { username, timestamp: new Date() });
     }
 
-    boradcastUserLeave(username){
-        this,io.emit('user_leave', { username, timestamp: new Date() });
+    brocastUserLeave(username){
+        this.io.emit('user_leave', { username, timestamp: new Date() });
     }
 
     broadcastUserList(){
