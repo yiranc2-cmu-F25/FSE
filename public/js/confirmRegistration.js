@@ -19,7 +19,7 @@
  *      4xx/5xx { ok: false, message: string }
  *
  * Notes:
- *  - If pending data is missing/expired, user is redirected back to /join.
+ *  - If pending data is missing/expired, user is redirected back to .
  *  - If user clicks “Home Page”, we clear pending and let the link navigate.
  */
 
@@ -108,7 +108,7 @@ async function onConfirmClick(e) {
     const pending = getPending();
     if (!pending) {
         //TODO: change name to RESTful
-        window.location.href = "/join";
+        window.location.href = "/communities";
         return;
     }
 
@@ -154,7 +154,7 @@ function init() {
     const pending = getPending();
     if (!pending) {
         //TODO: change name to RESTful
-        window.location.href = "/join";
+        window.location.href = "/communities";
         return;
     }
     // Show username from previous step

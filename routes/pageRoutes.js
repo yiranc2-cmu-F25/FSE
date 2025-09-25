@@ -7,7 +7,7 @@ router.get("/", (req, res) => {
 });
 
 //TODO: change name to RESTful
-router.get("/join", (req, res) => {
+router.get("/communities", (req, res) => {
     res.render("joinCommunity");
 });
 

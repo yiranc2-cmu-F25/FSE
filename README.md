@@ -54,3 +54,6 @@ This is your team's repo for the ESN Application, the group project conducted in
     - **Reason**: Lightweight, well-documented, and familiar to all team members. Ensures clear separation of frontend and backend and simplifies integration with external systems.
     - **Strengths**: Simple, standardized, easy to test and integrate.
     - **Weaknesses**: Less efficient for highly dynamic or real-time applications.
+
+## Documentation
+- API Reference: [api-doc.md](./api-doc.md)
