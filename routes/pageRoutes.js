@@ -1,4 +1,5 @@
 import express from "express";
+import { authView } from "../middleware/JWT.js";
 
 const router = express.Router();
 const JOIN_PATH = "joinCommunity/";
@@ -21,12 +22,12 @@ router.get("/acknowledgements", (req, res) => {
     res.render(JOIN_PATH + "acknowledgement");
 });
 
-router.get("/profiles", (req, res) => {
+router.get("/profiles", authView, (req, res) => {
     res.render(JOIN_PATH + "profile");
 });
 
-router.get("/chat", (req, res) => {
-    res.render(PUB_CHAT_PATH + "publicChat");
+router.get("/chat", authView, (req, res) => {
+    res.render(PUB_CHAT_PATH + "publicChat", { username: req.username });
 });
 
 export default router;

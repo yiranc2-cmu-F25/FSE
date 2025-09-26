@@ -1,8 +1,28 @@
-import { getAvatarColor, getInitials } from "/js/utils/avatars.js";
+import { getAvatarColor, getInitials } from "/public/js/utils/avatars.js";
 import { format } from "date-fns";
 
 const lineHeight = 24;
 const maxRows = 5;
+const statusColors = {
+    undefined: "gray",
+    ok: "green",
+    help: "yellow",
+    emergency: "red",
+};
+
+let socket = io();
+
+socket.on("message", (message) => {
+    const msgEl = createMessageElement(
+        message.sender,
+        message.content,
+        message.status,
+        message.timestamp,
+        message.sender === username,
+    );
+    ui.messageList.appendChild(msgEl);
+    ui.messageList.scrollTop = ui.messageList.scrollHeight;
+});
 
 const $ = (s) => document.querySelector(s);
 
@@ -13,12 +33,25 @@ const ui = {
     sendBtn: $("#send-btn"),
 };
 
-function createMessageElement(name, text, timestamp=null) {
+// TODO: total online number
+
+function createMessageElement(
+    name,
+    text,
+    status,
+    timestamp,
+    isOwnMessage = false,
+) {
     const li = document.createElement("li");
     li.className = "mb-4 flex items-start gap-3";
 
+    // TODO: show online status
+    // const status = document.createElement("span");
+    // status.className = "absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white bg-green-400";
+    // avatar.appendChild(status);
     const avatar = document.createElement("figure");
-    avatar.className = "flex h-10 w-10 shrink-0 items-center justify-center rounded-full";
+    avatar.className =
+        "flex h-10 w-10 shrink-0 items-center justify-center rounded-full";
     avatar.style.backgroundColor = getAvatarColor(name);
     const initials = document.createElement("span");
     initials.className = "font-poppins font-semibold text-white";
@@ -26,6 +59,7 @@ function createMessageElement(name, text, timestamp=null) {
     avatar.appendChild(initials);
 
     const content = document.createElement("div");
+    content.className = "flex min-w-0 flex-col items-start";
     const headerEl = document.createElement("div");
     headerEl.className = "flex items-center gap-4";
 
@@ -35,8 +69,8 @@ function createMessageElement(name, text, timestamp=null) {
     headerEl.appendChild(nameEl);
 
     const statusEl = document.createElement("span");
-    statusEl.className = "min-w-16 rounded-md bg-green-200 text-center font-poppins text-xs font-semibold text-green-500";
-    statusEl.textContent = "OK";
+    statusEl.className = `min-w-16 rounded-md bg-${statusColors[status]}-200 px-1 text-center font-poppins text-xs font-semibold text-${statusColors[status]}-500`;
+    statusEl.textContent = status.toUpperCase();
     headerEl.appendChild(statusEl);
     content.appendChild(headerEl);
 
@@ -46,46 +80,88 @@ function createMessageElement(name, text, timestamp=null) {
     timeEl.textContent = format(new Date(now), "MMMM dd yyyy 'at' hh:mm aa");
 
     const textEl = document.createElement("p");
-    textEl.className = "mt-1 rounded-lg bg-white p-3 font-poppins shadow";
+    textEl.className =
+        "mt-1 inline-block max-w-full break-words rounded-lg bg-white p-3 font-poppins shadow";
     textEl.textContent = text;
     content.appendChild(timeEl);
     content.appendChild(textEl);
 
+    const padding = document.createElement("figure");
+    padding.className =
+        "flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-transparent";
+
+    if (isOwnMessage) {
+        li.classList.add("flex-row-reverse");
+        headerEl.classList.add("flex-row-reverse");
+        content.classList.remove("items-start");
+        content.classList.add("items-end");
+    }
+
     li.appendChild(avatar);
     li.appendChild(content);
+    li.appendChild(padding);
 
     return li;
 }
 
-function sendMessage(text) {
-    if (text) {
-        ui.input.value = "";
-        ui.input.rows = 1;
-        ui.sendBtn.disabled = true;
-        const msgEl = createMessageElement("Me", text);
-        ui.messageList.appendChild(msgEl);
-        ui.messageList.scrollTop = ui.messageList.scrollHeight;
+async function sendMessage(text) {
+    try {
+        if (text) {
+            ui.input.value = "";
+            ui.input.rows = 1;
+            ui.sendBtn.disabled = true;
+            const res = await fetch("api/auth/accounts", {
+                credentials: "include",
+            });
+            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+            const user = await res.json();
+            let date = new Date();
+            const postRes = await fetch("/api/messages/public", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({
+                    sender: user._id,
+                    content: text,
+                    status: user.status,
+                    timestamp: date,
+                }),
+            });
+            if (!postRes.ok)
+                throw new Error(`HTTP error! status: ${postRes.status}`);
+        }
+    } catch (e) {
+        console.error("Failed to send message:", e);
     }
 }
 
 async function fetchMessages() {
     try {
-        const res = await fetch("/api/messages");
-    } catch (e) {
-        console.error("Failed to fetch messages", e);
-        return;
-    }
-    try {
+        const res = await fetch("/api/messages/public", {
+            credentials: "include",
+        });
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+
         const messages = await res.json();
+
+        const fragment = document.createDocumentFragment();
+        messages.forEach((msg) => {
+            fragment.appendChild(
+                createMessageElement(
+                    msg.sender,
+                    msg.content,
+                    msg.status,
+                    msg.timestamp,
+                    msg.sender === username,
+                ),
+            );
+        });
+        ui.messageList.appendChild(fragment);
+
+        ui.messageList.scrollTop = ui.messageList.scrollHeight;
     } catch (e) {
-        console.error("Failed to parse messages", e);
-        return;
+        console.error("Failed to fetch or parse messages:", e);
     }
-    messages.forEach(msg => {
-        const msgEl = createMessageElement(msg.username, msg.text, msg.timestamp);
-        ui.messageList.appendChild(msgEl);
-    });
-    ui.messageList.scrollTop = ui.messageList.scrollHeight;
 }
 
 ui.input.addEventListener("input", () => {
@@ -95,9 +171,13 @@ ui.input.addEventListener("input", () => {
         ui.sendBtn.disabled = false;
     }
     ui.input.rows = 1;
-    const currentRows = Math.min(Math.floor(ui.input.scrollHeight / lineHeight), maxRows);
+    const currentRows = Math.min(
+        Math.floor(ui.input.scrollHeight / lineHeight),
+        maxRows,
+    );
     ui.input.rows = currentRows;
     ui.input.scrollTop = ui.input.scrollHeight;
+    ui.messageList.scrollTop = ui.messageList.scrollHeight;
 });
 
 ui.input.addEventListener("keydown", (e) => {

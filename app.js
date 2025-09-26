@@ -9,6 +9,7 @@ import { fileURLToPath } from "url";
 import { dirname } from "path";
 import authRoutes from "./routes/authRoutes.js";
 import pageRoutes from "./routes/pageRoutes.js";
+import publicRoutes from "./routes/publicRoutes.js";
 import Socket from "./Middleware/Socket.js";
 import http from "http";
 import { Server } from "socket.io";
@@ -24,6 +25,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 const socketInstance = new Socket(io);
+app.set('io', io);
 app.set('socketInstance', socketInstance);
 
 
@@ -44,7 +46,10 @@ app.use(cookieParser());
 app.use("/api/auth", authRoutes);
 app.use("/", pageRoutes);
 
-app.listen(process.env.PORT || 3000, () => {
+// TODO: check name RESTfulness!
+app.use("/api/messages/public", publicRoutes);
+
+server.listen(process.env.PORT || 3000, () => {
     console.log("Server running at http://localhost:" + (process.env.PORT || 3000));
 });
 

@@ -21,14 +21,14 @@ export async function getAllActiveUsers(req, res) {
 export async function getPublicMessages(req, res) {
     try {
         const messages = await Message.getPublicMsg().populate("sender" , "username").lean();
-        const res = messages.map(msg => ({
+        const data = messages.map(msg => ({
             sender : msg.sender.username,
             content : msg.content,
             timestamp : msg.timestamp,
             status : msg.status
         }));
 
-        return res.status(200).json(res);
+        return res.status(200).json(data);
     }catch (err) {
         console.error("Error fetching public messages:", err);
         return res.status(500).json({ status: "error", message: "Server error" });

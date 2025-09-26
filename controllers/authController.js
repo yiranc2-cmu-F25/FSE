@@ -54,6 +54,7 @@ export async function getMe(req, res) {
 		if (!user) return res.status(404).json({ error: "User not found" });
 
 		res.json({
+			_id: user._id,
 			username: user.username,
 			status: user.sharedstatus ?? "undefined",
 			role: user.role,
