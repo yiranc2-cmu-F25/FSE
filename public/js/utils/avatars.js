@@ -20,7 +20,7 @@ export function getAvatarColor(name) {
 export function getInitials(name) {
     const nameParts = name.split(' ');
     if (nameParts.length === 1) {
-        return nameParts[0].charAt(0).toUpperCase();
+        return nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1).match(/[a-zA-Z0-9]/)[0].toUpperCase();
     } else {
         return (nameParts[0].charAt(0) + nameParts[nameParts.length - 1].charAt(0)).toUpperCase();
     }

@@ -35,26 +35,26 @@
         </div>
       </header>
       <main
-        id="message-container"
+        id="msg-container"
         class="relative flex w-full flex-grow flex-col overflow-y-auto bg-slate-50"
       >
         <div
           class="pointer-events-none absolute top-0 left-0 right-0 z-10 h-full"
           style="box-shadow: inset 0 20px 20px -5px #f8fafc"
         ></div>
-        <ul id="message-list" class="flex flex-col gap-2 overflow-y-auto p-4">
-          <% for (let i = 0; i < 20; i++) { %>
+        <ul id="msg-list" class="flex flex-col gap-2 overflow-y-auto p-4">
+          <% for (let i = 0; i < 1; i++) { %>
           <li>
             <div class="mb-4 flex items-start gap-3">
               <figure
                 class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
                 style="background-color: #148ade"
               >
-                <span class="font-poppins font-semibold text-white">JB</span>
+                <span class="font-poppins font-semibold text-white">TU</span>
               </figure>
               <div>
                 <div class="flex items-center gap-4">
-                  <span class="font-poppins font-bold">User <%= i + 1 %></span>
+                  <span class="font-poppins font-bold">Test User</span>
                   <span
                     class="min-w-16 rounded-md bg-green-200 text-center font-poppins text-xs font-semibold text-green-500"
                     >OK</span
@@ -64,7 +64,7 @@
                   September 20 2025 at 10:42 AM
                 </p>
                 <p class="mt-1 rounded-lg bg-white p-3 font-poppins shadow">
-                  A sample message from User <%= i + 1 %>. Hello everyone! This
+                  A sample message from Test User. Hello everyone! This
                   is a test message to demonstrate the public chat
                   functionality.
                 </p>
@@ -81,20 +81,21 @@
 
       <div class="w-full border-t-2 border-slate-200 bg-white px-6 py-4">
         <form
-          id="chat-form"
+          id="msg-form"
           class="flex w-full items-end justify-center gap-2 rounded-xl border border-gray-200 p-2"
         >
           <textarea
-            id="message-input"
+            id="msg-input"
             type="text"
             placeholder="Type your message..."
-            class="flex-grow resize-none overflow-hidden rounded px-4 py-2 font-poppins leading-normal text-gray-700 focus:outline-none"
-            required
+            class="flex-grow resize-none overflow-y-auto rounded px-4 py-2 font-poppins leading-normal text-gray-700 focus:outline-none"
             rows="1"
           ></textarea>
           <button
-            type="button"
-            class="flex h-10 w-10 items-center justify-center rounded-full bg-theme text-white transition active:bg-white active:text-theme"
+            id="send-btn"
+            type="submit"
+            disabled
+            class="flex h-10 w-10 items-center justify-center rounded-full bg-theme text-white transition active:bg-white active:text-theme disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
