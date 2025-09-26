@@ -48,9 +48,19 @@ UserSchema.methods.toJSON = function () {
     };
 };
 
+UserSchema.statics.getUsernameById = async function(userId){
+    const user = await this.findById(userId);
+    return user ? user.username : null;
+};
+
 UserSchema.statics.findByUsername = function(username){
     return this.findOne({ username });
 };
+
+//Get all users in database which status is active
+UserSchema.statics.getAllUsers = function(){
+    return this.find({status : "active"}, 'username').sort({ username: 1 });
+}
 
 const User = mongoose.model("User", UserSchema);
 
