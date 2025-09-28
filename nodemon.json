@@ -1,0 +1,5 @@
+{
+  "watch": ["app.js", "routes", "controllers", "middleware", "config"],
+  "ignore": ["public/css/output.css", "node_modules"],
+  "env": { "NODE_ENV": "development" }
+}

@@ -263,9 +263,10 @@ async function handleSubmit(e) {
 ui.btn.addEventListener("click", handleSubmit);
 
 // ----- Logout utilities ------------------------------------------------------
+// TODO: fake Logout now; used for public chatroom testing
 async function Logout() {
-  await backendLogout();
-  await clearClientState();
+//   await backendLogout();
+//   await clearClientState();
   window.location.href = HOME;
 }
 async function backendLogout() {

@@ -19,6 +19,20 @@ export function auth(req, res, next) {
     }
 }
 
+
+export function authView(req, res, next) {
+  const token = req.cookies.jwt_token;
+  if (!token) return res.redirect("/");
+
+  try {
+    const payload = jwt.verify(token, process.env.JWT_SECRET);
+    req.username = payload.username;
+    next();
+  } catch (err) {
+    return res.redirect("/");
+  }
+}
+
 export function setAuthCookie(res, username, expiresInHr) {
     const expiresIn = `${expiresInHr}h`;
     const token = jwt.sign({ username }, JWT_SECRET, { expiresIn: expiresIn });

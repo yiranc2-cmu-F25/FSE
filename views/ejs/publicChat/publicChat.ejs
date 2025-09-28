@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Public Chat</title>
+    <%- include('../partials/head') %>
+    <script src="/socket.io/socket.io.js"></script>
+    <!-- <script>
+      const username = "<%= typeof username !== 'undefined' ? username : '' %>";
+    </script>
+    <script type="module" src="/js/dist/publicChat.bundle.js"></script> -->
+    <script type="module" src="/js/publicChat/publicChatFlat.js"></script>
+  </head>
+  <body class="min-h-screen bg-white">
+    <div
+      class="relative mx-auto flex h-screen w-full max-w-md flex-col items-center"
+    >
+      <header
+        class="flex w-full items-center justify-start border-b-2 border-slate-200 px-4 pb-4 pt-6"
+      >
+        <figure
+          class="m-4 cursor-pointer rounded border border-gray-200 p-1"
+          id="back-btn-container"
+        >
+          <img
+            id="back-btn"
+            src="images/icons/illustrations/icon-left.svg"
+            alt="Back"
+            class="h-6 w-6"
+          />
+        </figure>
+        <div class="flex flex-col">
+          <h1 class="font-poppins text-lg font-semibold text-black">
+            Public Chat Wall
+          </h1>
+          <div
+            class="font-poppins flex items-center gap-1 text-sm text-gray-500"
+          >
+            <span id="online-num"></span>
+            <span> Members Online</span>
+            <span class="inline-block h-3 w-3 rounded-full bg-green-500"></span>
+          </div>
+        </div>
+      </header>
+      <main
+        id="msg-container"
+        class="relative flex w-full flex-grow flex-col overflow-y-auto bg-slate-50"
+      >
+        <div
+          class="pointer-events-none absolute left-0 right-0 top-0 z-10 h-full"
+          style="box-shadow: inset 0 20px 20px -5px #f8fafc"
+        ></div>
+        <ul id="msg-list" class="flex flex-col gap-2 overflow-y-auto p-4">
+          <% for (let i = 0; i < 1; i++) { %>
+          <li class="mb-4 flex items-start gap-3">
+            <figure
+              class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
+              style="background-color: #148ade"
+            >
+              <span class="font-poppins font-semibold text-white">TU</span>
+            </figure>
+            <div class="flex min-w-0 flex-col items-start">
+              <div class="flex items-center gap-4">
+                <span class="font-poppins font-bold">Test User</span>
+                <span
+                  class="font-poppins min-w-16 rounded-md bg-green-200 px-1 text-center text-xs font-semibold text-green-500"
+                  >OK</span
+                >
+              </div>
+              <p class="font-poppins text-xs text-gray-400">
+                September 20 2025 at 10:42 AM
+              </p>
+              <p
+                class="font-poppins mt-1 inline-block max-w-full break-words rounded-lg bg-white p-3 shadow"
+              >
+                A sample message from Test User. Hello everyone! This is a test
+                message to demonstrate the public chat functionality.
+              </p>
+            </div>
+          </li>
+          <% } %>
+        </ul>
+        <div
+          class="pointer-events-none absolute bottom-0 left-0 right-0 z-10 h-full"
+          style="box-shadow: inset 0 -30px 20px -5px #f8fafc"
+        ></div>
+      </main>
+
+      <div class="w-full border-t-2 border-slate-200 bg-white px-6 py-4">
+        <form
+          id="msg-form"
+          class="flex w-full items-end justify-center gap-2 rounded-xl border border-gray-200 p-2"
+        >
+          <textarea
+            id="msg-input"
+            type="text"
+            placeholder="Type your message..."
+            class="font-poppins flex-grow resize-none overflow-y-auto rounded px-4 py-2 leading-normal text-gray-700 focus:outline-none"
+            rows="1"
+          ></textarea>
+          <button
+            id="send-btn"
+            type="submit"
+            disabled
+            class="bg-theme active:text-theme flex h-10 w-10 items-center justify-center rounded-full text-white transition active:bg-white disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-500"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="1.5"
+              class="size-6 stroke-current"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5"
+              />
+            </svg>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <template id="chat-message">
+      <li class="message mb-4 flex items-start gap-3">
+        <figure
+          class="avatar flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
+        >
+          <span class="initials font-poppins font-semibold text-white"></span>
+        </figure>
+
+        <div class="content flex min-w-0 flex-col items-start">
+          <div class="header flex items-center gap-4">
+            <span class="name font-poppins font-bold"></span>
+            <span
+              class="status-badge font-poppins min-w-16 rounded-md px-1 text-center text-xs font-semibold"
+            ></span>
+          </div>
+          <p class="time font-poppins text-xs text-gray-400"></p>
+          <p
+            class="bubble font-poppins mt-1 inline-block max-w-full break-words rounded-lg bg-white p-3 shadow"
+          ></p>
+        </div>
+
+        <figure
+          class="pad flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-transparent"
+        ></figure>
+      </li>
+    </template>
+  </body>
+</html>
