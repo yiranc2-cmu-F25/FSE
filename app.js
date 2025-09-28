@@ -25,10 +25,8 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 const socketInstance = new Socket(io);
-app.set('io', io);
-app.set('socketInstance', socketInstance);
-
-
+app.set("io", io);
+app.set("socketInstance", socketInstance);
 
 // Set EJS as the template engine
 app.set("view engine", "ejs");
@@ -42,7 +40,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-
 app.use("/api/auth", authRoutes);
 app.use("/", pageRoutes);
 
@@ -50,7 +47,7 @@ app.use("/", pageRoutes);
 app.use("/api/messages/public", publicRoutes);
 
 server.listen(process.env.PORT || 3000, () => {
-    console.log("Server running at http://localhost:" + (process.env.PORT || 3000));
+  console.log(
+    "Server running at http://localhost:" + (process.env.PORT || 3000),
+  );
 });
-
-
