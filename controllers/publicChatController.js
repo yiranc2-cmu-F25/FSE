@@ -76,12 +76,18 @@ export async function sendPublicMessage(req, res) {
     }
     // console.log("Broadcasting message from:", username);
     // console.log("request username:", req.username);
-    socketInstance.broadcastMessage({
+    // socketInstance.broadcastMessage({
+    //   sender: username,
+    //   content: newMessage.content,
+    //   timestamp: newMessage.timestamp,
+    //   status: newMessage.status,
+    //   //   isOwn: username === (req.username.toLowerCase() || ""), // problematic
+    // });
+    socketInstance.emitMessageFrom(username, {
       sender: username,
       content: newMessage.content,
       timestamp: newMessage.timestamp,
       status: newMessage.status,
-      isOwn: username === (req.username.toLowerCase() || ""),
     });
 
     return res.status(201).json({ message: "Message sent successfully" });

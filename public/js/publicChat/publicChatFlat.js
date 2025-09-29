@@ -1,4 +1,8 @@
-import { getAvatarColor, getInitials } from "../utils/avatars.js";
+import {
+  getAvatarColor,
+  getInitials,
+  getInitialsSafe,
+} from "../utils/avatars.js";
 import { formatDate, toStr } from "../utils/dateFormatter.js";
 
 // Styling constants
@@ -64,7 +68,7 @@ function renderMessage({ name, text, status, timestamp, isOwn }) {
 
   const avatar = li.querySelector(".avatar");
   avatar.style.backgroundColor = getAvatarColor(safeName);
-  li.querySelector(".initials").textContent = getInitials(safeName);
+  li.querySelector(".initials").textContent = getInitialsSafe(safeName);
 
   if (isOwn) {
     li.classList.add("flex-row-reverse");
@@ -171,3 +175,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // Top-level Scripts
 fetchMessages();
+const currentUser = { username: "" };
+
+async function identifyAndJoin() {
+  try {
+    const res = await fetch("/api/auth/accounts", { credentials: "include" });
+    if (!res.ok) return;
+    const me = await res.json();
+    currentUser.username = me?.username || "";
+    socket.emit("join", currentUser.username); // <<< JOIN ONCE
+  } catch {}
+}
+
+identifyAndJoin();
