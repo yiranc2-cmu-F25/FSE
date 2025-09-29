@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>User Profile (burger)</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <%- include('../partials/head') %>
+  </head>
+  <body class="bg-stone-50 text-stone-900">
+    <main class="mx-auto px-8 py-6 sm:px-6">
+      <!-- Top row: back + Logout -->
+      <div class="flex items-center justify-between" id="logoutButton">
+        <button
+          class="grid h-10 w-10 place-content-center rounded-xl bg-white shadow-sm ring-1 ring-stone-200 hover:bg-stone-100"
+          aria-label="Back"
+        >
+          <!-- back arrow -->
+          <a href="/landingPage">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5 text-stone-600"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+          </a>
+        </button>
+
+        <a
+          href="#"
+          class="group relative inline-flex items-center rounded-xl px-4 py-2 font-semibold text-[#C35F49] shadow transition-all duration-200 hover:bg-[#C35F49] hover:pl-10 hover:text-white"
+        >
+          <!-- left icon (hidden until hover) -->
+          <span
+            class="pointer-events-none absolute inset-y-0 left-3 inline-flex -translate-x-2 items-center opacity-0 transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-100"
+          >
+            <!-- placeholder svg icon -->
+            <img
+              src="./images/icons/illustrations/Sign_out_squre.png"
+              alt=""
+              class="h-5 w-5 text-white"
+            />
+          </span>
+          Logout
+        </a>
+      </div>
+
+      <!-- Avatar + name + status -->
+      <section class="mt-10 text-center">
+        <div class="relative inline-grid place-items-center">
+          <div
+            class="grid h-28 w-28 place-content-center rounded-full bg-[#3B6A95] text-4xl font-extrabold text-white shadow-md ring-4 ring-white"
+          >
+            JB
+          </div>
+
+          <!-- Edit badge -->
+          <button
+            class="edit-profile-button absolute -bottom-2 grid grid-cols-[auto_1fr] items-center gap-1 rounded-2xl bg-white px-3 py-1 text-sm font-semibold text-indigo-600 shadow ring-1 ring-stone-200"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-4 w-4"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                d="M13.586 3.586a2 2 0 112.828 2.828L8.414 14.414a2 2 0 01-.878.515l-3 1a1 1 0 01-1.265-1.265l1-3a2 2 0 01.515-.878l8-8z"
+              />
+            </svg>
+            Edit
+          </button>
+        </div>
+
+        <h1 class="mt-6 text-3xl font-extrabold tracking-tight">James Bond</h1>
+
+        <!-- Status pill -->
+        <div
+          class="mt-3 inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-sm font-semibold text-green-700"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="mr-2 h-4 w-4"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M16.707 5.293a1 1 0 010 1.414l-6.364 6.364a1 1 0 01-1.414 0L3.293 8.435a1 1 0 111.414-1.414l4.121 4.121 5.657-5.657a1 1 0 011.414 0z"
+              clip-rule="evenodd"
+            />
+          </svg>
+          OK
+        </div>
+      </section>
+
+      <!-- Menu card -->
+      <section class="mt-4">
+        <div
+          class="rounded-2xl bg-white p-3 shadow-lg ring-1 ring-stone-200 sm:p-4"
+        >
+          <ul role="list" class="divide-y divide-stone-100">
+            <!-- Item -->
+
+            <li>
+              <a
+                href="#"
+                class="group flex items-center gap-4 rounded-2xl px-2 py-4 transition hover:bg-stone-50"
+              >
+                <span
+                  class="relative grid h-11 w-11 place-items-center rounded-full bg-stone-100"
+                >
+                  <!-- normal icon -->
+                  <img
+                    src="/images/icons/illustrations/Setting_fill.png"
+                    alt=""
+                    class="absolute h-5 w-5 transition-opacity duration-200 group-hover:opacity-0"
+                  />
+                  <!-- hover icon -->
+                  <img
+                    src="/images/icons/illustrations/Setting_fill_hovered.png"
+                    alt=""
+                    class="absolute h-5 w-5 opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+                  />
+                </span>
+                <div class="flex-1">
+                  <p class="font-medium group-hover:text-stone-600">Settings</p>
+                </div>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-5 w-5 text-stone-400 transition-colors duration-200 group-hover:text-stone-600"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                    clip-rule="evenodd"
+                  />
+                </svg>
+              </a>
+            </li>
+            <li>
+              <a
+                href="/profileUpdate"
+                class="group flex items-center gap-4 rounded-2xl px-2 py-4 transition hover:bg-stone-50"
+              >
+                <span
+                  class="relative grid h-11 w-11 place-items-center rounded-full bg-stone-100"
+                >
+                  <!-- normal icon -->
+                  <img
+                    src="/images/icons/illustrations/User_scan.png"
+                    alt=""
+                    class="absolute h-5 w-5 transition-opacity duration-200 group-hover:opacity-0"
+                  />
+                  <!-- hover icon -->
+                  <img
+                    src="/images/icons/illustrations/User_scan_hovered.png"
+                    alt=""
+                    class="absolute h-5 w-5 opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+                  />
+                </span>
+                <div class="flex-1">
+                  <p class="font-medium group-hover:text-stone-600">
+                    ESN Status
+                  </p>
+                </div>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-5 w-5 text-stone-400 transition-colors duration-200 group-hover:text-stone-600"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                    clip-rule="evenodd"
+                  />
+                </svg>
+              </a>
+            </li>
+            <li>
+              <a
+                href="#"
+                class="group flex items-center gap-4 rounded-2xl px-2 py-4 transition hover:bg-stone-50"
+              >
+                <span
+                  class="relative grid h-11 w-11 place-items-center rounded-full bg-stone-100"
+                >
+                  <!-- normal icon -->
+                  <img
+                    src="/images/icons/illustrations/Help_circle.png"
+                    alt=""
+                    class="absolute h-5 w-5 transition-opacity duration-200 group-hover:opacity-0"
+                  />
+                  <!-- hover icon -->
+                  <img
+                    src="/images/icons/illustrations/Help_circle_hovered.png"
+                    alt=""
+                    class="absolute h-5 w-5 opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+                  />
+                </span>
+                <div class="flex-1">
+                  <p class="font-medium group-hover:text-stone-600">
+                    Help & Support
+                  </p>
+                </div>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-5 w-5 text-stone-400 transition-colors duration-200 group-hover:text-stone-600"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                    clip-rule="evenodd"
+                  />
+                </svg>
+              </a>
+            </li>
+          </ul>
+        </div>
+      </section>
+    </main>
+    <script src="/js/userProfile/userFunctions.js"></script>
+  </body>
+</html>

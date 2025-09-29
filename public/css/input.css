@@ -29,3 +29,15 @@
 .shake {
   animation: wiggle 0.35s ease-in-out;
 }
+.status-tab-OK.active {
+  @apply bg-gradient-to-r from-[#D6F6DB] to-[#F0F7F1] font-bold tracking-wide text-[#1A7B29];
+}
+.status-tab-HELP.active {
+  @apply bg-gradient-to-r from-[#FBF5D2] to-[#FCFCF9] font-bold tracking-wide text-[#EFD510];
+}
+.status-tab-EMERGENCY.active {
+  @apply bg-gradient-to-r from-[#F7DDD6] to-[#F7F0F2] font-bold tracking-wide text-[#BE3D26];
+}
+.status-tab-UNDEFINED.active {
+  @apply bg-gradient-to-r from-[#C9C7C8] to-[#F6F6F6] font-bold tracking-wide text-black;
+}

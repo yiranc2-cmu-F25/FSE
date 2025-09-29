@@ -12,7 +12,7 @@ const API = {
   login: "/api/auth/online",
 };
 const HOME = "/";
-const NEXT_ROUTE_AFTER_LOGIN_VALIDATION = "/profiles";
+const NEXT_ROUTE_AFTER_LOGIN_VALIDATION = "/landingPage";
 const NEXT_ROUTE_AFTER_REGISTER_VALIDATION = "/acknowledgements";
 
 // ----- DOM helpers -----------------------------------------------------------
@@ -233,7 +233,8 @@ async function handleSubmit(e) {
         password: pwd,
       });
       if (r3.ok && d3?.ok) {
-        await Logout(); // TA requirement: log out right away after validating login
+        // await Logout(); // Iteration 0 TA requirement: log out right away after validating login
+        window.location.href = NEXT_ROUTE_AFTER_LOGIN_VALIDATION;
         return;
       }
       showError("password", d3?.message || "Incorrect password.");
@@ -265,8 +266,8 @@ ui.btn.addEventListener("click", handleSubmit);
 // ----- Logout utilities ------------------------------------------------------
 // TODO: fake Logout now; used for public chatroom testing
 async function Logout() {
-//   await backendLogout();
-//   await clearClientState();
+  //   await backendLogout();
+  //   await clearClientState();
   window.location.href = HOME;
 }
 async function backendLogout() {
