@@ -1,3 +1,4 @@
+import { toStr } from "./dateFormatter.js";
 const colors = [
   "#2EA328",
   "#148ADE",
@@ -33,4 +34,18 @@ export function getInitials(name) {
       nameParts[nameParts.length - 1].charAt(0).toUpperCase()
     );
   }
+}
+export function getInitialsSafe(name) {
+  const s = toStr(name, "").trim();
+  if (!s) return "?";
+  try {
+    const res = getInitials(s);
+    if (res && typeof res === "string" && res.length) return res;
+  } catch (_) {}
+  // Fallback that works for CJK/emoji/etc.
+  const chars = Array.from(s); // Unicode-safe split
+  const first = chars[0] || "?";
+  // If there’s a second word, take its first char too, else just one char
+  const second = (s.split(/\s+/)[1] && Array.from(s.split(/\s+/)[1])[0]) || "";
+  return (first + second).toUpperCase();
 }
