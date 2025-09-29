@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 dotenv.config();
-
+import jwt from "jsonwebtoken";
+import { authView } from "./middleware/JWT.js";
 import express from "express";
 import cookieParser from "cookie-parser";
 import mongoose from "mongoose";
@@ -13,7 +14,9 @@ import publicRoutes from "./routes/publicRoutes.js";
 import Socket from "./Middleware/Socket.js";
 import http from "http";
 import { Server } from "socket.io";
-
+import { getInitials, getAvatarColor } from "./public/js/utils/avatars.js";
+// testing static users data
+import users from "./utils/static/user.json" assert { type: "json" };
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
@@ -45,6 +48,30 @@ app.use("/", pageRoutes);
 
 // TODO: check name RESTfulness!
 app.use("/api/messages/public", publicRoutes);
+
+// pick any "current user" you like for the greeting card
+const currentUser = { firstName: "James", initials: "JB", status: "OK" };
+
+app.get("/landingPage", authView, (req, res) => {
+  const token = req.cookies.jwt_token;
+  const payload = jwt.verify(token, process.env.JWT_SECRET);
+  const avatarColor = getAvatarColor(payload.username);
+  console.log("getting avatar color: ", avatarColor);
+  const currentUser = {
+    username: payload.username,
+    initials: getInitials(payload.username),
+    avatarColor: avatarColor,
+  };
+  res.render("memberList/membersLanding", { users, currentUser });
+});
+
+app.get("/userFunctions", authView, (req, res) => {
+  res.render("memberProfile/memberFunction");
+});
+
+app.get("/profileUpdate", authView, (req, res) => {
+  res.render("memberProfile/profileUpdate");
+});
 
 server.listen(process.env.PORT || 3000, () => {
   console.log(

@@ -1,6 +1,6 @@
 // public/js/acknowledgement.js
 const $ = (s) => document.querySelector(s);
-const NEXT = "/profiles";
+const NEXT = "/landingPage";
 const HOME = "/";
 
 function init() {
@@ -9,7 +9,7 @@ function init() {
     btn.addEventListener("click", async (e) => {
       e.preventDefault();
       await Logout();
-      // window.location.href = NEXT;
+      window.location.href = NEXT;
     });
   }
 }
