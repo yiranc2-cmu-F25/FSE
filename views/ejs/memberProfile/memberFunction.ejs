@@ -6,59 +6,44 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <%- include('../partials/head') %>
   </head>
+  <script>
+    console.log("[tpl] page =", location.pathname);
+    window.__CURRENT_USER__ = "<%= username %>";
+    console.log("[tpl] CURRENT_USER =", window.__CURRENT_USER__);
+  </script>
+  <script src="/socket.io/socket.io.js"></script>
   <body class="bg-stone-50 text-stone-900">
     <main class="mx-auto px-8 py-6 sm:px-6">
       <!-- Top row: back + Logout -->
-      <div class="flex items-center justify-between" id="logoutButton">
-        <button
+      <div class="flex items-center justify-between">
+        <a
+          href="/members"
           class="grid h-10 w-10 place-content-center rounded-xl bg-white shadow-sm ring-1 ring-stone-200 hover:bg-stone-100"
           aria-label="Back"
         >
-          <!-- back arrow -->
-          <a href="/landingPage">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-5 w-5 text-stone-600"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
-          </a>
-        </button>
-
-        <a
-          href="#"
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-stone-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+          </svg>
+        </a>
+        <button
+          id="logoutButton"
+          type="button"
           class="group relative inline-flex items-center rounded-xl px-4 py-2 font-semibold text-[#C35F49] shadow transition-all duration-200 hover:bg-[#C35F49] hover:pl-10 hover:text-white"
         >
-          <!-- left icon (hidden until hover) -->
-          <span
-            class="pointer-events-none absolute inset-y-0 left-3 inline-flex -translate-x-2 items-center opacity-0 transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-100"
-          >
-            <!-- placeholder svg icon -->
-            <img
-              src="./images/icons/illustrations/Sign_out_squre.png"
-              alt=""
-              class="h-5 w-5 text-white"
-            />
+          <span class="pointer-events-none absolute inset-y-0 left-3 inline-flex -translate-x-2 items-center opacity-0 transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-100">
+            <img src="/images/icons/illustrations/Sign_out_squre.png" alt="" class="h-5 w-5"/>
           </span>
           Logout
-        </a>
+        </button>
       </div>
 
       <!-- Avatar + name + status -->
       <section class="mt-10 text-center">
         <div class="relative inline-grid place-items-center">
           <div
-            class="grid h-28 w-28 place-content-center rounded-full bg-[#3B6A95] text-4xl font-extrabold text-white shadow-md ring-4 ring-white"
+            class="grid h-28 w-28 place-content-center rounded-full text-4xl font-extrabold text-white shadow-md ring-4 ring-white"
+            id="avatar"
           >
-            JB
           </div>
 
           <!-- Edit badge -->
@@ -79,7 +64,7 @@
           </button>
         </div>
 
-        <h1 class="mt-6 text-3xl font-extrabold tracking-tight">James Bond</h1>
+        <h1 class="mt-6 text-3xl font-extrabold tracking-tight" id="username"></h1>
 
         <!-- Status pill -->
         <div
@@ -149,7 +134,7 @@
             </li>
             <li>
               <a
-                href="/profileUpdate"
+                href="/status"
                 class="group flex items-center gap-4 rounded-2xl px-2 py-4 transition hover:bg-stone-50"
               >
                 <span
@@ -231,6 +216,6 @@
         </div>
       </section>
     </main>
-    <script src="/js/userProfile/userFunctions.js"></script>
+    <script type="module" src="/js/userProfile/userFunctions.js"></script>
   </body>
 </html>

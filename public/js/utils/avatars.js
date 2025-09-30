@@ -18,23 +18,33 @@ export function getAvatarColor(name) {
   return colors[charIndex % colors.length];
 }
 
-export function getInitials(name) {
-  const nameParts = name.split(" ");
-  if (nameParts.length === 1) {
-    return (
-      nameParts[0].charAt(0).toUpperCase() +
-      nameParts[0]
-        .slice(1)
-        .match(/[a-zA-Z0-9]/)[0]
-        .toUpperCase()
-    );
-  } else {
-    return (
-      nameParts[0].charAt(0).toUpperCase() +
-      nameParts[nameParts.length - 1].charAt(0).toUpperCase()
-    );
+export function getInitials(input) {
+  const s = (input ?? "").toString().trim();
+  if (!s) return "?";
+
+  const parts = s.split(/\s+/u).filter(Boolean);
+
+  const pick = (str) => {
+    const m = str.match(/[\p{L}\p{N}]/u);
+    if (m) return m[0].toUpperCase();
+    const chars = Array.from(str);
+    return (chars[0] || "?").toUpperCase();
+  };
+
+  if (parts.length === 1) {
+    const word = parts[0];
+    const first = pick(word);
+    const rest = Array.from(word).slice(1).join("");
+    let second = "";
+    const m2 = rest.match(/[\p{L}\p{N}]/u);
+    if (m2) second = m2[0].toUpperCase();
+    else if (rest) second = Array.from(rest)[0].toUpperCase();
+
+    const out = (first + (second || "")).trim();
+    return out || "?";
   }
 }
+
 export function getInitialsSafe(name) {
   const s = toStr(name, "").trim();
   if (!s) return "?";

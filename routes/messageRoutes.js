@@ -4,7 +4,7 @@ import { auth } from "../middleware/JWT.js";
 
 const router = Router();
 
-router.get("/", auth, getPublicMessages);
-router.post("/", auth, sendPublicMessage);
+router.get("/public", auth, getPublicMessages);
+router.post("/public", auth, sendPublicMessage);
 
 export default router;

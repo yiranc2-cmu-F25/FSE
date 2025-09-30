@@ -4,6 +4,18 @@ class Socket {
     this.users = new Map(); // socket.id -> { username, norm, room }
     this.setupEventHandlers();
   }
+  // ---- getOnlineUsers ------------------------------------------------------------
+  getOnline() {
+    const seen = new Set();
+    const list = [];
+    for (const u of this.users.values()) {
+      if (!seen.has(u.norm)) {
+        seen.add(u.norm);
+        list.push(u.username);
+      }
+    }
+    return list;
+  }
 
   // ---- helpers ------------------------------------------------------------
   normUsername(username) {
@@ -18,33 +30,61 @@ class Socket {
   setupEventHandlers() {
     this.io.on("connection", (socket) => {
       console.log("New client connected:", socket.id);
+      console.log("=== [CONNECT] ===");
+      console.log("sid =", socket.id);
+      console.log("transport =", socket.conn?.transport?.name);
+      console.log("handshake.auth =", socket.handshake?.auth);
+      console.log("handshake.query =", socket.handshake?.query);
+      console.log("headers.origin =", socket.handshake?.headers?.origin);
+      console.log("headers.cookie =", socket.handshake?.headers?.cookie ? "(present)" : "(none)");
 
-      socket.on("join", (username) => {
+
+      const username = socket.handshake.auth?.username;
+      if (username) {
         const norm = this.normUsername(username);
         const room = this.roomFor(norm);
-        // remember who this socket belongs to
+        console.log("[JOIN auto]", {
+          sid: socket.id,
+          username,
+          norm,
+          room,
+          usersSizeBefore: this.users.size,
+        });
         this.users.set(socket.id, { username, norm, room });
-
-        // put this socket into the user's personal room (supports multi-tab)
         socket.join(room);
-
         this.broadcastUserJoin(username);
-        console.log(`${username} joined the chat.`);
         this.broadcastUserList();
-      });
-
+      }
+      
       socket.on("disconnect", () => {
         const info = this.users.get(socket.id);
-        if (info) {
-          this.users.delete(socket.id);
-          // socket leaves all rooms automatically, but leaving is harmless
-          socket.leave(info.room);
-          console.log("Client disconnected:", socket.id);
-          this.broadcastUserLeave(info.username);
+        console.log("[disconnect] socket.id=", socket.id);
+        console.log("[disconnect] info=", info);
+        console.log("[disconnect] current users map=", Array.from(this.users.entries()));
+        this.users.delete(socket.id);
+        if (info) socket.leave(info.room);
+
+        setTimeout(() => {
+          const room = info?.room;
+          const bucket = room ? this.io.sockets.adapter.rooms.get(room) : null;
+          const stillOnline = !!(bucket && bucket.size > 0);
+
+          console.log(
+            "disconnect check:",
+            info?.username,
+            "stillOnline=",
+            stillOnline,
+            "room size=",
+            bucket ? bucket.size : 0,
+            "active sockets=",
+            this.users.size
+          );
+
+          if (!stillOnline && info?.username) {
+            this.broadcastUserLeave(info.username);
+          }
           this.broadcastUserList();
-        } else {
-          console.log("Unknown client disconnected:", socket.id);
-        }
+        }, 800);
       });
     });
   }

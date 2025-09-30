@@ -107,7 +107,6 @@ async function onConfirmClick(e) {
 
     const pending = getPending();
     if (!pending) {
-        //TODO: change name to RESTful
         window.location.href = "/communities";
         return;
     }
@@ -153,7 +152,6 @@ async function onConfirmClick(e) {
 function init() {
     const pending = getPending();
     if (!pending) {
-        //TODO: change name to RESTful
         window.location.href = "/communities";
         return;
     }
