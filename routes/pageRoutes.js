@@ -1,7 +1,6 @@
 import express from "express";
 import { authView } from "../middleware/JWT.js";
 import jwt from "jsonwebtoken";
-import { getInitials, getAvatarColor } from "../public/js/utils/avatars.js";
 
 const router = express.Router();
 const JOIN_PATH = "joinCommunity/";
@@ -24,34 +23,18 @@ router.get("/acknowledgements", (req, res) => {
 });
 
 router.get("/chat", authView, (req, res) => {
-    res.render(PUB_CHAT_PATH + "publicChat", {
-        username: req.username || "",
-    });
+    res.render(PUB_CHAT_PATH + "publicChat", { username: req.username || ""});
 });
 
 router.get("/members", authView, (req, res) => {
-    const token = req.cookies?.jwt_token;
-    let currentUser = { username: "Guest", initials: "GT", avatarColor: "#999" };
-    try {
-        const payload = jwt.verify(token, process.env.JWT_SECRET);
-        const avatarColor = getAvatarColor(payload.username);
-        currentUser = {
-        username: payload.username,
-        initials: getInitials(payload.username),
-        avatarColor,
-        };
-    } catch (err) {
-        console.warn("JWT verify failed:", err?.message);
-    }
-    res.render("memberList/membersLanding", { currentUser });
+    res.render("memberList/membersLanding", { username: req.username || "" });
 });
 
 router.get("/profiles", authView, (req, res) => {
-    res.render("memberProfile/memberFunction", {
-        username: req.username || "",
-    });
+    res.render("memberProfile/memberFunction", { username: req.username || "" });
 });
 
+//TODO: Add parameter adn state to this route, otherwise it will wrongly kick user offline 
 router.get("/status", authView, (req, res) => {
     res.render("memberProfile/profileUpdate");
 });
