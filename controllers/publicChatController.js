@@ -1,22 +1,5 @@
 import Message from "../models/Msg.js";
-import Socket from "../Middleware/Socket.js";
-import User from "../models/User.js";
-import { populate } from "dotenv";
-
-//use user to find all active users -> username , sharedstatus // getAllUsers
-//listen to socket events to get allonlineusers
-//use Message to get all public messages //getPublicMessages
-//send message by socket and save to public messages // sendPublicMessage
-
-export async function getAllActiveUsers(req, res) {
-  try {
-    const users = await User.getAllUsers();
-    return res.status(200).json(users);
-  } catch (err) {
-    console.error("Error fetching active users:", err);
-    return res.status(500).json({ status: "error", message: "Server error" });
-  }
-}
+import User from "../models/User.js"; 
 
 export async function getPublicMessages(req, res) {
   try {
@@ -24,8 +7,8 @@ export async function getPublicMessages(req, res) {
       .populate("sender", "username")
       .lean();
     const data = messages.map((msg) => {
-      console.log("Message sender:", msg.sender.username);
-      console.log("Request username:", req.username);
+      // console.log("Message sender:", msg.sender.username);
+      // console.log("Request username:", req.username);
       let isOwn =
         (msg.sender.username || "") === (req.username.toLowerCase() || "");
       //   if (isOwn) {
@@ -87,7 +70,7 @@ export async function sendPublicMessage(req, res) {
       sender: username,
       content: newMessage.content,
       timestamp: newMessage.timestamp,
-      status: newMessage.status,
+      status: newMessage.status
     });
 
     return res.status(201).json({ message: "Message sent successfully" });

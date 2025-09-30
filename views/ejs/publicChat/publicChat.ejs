@@ -5,12 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Public Chat</title>
     <%- include('../partials/head') %>
+    <script>window.__CURRENT_USER__ = "<%= username %>";</script>
     <script src="/socket.io/socket.io.js"></script>
-    <!-- <script>
-      const username = "<%= typeof username !== 'undefined' ? username : '' %>";
-    </script>
-    <script type="module" src="/js/dist/publicChat.bundle.js"></script> -->
-    <script type="module" src="/js/publicChat/publicChatFlat.js"></script>
+    <script type="module" src="/js/publicChat/publicChat.js"></script>
   </head>
   <body class="min-h-screen bg-white">
     <div
@@ -23,7 +20,7 @@
           class="mx-4 cursor-pointer rounded-xl border border-gray-200 p-3"
           id="back-btn-container"
         >
-          <a href="/landingPage">
+          <a href="/members">
             <img
               id="back-btn"
               src="images/icons/illustrations/icon-left.svg"

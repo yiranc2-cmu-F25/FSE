@@ -38,5 +38,13 @@ tabs.forEach((btn) => {
   });
 });
 
+document.addEventListener('DOMContentLoaded', () => {
+  const form = document.getElementById('status-form');
+  form?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    // TODO: save logic here in future
+  });
+});
+
 // initialize default selection
 setActive(currentStatus);

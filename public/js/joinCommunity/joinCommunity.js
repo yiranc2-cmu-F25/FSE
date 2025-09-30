@@ -12,7 +12,7 @@ const API = {
   login: "/api/auth/online",
 };
 const HOME = "/";
-const NEXT_ROUTE_AFTER_LOGIN_VALIDATION = "/landingPage";
+const NEXT_ROUTE_AFTER_LOGIN_VALIDATION = "/members";
 const NEXT_ROUTE_AFTER_REGISTER_VALIDATION = "/acknowledgements";
 
 // ----- DOM helpers -----------------------------------------------------------
@@ -137,7 +137,6 @@ ui.modal?.addEventListener("click", (e) => {
 //     if (res.ok && data?.ok) {
 //       // Registration success -> immediately log out and return to HOME
 //       closeConfirmModal();
-//       await Logout();
 //       return;
 //     }
 
@@ -178,7 +177,6 @@ async function onConfirmCreate(e) {
         sessionStorage.removeItem("pendingUser");
       } catch {}
       closeConfirmModal();
-      // await Logout(); // clears client + POST /offline + redirect
       window.location.href = NEXT_ROUTE_AFTER_REGISTER_VALIDATION;
       return;
     }
@@ -233,7 +231,6 @@ async function handleSubmit(e) {
         password: pwd,
       });
       if (r3.ok && d3?.ok) {
-        // await Logout(); // Iteration 0 TA requirement: log out right away after validating login
         window.location.href = NEXT_ROUTE_AFTER_LOGIN_VALIDATION;
         return;
       }
@@ -262,27 +259,3 @@ async function handleSubmit(e) {
 });
 
 ui.btn.addEventListener("click", handleSubmit);
-
-// ----- Logout utilities ------------------------------------------------------
-// TODO: fake Logout now; used for public chatroom testing
-async function Logout() {
-  //   await backendLogout();
-  //   await clearClientState();
-  window.location.href = HOME;
-}
-async function backendLogout() {
-  try {
-    const res = await fetch("/api/auth/offline", {
-      method: "POST",
-      credentials: "include",
-    });
-    return res.ok;
-  } catch (err) {
-    console.error("logout error", err);
-    return false;
-  }
-}
-async function clearClientState() {
-  sessionStorage.clear();
-  localStorage.clear();
-}

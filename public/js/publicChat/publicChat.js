@@ -1,109 +1,132 @@
-import { getAvatarColor, getInitials } from "/public/js/utils/avatars.js";
-import { format } from "date-fns";
+import {
+  getAvatarColor,
+  getInitials,
+  getInitialsSafe,
+} from "../utils/avatars.js";
+import { formatDate, toStr } from "../utils/dateFormatter.js";
+import { getSocket } from "/js/utils/socket.js";
+// console.log("[chat] module eval at", performance.now(), "ms; readyState=", document.readyState);
+// console.log("[chat] __CURRENT_USER__ at import time =", window.__CURRENT_USER__);
 
+// Styling constants
 const lineHeight = 24;
 const maxRows = 5;
-const statusColors = {
+const STATUS = {
   undefined: "gray",
   ok: "green",
   help: "yellow",
   emergency: "red",
 };
-
-let socket = io();
-
-socket.on("message", (message) => {
-  const msgEl = createMessageElement(
-    message.sender,
-    message.content,
-    message.status,
-    message.timestamp,
-    message.sender === username,
-  );
-  ui.messageList.appendChild(msgEl);
-  ui.messageList.scrollTop = ui.messageList.scrollHeight;
-});
-
+// HTML element selectors
 const $ = (s) => document.querySelector(s);
-
 const ui = {
   input: $("#msg-input"),
   form: $("#msg-form"),
   messageList: $("#msg-list"),
   sendBtn: $("#send-btn"),
 };
-
 // TODO: total online number
-
-function createMessageElement(
-  name,
-  text,
-  status,
-  timestamp,
-  isOwnMessage = false,
-) {
-  const li = document.createElement("li");
-  li.className = "mb-4 flex items-start gap-3";
-
-  // TODO: show online status
+// TODO: show online status
   // const status = document.createElement("span");
   // status.className = "absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white bg-green-400";
   // avatar.appendChild(status);
-  const avatar = document.createElement("figure");
-  avatar.className =
-    "flex h-10 w-10 shrink-0 items-center justify-center rounded-full";
-  avatar.style.backgroundColor = getAvatarColor(name);
-  const initials = document.createElement("span");
-  initials.className = "font-poppins font-semibold text-white";
-  initials.textContent = getInitials(name);
-  avatar.appendChild(initials);
+// Socket.io setup
+const me = (window.__CURRENT_USER__ || "").trim().toLowerCase();
 
-  const content = document.createElement("div");
-  content.className = "flex min-w-0 flex-col items-start";
-  const headerEl = document.createElement("div");
-  headerEl.className = "flex items-center gap-4";
+// console.log("[chat] before getSocket, __CURRENT_USER__ =", window.__CURRENT_USER__);
+const socket = getSocket();
+// console.log("[chat] after getSocket, socket?.auth =", socket?.auth);
+// Incoming message should have:
+// {
+//     sender : msg.sender.username,
+//     content : msg.content,
+//     timestamp : msg.timestamp,
+//     status : msg.status
+// }
 
-  const nameEl = document.createElement("span");
-  nameEl.className = "font-poppins font-bold";
-  nameEl.textContent = name;
-  headerEl.appendChild(nameEl);
+socket.on("message", (message) => {
+  const { sender, content, status, timestamp, isOwn } = message;
+  //   const isOwn = false;
+  const s = (message?.sender || "").toLowerCase();
+  const localIsOwn = me && s && s === me;
+  console.log("Me:"+ me);
+  console.log("s:"+ s);
+  const msgEl = renderMessage({
+    name: sender,
+    text: content,
+    status,
+    timestamp,
+    isOwn: localIsOwn,
+  });
+  ui.messageList.appendChild(msgEl);
+  ui.messageList.scrollTop = ui.messageList.scrollHeight;
+});
 
-  const statusEl = document.createElement("span");
-  statusEl.className = `min-w-16 rounded-md bg-${statusColors[status]}-200 px-1 text-center font-poppins text-xs font-semibold text-${statusColors[status]}-500`;
-  statusEl.textContent = status.toUpperCase();
-  headerEl.appendChild(statusEl);
-  content.appendChild(headerEl);
+// Render one message using template element
+function renderMessage({ name, text, status, timestamp, isOwn }) {
+  const tpl = document.getElementById("chat-message");
+  const li = tpl.content.firstElementChild.cloneNode(true);
 
-  const timeEl = document.createElement("p");
-  timeEl.className = "font-poppins text-xs text-gray-400";
-  const now = timestamp ?? new Date();
-  timeEl.textContent = format(new Date(now), "MMMM dd yyyy 'at' hh:mm aa");
+  const safeName = toStr(name, "Unknown").trim() || "Unknown";
+  const safeText = toStr(text, "");
+  const key = (status || "undefined").toString().toLowerCase();
+  const color = STATUS[key] || STATUS.undefined;
 
-  const textEl = document.createElement("p");
-  textEl.className =
-    "mt-1 inline-block max-w-full break-words rounded-lg bg-white p-3 font-poppins shadow";
-  textEl.textContent = text;
-  content.appendChild(timeEl);
-  content.appendChild(textEl);
+  li.querySelector(".name").textContent = safeName;
+  li.querySelector(".time").textContent = formatDate(timestamp || new Date());
+  li.querySelector(".bubble").textContent = safeText;
 
-  const padding = document.createElement("figure");
-  padding.className =
-    "flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-transparent";
+  const badge = li.querySelector(".status-badge");
+  badge.textContent = (
+    Object.keys(STATUS).includes(key) ? key : "undefined"
+  ).toUpperCase();
+  badge.classList.add(`bg-${color}-200`, `text-${color}-500`);
 
-  if (isOwnMessage) {
+  const avatar = li.querySelector(".avatar");
+  avatar.style.backgroundColor = getAvatarColor(safeName);
+  li.querySelector(".initials").textContent = getInitialsSafe(safeName);
+
+  if (isOwn) {
     li.classList.add("flex-row-reverse");
-    headerEl.classList.add("flex-row-reverse");
+    li.querySelector(".header").classList.add("flex-row-reverse");
+    const content = li.querySelector(".content");
     content.classList.remove("items-start");
     content.classList.add("items-end");
+    const bubble = li.querySelector(".bubble");
+    bubble.classList.remove("bg-white");
+    bubble.classList.add("bg-blue-50");
   }
-
-  li.appendChild(avatar);
-  li.appendChild(content);
-  li.appendChild(padding);
-
   return li;
 }
 
+// Async Message Sending and Retrieval
+const fetchPublicMessagesPath = "/api/messages/public";
+async function fetchMessages() {
+  try {
+    const res = await fetch(fetchPublicMessagesPath, {
+      credentials: "include",
+    });
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+
+    const publicMessages = await res.json();
+
+    publicMessages.forEach((m) => {
+      //   const isOwn = false;
+      ui.messageList.appendChild(
+        renderMessage({
+          name: m.sender,
+          text: m.content,
+          status: m.status,
+          timestamp: m.timestamp,
+          isOwn: m.isOwn,
+        }),
+      );
+    });
+    ui.messageList.scrollTop = ui.messageList.scrollHeight;
+  } catch (e) {
+    console.error("Failed to fetch messages:", e);
+  }
+}
 async function sendMessage(text) {
   try {
     if (text) {
@@ -133,36 +156,7 @@ async function sendMessage(text) {
     console.error("Failed to send message:", e);
   }
 }
-
-async function fetchMessages() {
-  try {
-    const res = await fetch("/api/messages/public", {
-      credentials: "include",
-    });
-    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-
-    const messages = await res.json();
-
-    const fragment = document.createDocumentFragment();
-    messages.forEach((msg) => {
-      fragment.appendChild(
-        createMessageElement(
-          msg.sender,
-          msg.content,
-          msg.status,
-          msg.timestamp,
-          msg.sender === username,
-        ),
-      );
-    });
-    ui.messageList.appendChild(fragment);
-
-    ui.messageList.scrollTop = ui.messageList.scrollHeight;
-  } catch (e) {
-    console.error("Failed to fetch or parse messages:", e);
-  }
-}
-
+// Event Listeners
 ui.input.addEventListener("input", () => {
   if (!ui.input.value) {
     ui.sendBtn.disabled = true;
@@ -195,77 +189,18 @@ document.addEventListener("DOMContentLoaded", () => {
   ui.messageList.scrollTop = ui.messageList.scrollHeight;
 });
 
+// Top-level Scripts
 fetchMessages();
+// const currentUser = { username: "" };
 
-//////////////////////////
-const STATUS = {
-  undefined: "gray",
-  ok: "green",
-  help: "yellow",
-  emergency: "red",
-};
+// async function identifyAndJoin() {
+//   try {
+//     const res = await fetch("/api/auth/accounts", { credentials: "include" });
+//     if (!res.ok) return;
+//     const me = await res.json();
+//     currentUser.username = me?.username || "";
+//     socket.emit("join", currentUser.username); // <<< JOIN ONCE
+//   } catch {}
+// }
 
-function renderMessage({ name, text, status, timestamp, isOwn }) {
-  const tpl = document.getElementById("chat-message");
-  const li = tpl.content.firstElementChild.cloneNode(true);
-
-  const safeName = toStr(name, "Unknown").trim() || "Unknown";
-  const safeText = toStr(text, "");
-  const key = (status || "undefined").toString().toLowerCase();
-  const color = STATUS[key] || STATUS.undefined;
-
-  li.querySelector(".name").textContent = safeName;
-  li.querySelector(".time").textContent = formatDate(timestamp || new Date());
-  li.querySelector(".bubble").textContent = safeText;
-
-  const badge = li.querySelector(".status-badge");
-  badge.textContent = (
-    Object.keys(STATUS).includes(key) ? key : "undefined"
-  ).toUpperCase();
-  badge.classList.add(`bg-${color}-200`, `text-${color}-500`);
-
-  const avatar = li.querySelector(".avatar");
-  avatar.style.backgroundColor = getAvatarColor(safeName);
-  li.querySelector(".initials").textContent = getInitials(safeName);
-
-  if (isOwn) {
-    li.classList.add("flex-row-reverse");
-    li.querySelector(".header").classList.add("flex-row-reverse");
-    const content = li.querySelector(".content");
-    content.classList.remove("items-start");
-    content.classList.add("items-end");
-    const bubble = li.querySelector(".bubble");
-    bubble.classList.remove("bg-white");
-    bubble.classList.add("bg-blue-50");
-  }
-  return li;
-}
-// history
-messages.forEach((m) => {
-  const s = normalizeSender(m.sender, m.senderName);
-  const own = isOwnSender(s);
-  ui.messageList.appendChild(
-    renderMessage({
-      name: s.displayName,
-      text: m.content,
-      status: m.status,
-      timestamp: m.timestamp,
-      isOwn: own,
-    }),
-  );
-});
-
-// socket
-socket.on("message", (m) => {
-  const s = normalizeSender(m.sender, m.senderName);
-  const own = isOwnSender(s);
-  ui.messageList.appendChild(
-    renderMessage({
-      name: s.displayName,
-      text: m.content,
-      status: m.status,
-      timestamp: m.timestamp,
-      isOwn: own,
-    }),
-  );
-});
+// identifyAndJoin();
