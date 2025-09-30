@@ -1,6 +1,5 @@
 import {
   getAvatarColor,
-  getInitials,
   getInitialsSafe,
 } from "../utils/avatars.js";
 import { formatDate, toStr } from "../utils/dateFormatter.js";
