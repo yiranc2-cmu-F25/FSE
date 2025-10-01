@@ -16,7 +16,7 @@ Base URL: `/api`
     - 500 Server Error: `{ "status": "error", "message": "Server error" }`
   - Side effects: Sets `jwt_token` HTTP-only cookie with expiration configured by `EXPIRATION_TIME` env var.
 
-- `POST /api/auth/online`
+- `POST /api/auth/login`
   - Description: Log in a user.
   - Auth: Not required
   - Request Body (JSON):
@@ -28,7 +28,7 @@ Base URL: `/api`
     - 404 Not Found: `{ "error": "User not found" }`
     - 500 Server Error: `{ "status": "error", "message": "Server error" }`
 
-- `POST /api/auth/reserved`
+- `POST /api/auth/users/usernames`
   - Description: Check username reservation/availability status.
   - Auth: Not required
   - Request Body (JSON):
@@ -51,7 +51,7 @@ Base URL: `/api`
     - 404 Not Found: `{ "error": "User not found" }`
     - 500 Server Error: `{ "status": "error", "message": "Server error" }`
 
-- `POST /api/auth/offline`
+- `POST /api/auth/logout`
   - Description: Log out the current user (clears auth cookie).
   - Auth: Required (JWT cookie `jwt_token`)
   - Request: No body. Requires valid `jwt_token` cookie.

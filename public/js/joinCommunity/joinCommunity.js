@@ -7,9 +7,9 @@
  */
 
 const API = {
-  usernameStatus: "/api/auth/reserved",
+  usernameStatus: "/api/auth/users/usernames",
   register: "/api/auth/registrations",
-  login: "/api/auth/online",
+  login: "/api/auth/login",
 };
 const HOME = "/";
 const NEXT_ROUTE_AFTER_LOGIN_VALIDATION = "/members";

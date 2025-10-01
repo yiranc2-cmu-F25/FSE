@@ -7,10 +7,10 @@ import { listMembers } from "../controllers/loginController.js";
 const router = Router();
 
 router.post("/registrations", register);
-router.post("/online", login);
-router.post("/reserved", usernameStatus);
+router.post("/login", login);
+router.post("/users/usernames", usernameStatus);
 router.get("/accounts", auth, getMe);
-router.post("/offline", auth, logout);
-router.get("/list", auth, listMembers);
+router.post("/logout", auth, logout);
+router.get("/lists", auth, listMembers);
 
 export default router;

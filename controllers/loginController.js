@@ -37,7 +37,6 @@ export async function getMe(req, res) {
 			status: user.sharedstatus ?? "undefined",
 			role: user.role,
 			image:
-			//user.avatar ||
 			"images/photos/user-profiles/user1-james.png",
 		});
 	} catch (err) {
@@ -59,7 +58,7 @@ export async function logout(req, res) {
 		);
 		io.in(room).disconnectSockets(true);
 		}
-		return res.status(200).json({ ok: true });
+		return res.status(204).end();
 	} catch (err) {
 		console.error("Logout error:", err);
 		return res.status(500).json({ status: "error", message: "Server error" });
