@@ -5,13 +5,8 @@ export async function getPublicMessages(req, res) {
   try {
     const messages = await Message.getPublicMsg();
     const data = messages.map((msg) => {
-      // console.log("Message sender:", msg.sender.username);
-      // console.log("Request username:", req.username);
       let isOwn =
         (msg.sender.username || "") === (req.username.toLowerCase() || "");
-      //   if (isOwn) {
-      //     console.log("Found own message:", msg);
-      //   }
       return {
         sender: msg.sender.username,
         content: msg.content,
@@ -38,9 +33,6 @@ export async function sendPublicMessage(req, res) {
     if (!sender || !content || !status) {
       return res.status(400).json({ error: "Missing required fields" });
     }
-
-    //console.log("Requesting Body:", req.body);
-
     const newMessage = await Message.create({
       sender,
       receiver: "public",
@@ -62,15 +54,6 @@ export async function sendPublicMessage(req, res) {
         .status(500)
         .json({ status: "error", message: "Socket instance not found" });
     }
-    // console.log("Broadcasting message from:", username);
-    // console.log("request username:", req.username);
-    // socketInstance.broadcastMessage({
-    //   sender: username,
-    //   content: newMessage.content,
-    //   timestamp: newMessage.timestamp,
-    //   status: newMessage.status,
-    //   //   isOwn: username === (req.username.toLowerCase() || ""), // problematic
-    // });
     socketInstance.emitMessageFrom(username, {
       sender: username,
       content: newMessage.content,

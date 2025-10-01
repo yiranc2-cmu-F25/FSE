@@ -14,7 +14,24 @@ if (btn) {
   });
 }
 async function Logout() {
-  window.location.href = HOME;
+  try {
+    const res = await fetch("/api/auth/logout", {
+      method: "POST",
+      credentials: "include"
+    });
+
+    if (!res.ok) {
+      throw new Error("Logout failed");
+    }
+
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    window.socket?.disconnect?.();
+
+    window.location.replace(HOME);
+  } catch (err) {
+    console.error(err);
+  }
 }
 
 // select edit profile button and navigate to profile update page on click
