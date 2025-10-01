@@ -6,7 +6,8 @@
     "type": "module",
     "scripts": {
         "dev": "concurrently \"node --watch app.js\" \"tailwindcss -i public/css/input.css -o public/css/output.css --watch\"",
-        "build": "npm run build:css && npm run build:js",
+
+        "build": "npm run build:css",
         "build:css": "tailwindcss -i public/css/input.css -o public/css/output.css --minify",
         "start": "node app.js",
         "prestart": "npm run build"
