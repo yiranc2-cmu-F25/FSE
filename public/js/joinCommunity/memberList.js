@@ -1,4 +1,4 @@
-import { getInitials, getAvatarColor } from "/js/utils/avatars.js";
+import { getInitialsSafe, getAvatarColor } from "../utils/avatars.js";
 import { getSocket } from "/js/utils/socket.js";
 
 // ---------- DOM refs ----------
@@ -37,7 +37,7 @@ function renderUserItem(u, isOnline) {
   const avatar = $c("div", "grid h-9 w-9 place-content-center rounded-full text-xs font-bold text-white");
   const name = (u.name || "").trim();
   avatar.style.backgroundColor = getAvatarColor(name);
-  avatar.textContent = getInitials(name);
+  avatar.textContent = getInitialsSafe(name);
   left.appendChild(avatar);
 
   const dot = $c("span",
@@ -103,7 +103,7 @@ async function loadMe() {
   const me = await res.json();
 
   const name = (me.username || "").trim();
-  const initials = getInitials(name);
+  const initials = getInitialsSafe(name);
   const color = getAvatarColor(name);
 
   const avatar = document.getElementById("header-avatar");
