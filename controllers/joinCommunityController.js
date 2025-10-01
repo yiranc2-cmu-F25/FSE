@@ -1,4 +1,4 @@
-import User from "../models/User.js";
+import User from "../daos/UserDao.js";
 import { isUsernameValid, isPasswordValid } from "../utils/validators.js";
 import { setAuthCookie, clearAuthCookie } from "../middleware/JWT.js";
 import dotenv from "dotenv";

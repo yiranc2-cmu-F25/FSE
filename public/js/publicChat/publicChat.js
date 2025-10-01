@@ -143,7 +143,7 @@ async function sendMessage(text) {
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({
-          sender: user._id,
+          sender: user.id,
           content: text,
           status: user.status,
           timestamp: date,

@@ -85,7 +85,7 @@ function renderLists(onlineUsers = [], offlineUsers = []) {
 
 // ---------- data loaders ----------
 async function loadMembers() {
-  const res = await fetch("/api/auth/list", {
+  const res = await fetch("/api/auth/lists", {
     credentials: "include",
     headers: { "Accept": "application/json" },
   });
