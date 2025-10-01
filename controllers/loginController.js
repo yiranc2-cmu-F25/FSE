@@ -1,4 +1,4 @@
-import User from "../models/User.js";
+import User from "../daos/UserDao.js";
 import { setAuthCookie, clearAuthCookie } from "../middleware/JWT.js";
 import dotenv from "dotenv";
 dotenv.config();
@@ -13,7 +13,7 @@ export async function login(req, res) {
 
 		if (!user) return res.status(404).json({ error: "User not found" });
 
-		if (!(await user.validatePassword(password))) {
+		if (!(await User.validatePassword(username,password))) {
 			return res.status(401).json({ error: "Invalid password" });
 		}
 
@@ -32,12 +32,12 @@ export async function getMe(req, res) {
 		if (!user) return res.status(404).json({ error: "User not found" });
 
 		res.json({
-			_id: user._id,
+			id: user.id,
 			username: user.username,
 			status: user.sharedstatus ?? "undefined",
 			role: user.role,
 			image:
-			user.avatar ||
+			//user.avatar ||
 			"images/photos/user-profiles/user1-james.png",
 		});
 	} catch (err) {
@@ -68,8 +68,11 @@ export async function logout(req, res) {
 
 export async function listMembers(req, res) {
   try {
-    const docs = await User.find({}, { username: 1, sharedstatus: 1 }).lean();
-    const all = docs.map(d => ({ name: d.username, status: d.sharedstatus ?? "UNDEFINED" }));
+    const docs = await User.getAllUsers(); 
+	const all = docs.map(d => ({
+  	name: d.username,
+  	status: d.sharedstatus ?? "UNDEFINED"
+	}));
 
     const onlineNames = req.app.get("socketInstance")?.getOnline?.() ?? [];
     const onlineSet = new Set(onlineNames.map(n => (n || "").toLowerCase()));

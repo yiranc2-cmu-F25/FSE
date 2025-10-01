@@ -6,10 +6,8 @@
     "type": "module",
     "scripts": {
         "dev": "concurrently \"node --watch app.js\" \"tailwindcss -i public/css/input.css -o public/css/output.css --watch\"",
-
         "build": "npm run build:css && npm run build:js",
         "build:css": "tailwindcss -i public/css/input.css -o public/css/output.css --minify",
-
         "start": "node app.js",
         "prestart": "npm run build"
     },
@@ -41,6 +39,7 @@
         "@babel/preset-env": "^7.28.3",
         "autoprefixer": "^10.4.21",
         "babel-loader": "^10.0.0",
+        "concurrently": "^9.0.0",
         "nodemon": "^3.1.10",
         "postcss": "^8.5.6",
         "prettier": "^3.6.2",
@@ -48,7 +47,6 @@
         "prettier-plugin-tailwindcss": "^0.6.14",
         "tailwindcss": "^3.4.17",
         "webpack": "^5.101.3",
-        "webpack-cli": "^6.0.1",
-        "concurrently": "^9.0.0"
+        "webpack-cli": "^6.0.1"
     }
 }
