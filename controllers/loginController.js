@@ -51,7 +51,7 @@ export async function logout(req, res) {
 	try {
 		clearAuthCookie(res);
 		disconnectUser(req);
-		return res.status(200).json({ ok: true });
+		return res.status(204).end();
 	} catch (err) {
 		console.error("Logout error:", err);
 		return res.status(500).json({ status: "error", message: "Server error" });

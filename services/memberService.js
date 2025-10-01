@@ -1,8 +1,8 @@
-import { getUsernameAndStatus } from "../adapter/userAdapter.js";
+import User from "../daos/UserDao.js";
 
 export async function getOnlineOfflineMembers(app) {
   // Fetch user basics from DB
-  const docs = await getUsernameAndStatus();
+  const docs = await User.getAllUsers();
   const all = docs.map(d => ({
     name: d.username,
     status: d.sharedstatus ?? "UNDEFINED",
