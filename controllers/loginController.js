@@ -1,5 +1,6 @@
-import User from "../models/User.js";
+import { findByUsername } from "../adapter/userAdapter.js";
 import { setAuthCookie, clearAuthCookie } from "../middleware/JWT.js";
+import { disconnectUser } from "../services/sessionService.js";
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -9,7 +10,7 @@ export async function login(req, res) {
 	try {
 		const { username, password } = req.body;
 
-		const user = await User.findByUsername(username);
+		const user = await findByUsername(username);
 
 		if (!user) return res.status(404).json({ error: "User not found" });
 
@@ -27,7 +28,7 @@ export async function login(req, res) {
 
 export async function getMe(req, res) {
 	try {
-		const user = await User.findByUsername(req.username);
+		const user = await findByUsername(req.username);
 
 		if (!user) return res.status(404).json({ error: "User not found" });
 
@@ -49,16 +50,7 @@ export async function getMe(req, res) {
 export async function logout(req, res) {
 	try {
 		clearAuthCookie(res);
-		const io = req.app.get("io");
-		const socketInstance = req.app.get("socketInstance");
-		const username = req.username;
-
-		if (io && socketInstance && username) {
-		const room = socketInstance.roomFor(
-			socketInstance.normUsername(username)
-		);
-		io.in(room).disconnectSockets(true);
-		}
+		disconnectUser(req);
 		return res.status(200).json({ ok: true });
 	} catch (err) {
 		console.error("Logout error:", err);
@@ -67,24 +59,11 @@ export async function logout(req, res) {
 }
 
 export async function listMembers(req, res) {
-  try {
-    const docs = await User.find({}, { username: 1, sharedstatus: 1 }).lean();
-    const all = docs.map(d => ({ name: d.username, status: d.sharedstatus ?? "UNDEFINED" }));
-
-    const onlineNames = req.app.get("socketInstance")?.getOnline?.() ?? [];
-    const onlineSet = new Set(onlineNames.map(n => (n || "").toLowerCase()));
-
-    const onlineUsers = [];
-    const offlineUsers = [];
-    for (const u of all) {
-      (onlineSet.has((u.name || "").toLowerCase()) ? onlineUsers : offlineUsers).push(u);
-    }
-    const byName = (a, b) => (a.name || "").toLowerCase().localeCompare((b.name || "").toLowerCase());
-    onlineUsers.sort(byName);
-    offlineUsers.sort(byName);
-	return res.json({ onlineUsers, offlineUsers });
-  } catch (err) {
-    console.error("listMembers error:", err);
-    return res.status(500).json({ status: "error" });
-  }
+	try {
+		const result = await getOnlineOfflineMembers(req.app);
+		return res.json(result);
+	} catch (err) {
+		console.error("listMembers error:", err);
+		return res.status(500).json({ status: "error" });
+	}
 }
