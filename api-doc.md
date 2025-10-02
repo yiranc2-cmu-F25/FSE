@@ -61,6 +61,39 @@ Base URL: `/api`
     - 403 Forbidden: `{ "error": "Forbidden", "reason": "<jwt_error_name>" }` when token verification fails
     - 500 Server Error: `{ "status": "error", "message": "Server error" }`
 
+- `GET /api/auth/lists`
+  - Description: Get list of community members.
+  - Auth: Required (JWT cookie `jwt_token`)
+  - Request: No body. Requires valid `jwt_token` cookie.
+  - Responses:
+    - 200 OK: Array of member objects
+    - 401 Unauthorized: `{ "error": "Unauthorized" }` when no/invalid token
+    - 403 Forbidden: `{ "error": "Forbidden", "reason": "<jwt_error_name>" }` when token verification fails
+    - 500 Server Error: `{ "status": "error", "message": "Server error" }`
+
+### Message Routes (`/api/messages`)
+
+- `GET /api/messages/public`
+  - Description: Get public chat messages.
+  - Auth: Required (JWT cookie `jwt_token`)
+  - Request: No body. Requires valid `jwt_token` cookie.
+  - Responses:
+    - 200 OK: Array of message objects
+    - 401 Unauthorized: `{ "error": "Unauthorized" }` when no/invalid token
+    - 403 Forbidden: `{ "error": "Forbidden", "reason": "<jwt_error_name>" }` when token verification fails
+    - 500 Server Error: `{ "status": "error", "message": "Server error" }`
+
+- `POST /api/messages/public`
+  - Description: Send a public chat message.
+  - Auth: Required (JWT cookie `jwt_token`)
+  - Request Body (JSON):
+    - Message content and metadata
+  - Responses:
+    - 201 Created: Message sent successfully
+    - 401 Unauthorized: `{ "error": "Unauthorized" }` when no/invalid token
+    - 403 Forbidden: `{ "error": "Forbidden", "reason": "<jwt_error_name>" }` when token verification fails
+    - 500 Server Error: `{ "status": "error", "message": "Server error" }`
+
 ### View Routes (Server-rendered Pages)
 These are not JSON APIs but are included for completeness. They render EJS templates.
 
@@ -68,7 +101,10 @@ These are not JSON APIs but are included for completeness. They render EJS templ
 - `GET /communities` → renders `views/joinCommunity.ejs`
 - `GET /confirmations` → renders `views/confirmRegistration.ejs`
 - `GET /acknowledgements` → renders `views/acknowledgement.ejs`
-- `GET /profiles` → renders `views/profile.ejs`
+- `GET /chats` → renders `views/publicChat.ejs` (Auth required)
+- `GET /members` → renders `views/membersLanding.ejs` (Auth required)
+- `GET /profiles` → renders `views/memberFunction.ejs` (Auth required)
+- `GET /status` → renders `views/profileUpdate.ejs` (Auth required)
 
 ### Authentication Details
 - JWT is stored in an HTTP-only cookie named `jwt_token`.
