@@ -1,7 +1,6 @@
 import User from "../daos/UserDao.js";
 import { setAuthCookie, clearAuthCookie } from "../middleware/JWT.js";
-import { disconnectUser } from "../services/sessionService.js";
-import { getOnlineOfflineMembers } from "../services/memberService.js";
+import { getOnlineOfflineMembers } from "../entities/memebrList.js";
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -29,7 +28,7 @@ export async function login(req, res) {
 
 export async function getMe(req, res) {
 	try {
-		const user = await findByUsername(req.username);
+		const user = await User.findByUsername(req.username);
 
 		if (!user) return res.status(404).json({ error: "User not found" });
 
@@ -50,7 +49,9 @@ export async function getMe(req, res) {
 export async function logout(req, res) {
 	try {
 		clearAuthCookie(res);
-		disconnectUser(req);
+		const socketInstance = req.app.get("socketInstance");
+    	const username = req.username;
+    	socketInstance.disconnectUser(username);
 		return res.status(204).end();
 	} catch (err) {
 		console.error("Logout error:", err);

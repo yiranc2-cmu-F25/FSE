@@ -113,6 +113,12 @@ class Socket {
     const userList = Array.from(this.users.values()).map((u) => u.username);
     this.io.emit("user_list", userList);
   }
+  disconnectUser(username) {
+    if (!username) return;
+    const norm = this.normUsername(username);
+    const room = this.roomFor(norm);
+    this.io.in(room).disconnectSockets(true);
+  }
 }
 
 export default Socket;
