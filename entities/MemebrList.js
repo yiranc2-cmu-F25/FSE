@@ -1,8 +1,6 @@
-import User from "../daos/UserDao.js";
-
 export async function getOnlineOfflineMembers(app) {
   // Fetch user basics from DB
-  const docs = await User.getAllUsers();
+  const docs = await app.locals.userDao.getAllUsers();
   const all = docs.map(d => ({
     name: d.username,
     status: d.sharedstatus ?? "UNDEFINED",

@@ -1,8 +1,8 @@
-import User from "../daos/UserDao.js";
 import { isUsernameValid, isPasswordValid } from "../utils/validators.js";
 import { setAuthCookie, clearAuthCookie } from "../middleware/JWT.js";
 import dotenv from "dotenv";
 dotenv.config();
+
 
 const EXPIRATION_TIME = process.env.EXPIRATION_TIME;
 
@@ -13,7 +13,7 @@ export async function register(req, res) {
 		if (!isUsernameValid(username)) return res.status(400).json({ error: "Invalid username" });
 		if (!isPasswordValid(password)) return res.status(400).json({ error: "Invalid password" });
 
-		const user = await User.create({ username, password });
+		const user = await req.app.locals.userDao.create({ username, password });
 
 		setAuthCookie(res, username, EXPIRATION_TIME);
 		return res.status(201).json({
@@ -38,7 +38,7 @@ export async function usernameStatus(req, res) {
 			});
 		}
 
-		const user = await User.findByUsername(username);
+		const user = await req.app.locals.userDao.findByUsername(username);
 		if (user) {
 			return res.json({ status: "exists" });
 		}
