@@ -114,6 +114,48 @@ Base URL: `/api`
     - 403 Forbidden: `{ "error": "Forbidden", "reason": "<jwt_error_name>" }` when token verification fails
     - 500 Server Error: `{ "status": "error", "message": "Server error" }`
 
+### ESN Speed Test Routes (`/api/tools/speed-tests`)
+
+- `POST /api/tools/speed-tests/public`
+
+- Description: Synthetic “post to public wall” for load testing. Does not write to DB.
+
+- Auth: Required (JWT cookie jwt_token)
+
+- Request Body (JSON):
+  - payload: object | string | number | boolean (optional, echoed back; ignored by server logic)
+
+- Responses:
+  - 201 Created: { "ok": true, "ts": "<iso8601>" }
+
+  - 401 Unauthorized: { "error": "Unauthorized" }
+
+  - 403 Forbidden: { "error": "Forbidden", "reason": "<jwt_error_name>" }
+
+  - 500 Server Error: { "status": "error", "message": "Server error" }
+
+- Side effects: None (data stored in memory-only ring buffer for a few seconds, or discarded).
+
+- GET /api/tools/speed-tests/public
+
+- Description: Synthetic “get public wall messages” for load testing. Served from memory, not DB.
+
+- Auth: Required (JWT cookie jwt_token)
+
+- Request: No body.
+
+- Responses:
+  - 200 OK: Array (possibly empty) of synthetic message envelopes
+    Example: [ { "id": "<uuid>", "ts": "<iso8601>" } ]
+
+  - 401 Unauthorized: { "error": "Unauthorized" }
+
+  - 403 Forbidden: { "error": "Forbidden", "reason": "<jwt_error_name>" }
+
+  - 500 Server Error: { "status": "error", "message": "Server error" }
+
+- Side effects: None (data is ephemeral).
+
 ### View Routes (Server-rendered Pages)
 
 These are not JSON APIs but are included for completeness. They render EJS templates.

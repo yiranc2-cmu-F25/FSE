@@ -1,0 +1,167 @@
+<div id="feature-modal" class="fixed inset-0 z-[60] hidden" aria-hidden="true">
+  <!-- overlay (click to close) -->
+  <div
+    id="feature-modal-overlay"
+    class="absolute inset-0 bg-black/40 backdrop-blur-sm"
+  ></div>
+
+  <!-- sheet -->
+  <div
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="feature-modal-title"
+    class="absolute left-0 top-0 h-full w-5/6 max-w-[620px] bg-white shadow-2xl ring-1 ring-stone-200"
+  >
+    <!-- header -->
+    <div class="flex items-center gap-3 px-6 py-5">
+      <button
+        id="feature-modal-close"
+        type="button"
+        class="grid h-10 w-10 place-content-center rounded-full ring-1 ring-stone-200 hover:bg-stone-50"
+        aria-label="Close"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          class="h-5 w-5 stroke-stone-700"
+          fill="none"
+          stroke-width="2"
+        >
+          <path
+            d="M15 18l-6-6 6-6"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      </button>
+      <!-- <h2 id="feature-modal-title" class="text-lg font-semibold">Profile</h2> -->
+    </div>
+
+    <div class="px-6 pb-8">
+      <!-- avatar + name (placeholders) -->
+      <div class="mb-6">
+        <div
+          class="mx-auto grid h-28 w-28 place-content-center rounded-full text-3xl font-bold text-white shadow-md ring-4 ring-white"
+          style="background-color: #3b6a95"
+        >
+          <span>MB</span>
+        </div>
+        <p class="mt-4 text-center text-2xl font-extrabold">Member</p>
+        <div class="mt-2 flex justify-center">
+          <span
+            class="inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-700"
+          >
+            <svg class="mr-1 h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+            </svg>
+            OK
+          </span>
+        </div>
+      </div>
+
+      <p class="mb-2 text-sm font-semibold text-stone-500">
+        Profile &amp; Account
+      </p>
+      <button
+        type="button"
+        class="mb-4 flex w-full items-center justify-between rounded-2xl border border-stone-200 bg-white px-4 py-4 text-left shadow-sm hover:bg-stone-50"
+      >
+        <span class="flex items-center gap-3">
+          <span
+            class="grid h-10 w-10 place-content-center rounded-xl bg-stone-100"
+          >
+            <svg
+              class="h-6 w-6 stroke-1 transition duration-150"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M17 4H17.502C18.7134 4 19.319 4 19.7834 4.232C20.2095 4.44495 20.5551 4.79048 20.768 5.21665C21 5.68096 21 6.28664 21 7.498V8M17 20H17.502C18.7134 20 19.319 20 19.7834 19.768C20.2095 19.5551 20.5551 19.2095 20.768 18.7834C21 18.319 21 17.7134 21 16.502V16M7 4H6.498C5.28664 4 4.68096 4 4.21665 4.232C3.79048 4.44495 3.44495 4.79048 3.232 5.21665C3 5.68096 3 6.28664 3 7.498V8M7 20H6.498C5.28664 20 4.68096 20 4.21665 19.768C3.79048 19.5551 3.44495 19.2095 3.232 18.7834C3 18.319 3 17.7134 3 16.502V16"
+                stroke-linecap="round"
+              />
+              <path
+                d="M7.62584 17.0695C8.0447 16.4649 8.66228 15.9421 9.43355 15.571C10.2049 15.1999 11.0906 15 12 15C12.9094 15 13.7951 15.1999 14.5664 15.571C15.3377 15.9421 15.9553 16.4649 16.3742 17.0695"
+                stroke-linecap="round"
+              />
+              <circle cx="12" cy="9" r="3" stroke-linecap="round" />
+            </svg>
+          </span>
+
+          <span class="text-base font-semibold">ESN Status</span>
+        </span>
+        <svg
+          viewBox="0 0 24 24"
+          class="h-5 w-5 stroke-stone-500"
+          fill="none"
+          stroke-width="2"
+        >
+          <path
+            d="M9 6l6 6-6 6"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      </button>
+
+      <p class="mb-2 mt-4 text-sm font-semibold text-stone-500">System Tools</p>
+      <button
+        type="button"
+        class="mb-6 flex w-full items-center justify-between rounded-2xl border border-stone-200 bg-white px-4 py-4 text-left shadow-sm hover:bg-stone-50"
+      >
+        <span class="flex items-center gap-3">
+          <span
+            class="grid h-10 w-10 place-content-center rounded-xl bg-stone-100"
+          >
+            <svg
+              class="h-6 w-6 stroke-blue-500 stroke-1 transition duration-150"
+              version="1.1"
+              id="Layer_1"
+              xmlns="http://www.w3.org/2000/svg"
+              xmlns:xlink="http://www.w3.org/1999/xlink"
+              viewBox="0 0 512 512"
+              enable-background="new 0 0 512 512"
+              xml:space="preserve"
+            >
+              <g>
+                <path
+                  d="M256,0C114.609,0,0,114.609,0,256s114.609,256,256,256s256-114.609,256-256S397.391,0,256,0z M256,472
+		c-119.297,0-216-96.703-216-216S136.703,40,256,40s216,96.703,216,216S375.297,472,256,472z"
+                />
+                <g>
+                  <path
+                    d="M350.281,169.609l-23.594,21.625C343.016,209.047,352,232.047,352,256c0,52.938-43.062,96-96,96s-96-43.062-96-96
+			s43.062-96,96-96v-32c-70.578,0-128,57.422-128,128s57.422,128,128,128s128-57.422,128-128
+			C384,224.016,372.031,193.344,350.281,169.609z"
+                  />
+                  <polygon
+                    points="272,262.391 307.188,138.688 240,249.609 248,272 		"
+                  />
+                </g>
+              </g>
+            </svg>
+          </span>
+          <span class="text-base font-semibold">ESN Speed Test</span>
+        </span>
+        <svg
+          viewBox="0 0 24 24"
+          class="h-5 w-5 stroke-stone-500"
+          fill="none"
+          stroke-width="2"
+        >
+          <path
+            d="M9 6l6 6-6 6"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      </button>
+
+      <button
+        type="button"
+        id="feature-logout"
+        class="inline-flex w-full items-center justify-center rounded-2xl bg-[#C35F49] px-6 py-4 text-base font-semibold text-white shadow hover:brightness-95"
+      >
+        Log Out
+      </button>
+    </div>
+  </div>
+</div>
