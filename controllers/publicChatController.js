@@ -1,9 +1,6 @@
-import Message from "../daos/MsgDao.js";
-import User from "../daos/UserDao.js"; 
-
 export async function getPublicMessages(req, res) {
   try {
-    const messages = await Message.getPublicMsg();
+    const messages = await req.app.locals.msgDao.getPublicMsg();
     const data = messages.map((msg) => {
       let isOwn =
         (msg.sender.username || "") === (req.username.toLowerCase() || "");
@@ -33,7 +30,7 @@ export async function sendPublicMessage(req, res) {
     if (!sender || !content || !status) {
       return res.status(400).json({ error: "Missing required fields" });
     }
-    const newMessage = await Message.create({
+    const newMessage = await req.app.locals.msgDao.create({
       sender,
       receiver: "public",
       content: content.trim(),
@@ -43,7 +40,7 @@ export async function sendPublicMessage(req, res) {
 
     console.log("New message created:", newMessage);
 
-    const username = await User.getUsernameById(sender);
+    const username = await req.app.locals.userDao.getUsernameById(sender);
     if (!username) {
       return res.status(404).json({ error: "Sender not found" });
     }

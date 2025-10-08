@@ -12,13 +12,20 @@ import publicMessageRoutes from "./routes/messageRoutes.js";
 import Socket from "./Middleware/Socket.js";
 import http from "http";
 import { Server } from "socket.io";
+import { makeUserModel } from "./db/UserSchema.js";
+import { makeMsgModel } from "./db/MsgSchema.js";
+import { UserDao } from "./daos/UserDao.js";
+import { MsgDao } from "./daos/MsgDao.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-
-await mongoose.connect(process.env.MONGO_URI);
-
 const app = express();
+
+const conn = await mongoose.createConnection(process.env.MONGO_URI).asPromise();
+const UserModel = makeUserModel(conn);
+const MessageModel = makeMsgModel(conn)
+app.locals.userDao = new UserDao({ UserModel });
+app.locals.msgDao = new MsgDao({ MessageModel });
 
 //set up socket.io
 const server = http.createServer(app);
