@@ -93,8 +93,29 @@ Base URL: `/api`
     - 401 Unauthorized: `{ "error": "Unauthorized" }` when no/invalid token
     - 403 Forbidden: `{ "error": "Forbidden", "reason": "<jwt_error_name>" }` when token verification fails
     - 500 Server Error: `{ "status": "error", "message": "Server error" }`
+- - `GET /api/messages/private`
+  - Description: Get private chat messages between two ESN users.
+  - Auth: Required (JWT cookie `jwt_token`)
+  - Request: No body. Requires valid `jwt_token` cookie.
+  - Responses:
+    - 200 OK: Array of message objects
+    - 401 Unauthorized: `{ "error": "Unauthorized" }` when no/invalid token
+    - 403 Forbidden: `{ "error": "Forbidden", "reason": "<jwt_error_name>" }` when token verification fails
+    - 500 Server Error: `{ "status": "error", "message": "Server error" }`
+
+- `POST /api/messages/private`
+  - Description: Send a pribate chat message to the channel between two ESN users.
+  - Auth: Required (JWT cookie `jwt_token`)
+  - Request Body (JSON):
+    - Message content and metadata
+  - Responses:
+    - 201 Created: Message sent successfully
+    - 401 Unauthorized: `{ "error": "Unauthorized" }` when no/invalid token
+    - 403 Forbidden: `{ "error": "Forbidden", "reason": "<jwt_error_name>" }` when token verification fails
+    - 500 Server Error: `{ "status": "error", "message": "Server error" }`
 
 ### View Routes (Server-rendered Pages)
+
 These are not JSON APIs but are included for completeness. They render EJS templates.
 
 - `GET /` → renders `views/splashPage.ejs`
@@ -107,6 +128,7 @@ These are not JSON APIs but are included for completeness. They render EJS templ
 - `GET /status` → renders `views/profileUpdate.ejs` (Auth required)
 
 ### Authentication Details
+
 - JWT is stored in an HTTP-only cookie named `jwt_token`.
 - Cookie attributes: `httpOnly: true`, `secure: (NODE_ENV === 'production')`, `sameSite: 'lax'`, `path: '/'`, `maxAge` based on `EXPIRATION_TIME` hours.
 - Protected routes use middleware that:
@@ -116,6 +138,7 @@ These are not JSON APIs but are included for completeness. They render EJS templ
   - Returns 403 with `{ error: 'Forbidden', reason: <jwt_error_name> }` if verification fails.
 
 ### Environment Variables
+
 - `MONGO_URI`: MongoDB connection string (required)
 - `JWT_SECRET`: Secret used for token signing/verification (required)
 - `EXPIRATION_TIME`: Token expiration in hours (required)

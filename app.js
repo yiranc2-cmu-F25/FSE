@@ -16,6 +16,8 @@ import { makeUserModel } from "./db/UserSchema.js";
 import { makeMsgModel } from "./db/MsgSchema.js";
 import { UserDao } from "./daos/UserDao.js";
 import { MsgDao } from "./daos/MsgDao.js";
+import swaggerUi from "swagger-ui-express";
+import swaggerSpec from "./config/swagger/swaggerConfig.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -23,7 +25,7 @@ const app = express();
 
 const conn = await mongoose.createConnection(process.env.MONGO_URI).asPromise();
 const UserModel = makeUserModel(conn);
-const MessageModel = makeMsgModel(conn)
+const MessageModel = makeMsgModel(conn);
 app.locals.userDao = new UserDao({ UserModel });
 app.locals.msgDao = new MsgDao({ MessageModel });
 
@@ -36,6 +38,9 @@ const io = new Server(server, {
   },
 });
 const socketInstance = new Socket(io);
+// Serve Swagger UI
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
 app.set("io", io);
 app.set("socketInstance", socketInstance);
 
@@ -52,12 +57,14 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 //Routes
-app.use("/api/auth", authRoutes);
-app.use("/", pageRoutes);
-app.use("/api/messages/", publicMessageRoutes);
+app.use("/api/auth", authRoutes); // User Login/logout; Account Info retrieval
+app.use("/", pageRoutes); // All routes for separate pages e.g. public chat wall
+app.use("/api/messages/", publicMessageRoutes); // Get & Post Public Messages
+// app.use("/api/privateMessages/", privateMessageRoutes);
 
 server.listen(process.env.PORT || 3000, () => {
   console.log(
     "Server running at http://localhost:" + (process.env.PORT || 3000),
+    "Swagger docs at http://localhost:3000/api-docs",
   );
 });
