@@ -156,6 +156,46 @@ Base URL: `/api`
 
 - Side effects: None (data is ephemeral).
 
+- `PATCH /api/auth/accounts/status`
+  - Description: Set or clear the authenticated user's current status.
+
+  - Auth: Required (JWT cookie `jwt_token`)
+
+  - Request Body (JSON):
+    - `status`: `"OK" | "HELP" | "EMERGENCY" | "UNDEFINED"`
+
+  - Responses:
+    - 200 OK: `{ "username": "<username>", "status": "<status>", "updatedAt": "<iso8601>" }`
+
+    - 400 Bad Request: `{ "error": "Invalid status" }`
+
+    - 401 Unauthorized: `{ "error": "Unauthorized" }`
+
+    - 403 Forbidden: `{ "error": "Forbidden", "reason": "<jwt_error_name>" }`
+
+    - 500 Server Error: `{ "status": "error", "message": "Server error" }`
+
+  - Side effects: Persists status + server timestamp; can optionally emit a socket event so directories/chat UIs refresh.
+    - `GET /api/auth/statuses`
+
+  - Description: Return the allowed statuses and their UI hints (for the status picker).
+
+  - Auth: Not required (pure metadata; can be cached)
+
+  - Request: No body.
+
+  - Responses:
+    - 200 OK:
+
+      `[
+  { "code": "OK",        "label": "I am OK: I do not need help.",            "color": "green",  "icon": "ok" },
+  { "code": "HELP",      "label": "I need help (not life-threatening).",     "color": "yellow", "icon": "help" },
+  { "code": "EMERGENCY", "label": "I need help now (emergency).",            "color": "red",    "icon": "emergency" },
+  { "code": "UNDEFINED", "label": "No status provided.",                     "color": "gray",   "icon": "undefined" }
+]`
+
+    - 500 Server Error: `{ "status": "error", "message": "Server error" }`
+
 ### View Routes (Server-rendered Pages)
 
 These are not JSON APIs but are included for completeness. They render EJS templates.
