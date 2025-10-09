@@ -13,7 +13,7 @@
  *  - On failure → shows a modal with the server-provided reason.
  *
  * Backend contract (proposed):
- *  - POST /api/auth/register
+ *  - POST /api/authentications/register
  *      Body:   { username: string, password: string }
  *      201/200 { ok: true }
  *      4xx/5xx { ok: false, message: string }
@@ -24,7 +24,7 @@
  */
 
 const API = {
-    register: "/api/auth/registrations",
+    register: "/api/authentications/registrations",
 };
 const NEXT_ROUTE_AFTER_OK = "/acknowledgement";
 const MAX_AGE_MS = 5 * 60 * 1000; // 5 minutes
