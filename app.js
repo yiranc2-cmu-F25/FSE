@@ -57,7 +57,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 //Routes
-app.use("/api/auth", authRoutes); // User Login/logout; Account Info retrieval
+app.use("/api/authentications", authRoutes); // User Login/logout; Account Info retrieval
 app.use("/", pageRoutes); // All routes for separate pages e.g. public chat wall
 app.use("/api/messages/", publicMessageRoutes); // Get & Post Public Messages
 // app.use("/api/privateMessages/", privateMessageRoutes);
