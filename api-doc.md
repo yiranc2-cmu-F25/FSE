@@ -2,9 +2,9 @@
 
 Base URL: `/api`
 
-### Auth Routes (`/api/auth`)
+### Auth Routes (`/api/authentications`)
 
-- `POST /api/auth/registrations`
+- `POST /api/authentications/registrations`
   - Description: Register a new user.
   - Auth: Not required
   - Request Body (JSON):
@@ -16,7 +16,7 @@ Base URL: `/api`
     - 500 Server Error: `{ "status": "error", "message": "Server error" }`
   - Side effects: Sets `jwt_token` HTTP-only cookie with expiration configured by `EXPIRATION_TIME` env var.
 
-- `POST /api/auth/login`
+- `POST /api/authentications/login`
   - Description: Log in a user.
   - Auth: Not required
   - Request Body (JSON):
@@ -28,7 +28,7 @@ Base URL: `/api`
     - 404 Not Found: `{ "error": "User not found" }`
     - 500 Server Error: `{ "status": "error", "message": "Server error" }`
 
-- `POST /api/auth/users/usernames`
+- `POST /api/authentications/users/usernames`
   - Description: Check username reservation/availability status.
   - Auth: Not required
   - Request Body (JSON):
@@ -40,7 +40,7 @@ Base URL: `/api`
       - `{ "status": "available" }` when the username is available
     - 500 Server Error: `{ "status": "error", "message": "Server error" }`
 
-- `GET /api/auth/accounts`
+- `GET /api/authentications/accounts`
   - Description: Get the authenticated user's profile.
   - Auth: Required (JWT cookie `jwt_token`)
   - Request: No body. Requires valid `jwt_token` cookie.
@@ -51,7 +51,7 @@ Base URL: `/api`
     - 404 Not Found: `{ "error": "User not found" }`
     - 500 Server Error: `{ "status": "error", "message": "Server error" }`
 
-- `POST /api/auth/logout`
+- `POST /api/authentications/logout`
   - Description: Log out the current user (clears auth cookie).
   - Auth: Required (JWT cookie `jwt_token`)
   - Request: No body. Requires valid `jwt_token` cookie.
@@ -61,7 +61,7 @@ Base URL: `/api`
     - 403 Forbidden: `{ "error": "Forbidden", "reason": "<jwt_error_name>" }` when token verification fails
     - 500 Server Error: `{ "status": "error", "message": "Server error" }`
 
-- `GET /api/auth/lists`
+- `GET /api/authentications/lists`
   - Description: Get list of community members.
   - Auth: Required (JWT cookie `jwt_token`)
   - Request: No body. Requires valid `jwt_token` cookie.
@@ -156,7 +156,7 @@ Base URL: `/api`
 
 - Side effects: None (data is ephemeral).
 
-- `PATCH /api/auth/accounts/status`
+- `PATCH /api/authentications/accounts/status`
   - Description: Set or clear the authenticated user's current status.
 
   - Auth: Required (JWT cookie `jwt_token`)
@@ -176,7 +176,7 @@ Base URL: `/api`
     - 500 Server Error: `{ "status": "error", "message": "Server error" }`
 
   - Side effects: Persists status + server timestamp; can optionally emit a socket event so directories/chat UIs refresh.
-    - `GET /api/auth/statuses`
+    - `GET /api/authentications/statuses`
 
   - Description: Return the allowed statuses and their UI hints (for the status picker).
 
