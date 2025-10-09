@@ -1,5 +1,5 @@
 /**
- * Join Community: FE validation + auth flow with in-page confirm modal.
+ * Join Community: FE validation + authentications flow with in-page confirm modal.
  * - If username is reserved -> show username error.
  * - If username exists -> try login; on success, Logout() (per TA note).
  * - If username available -> open confirm modal; on confirm -> register.
@@ -7,9 +7,9 @@
  */
 
 const API = {
-  usernameStatus: "/api/auth/users/usernames",
-  register: "/api/auth/registrations",
-  login: "/api/auth/login",
+  usernameStatus: "/api/authentications/users/usernames",
+  register: "/api/authentications/registrations",
+  login: "/api/authentications/login",
 };
 const HOME = "/";
 const NEXT_ROUTE_AFTER_LOGIN_VALIDATION = "/members";
