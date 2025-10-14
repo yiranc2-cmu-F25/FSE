@@ -132,7 +132,7 @@ async function sendMessage(text) {
       ui.input.value = "";
       ui.input.rows = 1;
       ui.sendBtn.disabled = true;
-      const res = await fetch("api/auth/accounts", {
+      const res = await fetch("api/authentications/accounts", {
         credentials: "include",
       });
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);

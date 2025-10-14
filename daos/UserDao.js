@@ -56,4 +56,26 @@ export class UserDao {
         }));
     }
 
+    async updateStatusById(id, newStatus) {
+        console.log("Updating status for user ID:", id, "to new status:", newStatus);
+        try{
+            const doc = await this.UserModel.findByIdAndUpdate(id, {sharedstatus: newStatus}, {new : true});
+            console.log("After update, doc =", doc);
+
+            if (!doc) return null;
+
+        return doc ? new User ({
+            id: doc._id,
+            username: doc.username,
+            sharedstatus: doc.sharedstatus,
+            status: doc.status,
+            role: doc.role,
+            createdAt: doc.createdAt
+        }) : null;
+        } catch (err) {
+            console.error("Error updating status for user ID:", id, err);
+            throw err;
+        }
+    }
+
 }

@@ -40,20 +40,25 @@
       <!-- avatar + name (placeholders) -->
       <div class="mb-6">
         <div
+          id="avatar"
           class="mx-auto grid h-28 w-28 place-content-center rounded-full text-3xl font-bold text-white shadow-md ring-4 ring-white"
           style="background-color: #3b6a95"
         >
-          <span>MB</span>
+          <span id = "avatar-initials"></span>
         </div>
-        <p class="mt-4 text-center text-2xl font-extrabold">Member</p>
+        <p id ="displayName" class="mt-4 text-center text-2xl font-extrabold"></p>
         <div class="mt-2 flex justify-center">
           <span
-            class="inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-700"
+            class="inline-flex items-center rounded-full px-3 py-1 text-sm font-medium"
+            id="partial-status-color"
           >
-            <svg class="mr-1 h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
-            </svg>
-            OK
+            <img
+                  src="/images/icons/status/help-status-icon.svg"
+                  alt=""
+                  class="mr-1 h-4 w-4"
+                  id="partial-status-icon"
+                />
+            <span id="status-text">OK</span>
           </span>
         </div>
       </div>
@@ -62,6 +67,7 @@
         Profile &amp; Account
       </p>
       <button
+        id ="status-button"
         type="button"
         class="mb-4 flex w-full items-center justify-between rounded-2xl border border-stone-200 bg-white px-4 py-4 text-left shadow-sm hover:bg-stone-50"
       >
