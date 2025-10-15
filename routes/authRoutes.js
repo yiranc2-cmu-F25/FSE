@@ -6,6 +6,7 @@ import {
   register,
 } from "../controllers/joinCommunityController.js";
 import { listMembers } from "../controllers/loginController.js";
+import { updateStatusById } from "../controllers/updateStatusController.js";
 
 const router = Router();
 /**
@@ -295,5 +296,94 @@ router.post("/logout", auth, logout);
  *               $ref: '#/components/schemas/ServerError'
  */
 router.get("/lists", auth, listMembers);
+/**
+ * @openapi
+ * /api/auth/status:
+ *   put:
+ *     tags: [Auth]
+ *     summary: Update a user's status by ID
+ *     description: Update the status field of a specific user identified by userId in the request body.
+ *     security:
+ *       - cookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - userId
+ *               - newStatus
+ *             properties:
+ *               userId:
+ *                 type: string
+ *                 description: The unique identifier (_id) of the user in MongoDB.
+ *                 example: "652e9b7a2c1a8e4f2d7b8c3e"
+ *               newStatus:
+ *                 type: string
+ *                 description: The new status value to assign to the user.
+ *                 example: "online"
+ *     responses:
+ *       200:
+ *         description: User status successfully updated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "User status updated"
+ *                 user:
+ *                   type: object
+ *                   properties:
+ *                     id: { type: string, example: "652e9b7a2c1a8e4f2d7b8c3e" }
+ *                     username: { type: string, example: "yiranc2" }
+ *                     sharedstatus: { type: string, nullable: true, example: "online" }
+ *       400:
+ *         description: Missing required fields
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error: { type: string, example: "Missing required fields" }
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error: { type: string, example: "Unauthorized" }
+ *       403:
+ *         description: Forbidden (token verification failed)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error: { type: string, example: "Forbidden" }
+ *                 reason: { type: string, example: "TokenExpiredError" }
+ *       404:
+ *         description: User not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error: { type: string, example: "User not found" }
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status: { type: string, example: "error" }
+ *                 message: { type: string, example: "Server error" }
+ */
+router.patch("/newstatuses", auth, updateStatusById);
+
 
 export default router;

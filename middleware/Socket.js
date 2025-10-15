@@ -113,6 +113,15 @@ class Socket {
     const userList = Array.from(this.users.values()).map((u) => u.username);
     this.io.emit("user_list", userList);
   }
+
+  broadcastNewStatus(username , status){
+    this.io.emit("new_status", { username, status });
+    console.log("Broadcasting new status:", { username, status });
+  }
+  // 1. backend will call this function when user change their status
+  // 2.fronted will listen to this event to update the status of the user in userprofile and memberlist
+
+
   disconnectUser(username) {
     if (!username) return;
     const norm = this.normUsername(username);

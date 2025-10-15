@@ -1,7 +1,4 @@
-import {
-  getAvatarColor,
-  getInitialsSafe,
-} from "../utils/avatars.js";
+import { getAvatarColor, getInitialsSafe } from "../utils/avatars.js";
 import { formatDate, toStr } from "../utils/dateFormatter.js";
 import { getSocket } from "/js/utils/socket.js";
 // console.log("[chat] module eval at", performance.now(), "ms; readyState=", document.readyState);
@@ -26,9 +23,9 @@ const ui = {
 };
 // TODO: total online number
 // TODO: show online status
-  // const status = document.createElement("span");
-  // status.className = "absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white bg-green-400";
-  // avatar.appendChild(status);
+// const status = document.createElement("span");
+// status.className = "absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white bg-green-400";
+// avatar.appendChild(status);
 // Socket.io setup
 const me = (window.__CURRENT_USER__ || "").trim().toLowerCase();
 
@@ -48,8 +45,8 @@ socket.on("message", (message) => {
   //   const isOwn = false;
   const s = (message?.sender || "").toLowerCase();
   const localIsOwn = me && s && s === me;
-  console.log("Me:"+ me);
-  console.log("s:"+ s);
+  console.log("Me:" + me);
+  console.log("s:" + s);
   const msgEl = renderMessage({
     name: sender,
     text: content,
@@ -132,7 +129,7 @@ async function sendMessage(text) {
       ui.input.value = "";
       ui.input.rows = 1;
       ui.sendBtn.disabled = true;
-      const res = await fetch("api/auth/accounts", {
+      const res = await fetch("api/authentications/accounts", {
         credentials: "include",
       });
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
@@ -145,7 +142,7 @@ async function sendMessage(text) {
         body: JSON.stringify({
           sender: user.id,
           content: text,
-          status: user.status,
+          status: user.status.toLowerCase(),
           timestamp: date,
         }),
       });

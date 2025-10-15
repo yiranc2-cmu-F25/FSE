@@ -29,9 +29,11 @@ router.get("/members", authView, (req, res) => {
     res.render("memberList/membersLanding", { username: req.username || "" });
 });
 
+/*
 router.get("/profiles", authView, (req, res) => {
     res.render("memberProfile/memberFunction", { username: req.username || "" });
 });
+*/
 
 //TODO: Add parameter and state to this route, otherwise it will wrongly kick user offline 
 router.get("/status", authView, (req, res) => {

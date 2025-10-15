@@ -1,5 +1,6 @@
 import { getInitialsSafe, getAvatarColor } from "../utils/avatars.js";
 import { getSocket } from "/js/utils/socket.js";
+import {statusUpdate} from "../utils/statusPageUpdate.js";
 
 // ---------- DOM refs ----------
 const onlineUL = document.querySelector("#online-members-list ul");
@@ -105,11 +106,15 @@ async function loadMe() {
   const name = (me.username || "").trim();
   const initials = getInitialsSafe(name);
   const color = getAvatarColor(name);
+  const status = me.status ?? "UNDEFINED";
 
   const avatar = document.getElementById("header-avatar");
   const avatarInit = document.getElementById("header-avatar-initials");
   const nameEl = document.getElementById("header-name");
+  const statustext = document.getElementById("header-status-text");
+  statusUpdate(status);
 
+  if (statustext) statustext.textContent = status;
   if (avatar) avatar.style.backgroundColor = color;
   if (avatarInit) avatarInit.textContent = initials;
   if (nameEl) nameEl.textContent = name || "Guest";

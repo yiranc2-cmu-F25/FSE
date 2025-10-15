@@ -15,7 +15,7 @@ if (btn) {
 }
 async function Logout() {
   try {
-    const res = await fetch("/api/auth/logout", {
+    const res = await fetch("/api/authentications/logout", {
       method: "POST",
       credentials: "include"
     });
@@ -45,7 +45,7 @@ if (editBtn) {
 
 
 async function loadMeAndRender() {
-  const res = await fetch("/api/auth/accounts", {
+  const res = await fetch("/api/authentications/accounts", {
     credentials: "include",
     headers: { "Accept": "application/json" },
   });
@@ -72,6 +72,6 @@ async function loadMeAndRender() {
 
 document.addEventListener("DOMContentLoaded", () => {
   loadMeAndRender().catch(err => {
-    console.error("[profile] load /api/auth/me failed:", err);
+    console.error("[profile] load /api/authentications/me failed:", err);
   });
 });

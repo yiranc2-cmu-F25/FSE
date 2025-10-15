@@ -1,3 +1,30 @@
+import {loadInfo} from "../utils/loadinfo.js";
+import { getInitialsSafe,getAvatarColor } from "../utils/avatars.js";
+import { statusUpdate } from "../utils/statusPageUpdate.js";
+
+document.addEventListener("DOMContentLoaded", async () => {
+  try {
+    const user = await loadInfo();
+    console.log("Loaded user info:", user);
+    const name = (user.username || "").trim();
+
+    const displayInput = document.querySelector('input[name="displayName"]');
+    const avatarInit = document.getElementById("avatar-initials");
+    const avatarColor = document.getElementById("avatar");
+    const statusText = document.getElementById("status-text");
+    statusUpdate(user.status);
+
+    if (statusText) statusText.textContent = user.status ?? "UNDEFINED";
+    if (avatarColor) avatarColor.style.backgroundColor = getAvatarColor(name);;
+    if (avatarInit) avatarInit.textContent = getInitialsSafe(name);
+    if (displayInput) displayInput.value = name || "Guest";
+  } catch (err) {
+    console.error("Failed to load user info:", err);
+  }
+});
+
+
+
 document.addEventListener("DOMContentLoaded", () => {
   const body = document.body;
   const openBtn = document.getElementById("open-profile-modal"); // kebab button
@@ -38,7 +65,7 @@ document.addEventListener("DOMContentLoaded", () => {
     logoutBtn.textContent = "Logging out…";
 
     try {
-      const res = await fetch("/api/auth/logout", {
+      const res = await fetch("/api/authentications/logout", {
         method: "POST",
         credentials: "include",
         headers: { Accept: "application/json" },
@@ -57,5 +84,14 @@ document.addEventListener("DOMContentLoaded", () => {
       logoutBtn.disabled = false;
       logoutBtn.textContent = originalText;
     }
+  });
+});
+
+
+//click esn status link to go to status page
+document.addEventListener("DOMContentLoaded", () => {
+  const statusButton = document.getElementById("status-button");
+  statusButton?.addEventListener("click", () => {
+    window.location.href = "/status";
   });
 });

@@ -15,7 +15,7 @@
           class="grid h-9 w-9 place-content-center rounded-xl bg-white shadow-sm ring-1 ring-stone-200"
           aria-label="Back"
         >
-          <a href="/profiles">
+          <a href="/members">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               class="h-5 w-5 text-stone-600"
@@ -33,7 +33,7 @@
           </a>
         </button>
 
-        <h1 class="text-2xl font-semibold tracking-wide">Edit Profile</h1>
+        <h1 class="text-2xl font-semibold tracking-wide">Update ESN Status</h1>
 
         <!-- spacer to balance the back button -->
         <span class="h-10 w-10"></span>
@@ -43,9 +43,11 @@
       <section class="mt-8 text-center">
         <div class="inline-grid place-items-center">
           <div
-            class="grid h-32 w-32 place-content-center rounded-full bg-[#3B6A95] text-4xl font-extrabold text-white shadow-md ring-4 ring-white"
+            id="avatar"
+            class="grid h-32 w-32 place-content-center rounded-full text-4xl font-extrabold text-white shadow-md ring-4 ring-white"
+            style="background-color: #3B6A95"
           >
-            JB
+            <span id ="avatar-initials"></span>
           </div>
         </div>
       </section>
@@ -59,14 +61,12 @@
             <input
               type="text"
               name="displayName"
-              value="James Bond"
               class="w-full rounded-2xl bg-white px-4 py-4 text-stone-800 placeholder-stone-400 focus:outline-none"
               placeholder="Enter your name"
               disabled
             />
           </div>
         </div>
-
         <!-- ESN Status card -->
         <div id="esn-status" data-default="UNDEFINED">
           <h2 class="text-lg font-semibold">ESN Status</h2>
@@ -132,7 +132,6 @@
             </ul>
           </div>
         </div>
-
         <!-- Save button -->
         <div class="pt-2">
           <button
@@ -143,7 +142,40 @@
           </button>
         </div>
       </form>
+      <div
+        id="status-modal"
+        class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 backdrop-blur-sm"
+        aria-hidden="true"
+      >
+        <div
+          class="rounded-3xl bg-white p-8 shadow-2xl text-center w-80 animate-fade-in"
+        >
+          <div
+            class="mx-auto mb-6 flex h-28 w-28 items-center justify-center rounded-full bg-white"
+          >
+            <img
+              src="/images/icons/statusnotification/status-notification-logo.png"
+              alt="ESN shared"
+              class="w-24 h-24 object-contain"
+            />
+          </div>
+
+          <h2 class="text-xl font-bold text-stone-800 mb-2">
+            ESN Status Shared!
+          </h2>
+          <p class="text-stone-500 text-sm mb-6">
+            Keep your ESN status fresh so everyone can support each other! 🙌
+          </p>
+
+          <button
+            id="status-modal-close"
+            class="w-full rounded-2xl bg-[#D8897E] px-6 py-3 text-white font-semibold hover:bg-[#D65841] transition"
+          >
+            Great!
+          </button>
+        </div>
+      </div>
     </main>
-    <script src="/js/userProfile/statusUpdate.js"></script>
+    <script type="module" src="/js/userProfile/statusUpdate.js"></script>
   </body>
 </html>
