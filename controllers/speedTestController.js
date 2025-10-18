@@ -1,5 +1,6 @@
 import { Server } from "socket.io";
 import { v4 as uuid } from "uuid";
+import { getLimit, getPage } from "./../utils/speedTest/pagination.js";
 
 // HTTP ERROR Codes
 // 409 Conflict: Conflict with current server state
@@ -8,7 +9,7 @@ const speedTestStateEnum = {
   IDLE: "IDLE",
   POSTING: "POSTING",
   GETTING: "GETTING",
-  STOPPING: "STOPPING",
+  STOPING: "STOPPING",
 };
 export const speedTestState = {
   active: false,
@@ -41,15 +42,16 @@ const updateSpeedTestStateToIdle = () => {
 export const requireSpeedTest = function (req, res) {
   const speedTestId = req.header("speed-test-id");
   if (!speedTestId || speedTestId !== speedTestState.speedTestId) {
-    return res.status(404).json({ error: "Speed test not found" });
+    res.status(404).json({ error: "Speed test not found" });
+    return null;
   }
   return speedTestId;
 };
-
 // POST to /speed-test/start to start a new speed test
 export async function startSpeedTest(req, res) {
   // Only one speed test at a time; Return conflict if already active
   if (speedTestState.active) {
+    console.log(speedTestState);
     return res.status(409).json({
       errorMessage: "Speed test already in progress",
       errorStatus: "SPEED_TEST_IN_PROGRESS",
@@ -89,11 +91,12 @@ export async function postToSpeedTest(req, res) {
   const speedTestId = requireSpeedTest(req, res);
   if (!speedTestId) return;
   if (speedTestState.state !== "POSTING") {
-    return res.status(409).json({
+    res.status(409).json({
       errorMessage: "Try to post message while Speed test not in POST phase",
       errorStatus: "SPEED_TEST_PHASE_ERROR",
       errorCode: 409,
     });
+    return null;
   }
   const { payload } = req.body ?? {};
   if (typeof payload !== "string" || payload.length != 20) {
@@ -131,11 +134,8 @@ export async function getFromSpeedTest(req, res) {
     });
   }
 
-  const page = Math.max(1, parseInt(String(req.query.page ?? "1"), 10));
-  const limit = Math.min(
-    200,
-    Math.max(1, parseInt(String(req.query.limit ?? "50"), 10)),
-  );
+  const page = getPage(req.query);
+  const limit = getLimit(req.query);
   // TODO: read from test db in step 3
   speedTestState.getCount += 1;
   return res.status(200).json({
@@ -151,21 +151,25 @@ export async function getFromSpeedTest(req, res) {
 export async function switchTestPhase(req, res) {
   const speedTestId = requireSpeedTest(req, res);
   if (!speedTestId) return;
-  if (perfState.state !== speedTestStateEnum.POSTING)
+  if (speedTestState.state !== speedTestStateEnum.POSTING)
     return res.status(409).json({
       errorMessage: "Try to switch phase while Speed test not in POST phase",
       errorStatus: "SPEED_TEST_PHASE_ERROR",
       errorCode: 409,
     });
 
-  perfState.state = speedTestStateEnum.GETTING;
-  return res.status(200).json({ ok: true, status: perfState.state });
+  speedTestState.state = speedTestStateEnum.GETTING;
+  return res.status(200).json({
+    ok: true,
+    status: speedTestState.state,
+    message: "Switched to GET phase",
+  });
 }
 // POST to /speedtest/stop to stop a speed test
 export async function stopSpeedTest(req, res) {
   const speedTestId = requireSpeedTest(req, res);
   if (!speedTestId) return;
-
+  console.log("Turning down speed test...");
   speedTestState.state = speedTestStateEnum.STOPPING;
   // TODO: drop db collection in step 3
   const summary = writeSpeedTestSummary(speedTestState);
