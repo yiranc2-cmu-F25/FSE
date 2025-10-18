@@ -9,6 +9,7 @@ import { dirname } from "path";
 import authRoutes from "./routes/authRoutes.js";
 import pageRoutes from "./routes/pageRoutes.js";
 import publicMessageRoutes from "./routes/messageRoutes.js";
+import speedTestRoutes from "./routes/speedTestRoutes.js";
 import Socket from "./Middleware/Socket.js";
 import http from "http";
 import { Server } from "socket.io";
@@ -61,6 +62,8 @@ app.use("/api/authentications", authRoutes); // User Login/logout; Account Info 
 app.use("/", pageRoutes); // All routes for separate pages e.g. public chat wall
 app.use("/api/messages/", publicMessageRoutes); // Get & Post Public Messages
 // app.use("/api/privateMessages/", privateMessageRoutes);
+
+app.use("/speed-test", speedTestRoutes); // Speed Test Routes
 
 server.listen(process.env.PORT || 3000, () => {
   console.log(
