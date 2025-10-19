@@ -32,7 +32,7 @@ export async function sendPublicMessage(req, res) {
     }
     const newMessage = await req.app.locals.msgDao.create({
       sender,
-      receiver: "public",
+      receiver: null,
       content: content.trim(),
       status,
       timestamp,

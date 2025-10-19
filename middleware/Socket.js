@@ -100,6 +100,13 @@ class Socket {
     this.io.except(room).emit("message", { ...base, isOwn: false });
   }
 
+  emitMessageFromAndTo(senderUsername, receiverUsername, base) {
+    const senderRoom = this.roomFor(senderUsername);
+    const receiverRoom = this.roomFor(receiverUsername);
+    this.io.to(senderRoom).emit("message", { ...base, isOwn: true });
+    this.io.to(receiverRoom).emit("message", { ...base, isOwn: false });
+  }
+
   broadcastUserJoin(username) {
     this.io.emit("user_join", { username, timestamp: new Date() });
   }

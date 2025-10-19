@@ -1,29 +1,84 @@
-export async function getPrivateMessages(req, res, next) {
-  // Req parameters:
-  // Sender, Receiver (UID)
-  // Res:
-  // A list of private Messages
+export async function getPrivateMessages(req, res) {
+    // Req parameters:
+    // Sender, Receiver (UID)
+    // Res:
+    // A list of private Messages
+    const { sender, receiver } = req.body;
+    try {
+        const messages = await req.app.locals.msgDao.getPrivateMsg(
+            sender,
+            receiver,
+        );
+        const data = messages.map((msg) => {
+            let isOwn =
+                (msg.sender.username || "") ===
+                (req.username.toLowerCase() || "");
+            return {
+                content: msg.content,
+                timestamp: msg.timestamp,
+                status: msg.status,
+                isOwn: isOwn,
+            };
+        });
+
+        return res.status(200).json(data);
+    } catch (err) {
+        console.error("Error fetching private messages:", err);
+        return res
+            .status(500)
+            .json({ status: "error", message: "Server error" });
+    }
 }
 
-export async function sendPrivateMessage(req, res, next) {
-  // Req parameters:
-  // Sender, Receiver (UID)
-  // Message Text, Timestamp
-  // Sender Status (retrieved from user)
-  // Res:
-  // void with Status code
-  // 201: "Message sent successfully"
-  // 500: "Internal server error: Unable to create new private message to channel."
-}
+export async function sendPrivateMessage(req, res) {
+    // Req parameters:
+    // Sender, Receiver (UID)
+    // Message Text, Timestamp
+    // Sender Status (retrieved from user)
+    // Res:
+    // void with Status code
+    // 201: "Message sent successfully"
+    // 500: "Internal server error: Unable to create new private message to channel."
+    try {
+        const { sender, receiver, content, status, timestamp } = req.body;
+        const newMessage = await req.app.locals.msgDao.create({
+            sender,
+            receiver,
+            content: content.trim(),
+            status,
+            timestamp,
+        });
 
-// TODO: push new msg to receiver via socket.io
-export async function sendNewPrivateMsgNotification(req, res, next) {
-  // Req parameters:
-  // Sender, Receiver (UID)
-  // Message text (for 'elect to view'), Timestamp (for 'You received a msg XXX minutes ago')
-  // Sender status (available alongside msg content when viewed)
-  // Res:
-  // Sender, Receiver (UID)
-  // Message text (for 'elect to view'), Timestamp (for 'You received a msg XXX minutes ago')
-  // Sender status (available alongside msg content when viewed)
+        const senderUsername =
+            await req.app.locals.userDao.getUsernameById(sender);
+        const receiverUsername =
+            await req.app.locals.userDao.getUsernameById(receiver);
+        if (!username) {
+            return res
+                .status(500)
+                .json({ status: "error", message: "Sender not found" });
+        }
+
+        const socketInstance = req.app.get("socketInstance");
+        if (!socketInstance) {
+            return res.status(500).json({
+                status: "error",
+                message: "Socket instance not found",
+            });
+        }
+        socketInstance.emitMessageFromAndTo(senderUsername, receiverUsername, {
+            sender: senderUsername,
+            receiver: receiverUsername,
+            content: newMessage.content,
+            timestamp: newMessage.timestamp,
+            status: newMessage.status,
+        });
+
+        return res.status(201).json({ message: "Message sent successfully" });
+    } catch (err) {
+        console.error("Error sending private message:", err);
+        return res
+            .status(500)
+            .json({ status: "error", message: "Server error" });
+    }
 }

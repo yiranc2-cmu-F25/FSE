@@ -19,8 +19,8 @@ export class MsgDao {
         });
     }
     
-    async getPrivateMsg(receiver) {
-        const docs = await this.MessageModel.find({ receiver }).sort({ timestamp: 1 });
+    async getPrivateMsg(sender, receiver) {
+        const docs = await this.MessageModel.find({ sender, receiver }).sort({ timestamp: 1 }).populate("sender", "username").populate("receiver", "username").lean();
         return docs.map(doc => new Message({
             id: doc._id,
             sender: doc.sender,
@@ -32,7 +32,7 @@ export class MsgDao {
     }
 
     async getPublicMsg() {
-        const docs = await this.MessageModel.find({ receiver: "public" }).sort({ timestamp: 1 }).populate("sender", "username").lean();
+        const docs = await this.MessageModel.find({ receiver: null }).sort({ timestamp: 1 }).populate("sender", "username").lean();
         return docs.map(doc => new Message({
             id: doc._id,
             sender: doc.sender,

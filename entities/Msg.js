@@ -9,11 +9,11 @@ class Msg {
   }
 
   isPublic() {
-    return this.receiver === "public";
+    return this.receiver === null;
   }
 
   isPrivate() {
-    return this.receiver !== "public";
+    return this.receiver !== null;
   }
 }
 
