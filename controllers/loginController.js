@@ -1,74 +1,72 @@
 import { setAuthCookie, clearAuthCookie } from "../middleware/JWT.js";
-import { getOnlineOfflineMembers } from "../entities/memberList.js";
+import { getOnlineOfflineMembers } from "../entities/MemberList.js";
 import User from "../entities/User.js";
 import dotenv from "dotenv";
 dotenv.config();
 
-
 const EXPIRATION_TIME = process.env.EXPIRATION_TIME;
 
 export async function login(req, res) {
-	try {
-		const { username, password } = req.body;
+  try {
+    const { username, password } = req.body;
 
-		const user = await User.findByUsername(username);
-		// const user = await req.app.locals.userDao.findByUsername(username);
+    const user = await User.findByUsername(username);
+    // const user = await req.app.locals.userDao.findByUsername(username);
 
-		if (!user) return res.status(404).json({ error: "User not found" });
+    if (!user) return res.status(404).json({ error: "User not found" });
 
-		if (!(await User.validatePassword(username,password))) {
-		// if (!(await req.app.locals.userDao.validatePassword(username,password))) {
-			return res.status(401).json({ error: "Invalid password" });
-		}
+    if (!(await User.validatePassword(username, password))) {
+      // if (!(await req.app.locals.userDao.validatePassword(username,password))) {
+      return res.status(401).json({ error: "Invalid password" });
+    }
 
-		setAuthCookie(res, username, EXPIRATION_TIME);
-		return res.json({ username: username, ok : true});
-	} catch (err) {
-		console.error("Login error:", err);
-		return res.status(500).json({ status: "error", message: "Server error" });
-	}
+    setAuthCookie(res, username, EXPIRATION_TIME);
+    return res.json({ username: username, ok: true });
+  } catch (err) {
+    console.error("Login error:", err);
+    return res.status(500).json({ status: "error", message: "Server error" });
+  }
 }
 
 export async function getMe(req, res) {
-	try {
-		const user = await User.findByUsername(req.username);
-		// const user = await req.app.locals.userDao.findByUsername(req.username);
+  try {
+    const user = await User.findByUsername(req.username);
+    // const user = await req.app.locals.userDao.findByUsername(req.username);
 
-		if (!user) return res.status(404).json({ error: "User not found" });
+    if (!user) return res.status(404).json({ error: "User not found" });
 
-		res.json({
-			id: user.id,
-			username: user.username,
-			status: user.sharedstatus ?? "undefined",
-			role: user.role,
-			image:
-			"images/photos/user-profiles/user1-james.png",
-		});
-	} catch (err) {
-		console.error("Get user profile error:", err);
-		return res.status(500).json({ status: "error", message: "Server error" });
-	}
+    res.json({
+      id: user.id,
+      username: user.username,
+      status: user.sharedstatus ?? "undefined",
+      role: user.role,
+      image: "images/photos/user-profiles/user1-james.png",
+    });
+  } catch (err) {
+    console.error("Get user profile error:", err);
+    return res.status(500).json({ status: "error", message: "Server error" });
+  }
 }
 
 export async function logout(req, res) {
-	try {
-		clearAuthCookie(res);
-		const socketInstance = req.app.get("socketInstance");
-    	const username = req.username;
-    	socketInstance.disconnectUser(username);
-		return res.status(204).end();
-	} catch (err) {
-		console.error("Logout error:", err);
-		return res.status(500).json({ status: "error", message: "Server error" });
-	}
+  try {
+    clearAuthCookie(res);
+    const socketInstance = req.app.get("socketInstance");
+    const username = req.username;
+    socketInstance.disconnectUser(username);
+    return res.status(204).end();
+  } catch (err) {
+    console.error("Logout error:", err);
+    return res.status(500).json({ status: "error", message: "Server error" });
+  }
 }
 
 export async function listMembers(req, res) {
-	try {
-		const result = await getOnlineOfflineMembers(req.app);
-		return res.json(result);
-	} catch (err) {
-		console.error("listMembers error:", err);
-		return res.status(500).json({ status: "error" });
-	}
+  try {
+    const result = await getOnlineOfflineMembers(req.app);
+    return res.json(result);
+  } catch (err) {
+    console.error("listMembers error:", err);
+    return res.status(500).json({ status: "error" });
+  }
 }

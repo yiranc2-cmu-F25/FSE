@@ -18,7 +18,6 @@ const MessageModel = makeMsgModel(conn);
 // 2. Inject models into DAOs for persistence operations
 userDac.DAO = new UserDao({ UserModel });
 msgDac.DAO = new MsgDao({ MessageModel });
-
 // 3. Create HTTP server and bind Socket.IO
 const server = http.createServer(app);
 const io = new Server(server, {
