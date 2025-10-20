@@ -96,15 +96,15 @@ class Socket {
   }
   emitMessageFrom(authorUsername, base) {
     const room = this.roomFor(authorUsername);
-    this.io.to(room).emit("message", { ...base, isOwn: true });
-    this.io.except(room).emit("message", { ...base, isOwn: false });
+    this.io.to(room).emit("public_message", { ...base, isOwn: true });
+    this.io.except(room).emit("public_message", { ...base, isOwn: false });
   }
 
   emitMessageFromAndTo(senderUsername, receiverUsername, base) {
     const senderRoom = this.roomFor(senderUsername);
     const receiverRoom = this.roomFor(receiverUsername);
-    this.io.to(senderRoom).emit("message", { ...base, isOwn: true });
-    this.io.to(receiverRoom).emit("message", { ...base, isOwn: false });
+    this.io.to(senderRoom).emit("private_message", { ...base, isOwn: true });
+    this.io.to(receiverRoom).emit("private_message", { ...base, isOwn: false });
   }
 
   broadcastUserJoin(username) {

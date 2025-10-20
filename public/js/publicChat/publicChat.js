@@ -40,7 +40,7 @@ const socket = getSocket();
 //     status : msg.status
 // }
 
-socket.on("message", (message) => {
+socket.on("public_message", (message) => {
   const { sender, content, status, timestamp, isOwn } = message;
   //   const isOwn = false;
   const s = (message?.sender || "").toLowerCase();
@@ -169,7 +169,24 @@ ui.input.addEventListener("input", () => {
   ui.messageList.scrollTop = ui.messageList.scrollHeight;
 });
 
+let isImeActive = false;
+
+ui.input.addEventListener("compositionstart", () => {
+  isImeActive = true;
+});
+
+ui.input.addEventListener("compositionend", () => {
+  // Delay so the keydown that comes right after we commit doesn't read false immediately.
+  setTimeout(() => {
+    isImeActive = false;
+  });
+});
+
 ui.input.addEventListener("keydown", (e) => {
+  if (isImeActive || e.key === "Process" || e.keyCode === 229) {
+    return;
+  }
+
   if (e.key === "Enter" && !e.shiftKey) {
     e.preventDefault();
     sendMessage(ui.input.value);
