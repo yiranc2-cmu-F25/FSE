@@ -1,6 +1,6 @@
 //displayname, avatar, status
 //loadinfo from backend
-import {loadInfo} from "../utils/loadinfo.js";
+import {loadInfo} from "../utils/loadInfo.js";
 import { getInitialsSafe,getAvatarColor } from "../utils/avatars.js";
 
 document.addEventListener("DOMContentLoaded", async () => {
