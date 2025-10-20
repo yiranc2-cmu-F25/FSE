@@ -1,5 +1,6 @@
 import { setAuthCookie, clearAuthCookie } from "../middleware/JWT.js";
-import { getOnlineOfflineMembers } from "../entities/memebrList.js";
+import { getOnlineOfflineMembers } from "../entities/memberList.js";
+import User from "../entities/User.js";
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -10,11 +11,13 @@ export async function login(req, res) {
 	try {
 		const { username, password } = req.body;
 
-		const user = await req.app.locals.userDao.findByUsername(username);
+		const user = await User.findByUsername(username);
+		// const user = await req.app.locals.userDao.findByUsername(username);
 
 		if (!user) return res.status(404).json({ error: "User not found" });
 
-		if (!(await req.app.locals.userDao.validatePassword(username,password))) {
+		if (!(await User.validatePassword(username,password))) {
+		// if (!(await req.app.locals.userDao.validatePassword(username,password))) {
 			return res.status(401).json({ error: "Invalid password" });
 		}
 
@@ -28,7 +31,8 @@ export async function login(req, res) {
 
 export async function getMe(req, res) {
 	try {
-		const user = await req.app.locals.userDao.findByUsername(req.username);
+		const user = await User.findByUsername(req.username);
+		// const user = await req.app.locals.userDao.findByUsername(req.username);
 
 		if (!user) return res.status(404).json({ error: "User not found" });
 

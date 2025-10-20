@@ -10,9 +10,9 @@ export function makeMsgModel(conn) {
             required: true
         },
         receiver: {
-            type: String,
-            required: true,
-            default: "public",
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+            default: null
         },
         timestamp: { 
             type: Date,

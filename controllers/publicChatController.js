@@ -1,6 +1,10 @@
+import User from "../entities/User.js";
+import Msg from "../entities/Msg.js";
+
 export async function getPublicMessages(req, res) {
   try {
-    const messages = await req.app.locals.msgDao.getPublicMsg();
+    const messages = await Msg.getPublicMsg();
+    // const messages = await req.app.locals.msgDao.getPublicMsg();
     const data = messages.map((msg) => {
       let isOwn =
         (msg.sender.username || "") === (req.username.toLowerCase() || "");
@@ -30,17 +34,18 @@ export async function sendPublicMessage(req, res) {
     if (!sender || !content || !status) {
       return res.status(400).json({ error: "Missing required fields" });
     }
-    const newMessage = await req.app.locals.msgDao.create({
-      sender,
-      receiver: "public",
-      content: content.trim(),
-      status,
-      timestamp,
-    });
+    const msg = new Msg({ sender, receiver: null, content: content.trim(), status, timestamp });
+    await msg.create();
+    // await req.app.locals.msgDao.create({
+    //   sender,
+    //   receiver: null,
+    //   content: content.trim(),
+    //   status,
+    //   timestamp,
+    // });
 
-    console.log("New message created:", newMessage);
-
-    const username = await req.app.locals.userDao.getUsernameById(sender);
+    const username = await User.getUsernameById(sender);
+    // const username = await req.app.locals.userDao.getUsernameById(sender);
     if (!username) {
       return res.status(404).json({ error: "Sender not found" });
     }
@@ -53,9 +58,9 @@ export async function sendPublicMessage(req, res) {
     }
     socketInstance.emitMessageFrom(username, {
       sender: username,
-      content: newMessage.content,
-      timestamp: newMessage.timestamp,
-      status: newMessage.status
+      content: content,
+      timestamp: timestamp,
+      status: status
     });
 
     return res.status(201).json({ message: "Message sent successfully" });
