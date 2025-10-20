@@ -2,7 +2,7 @@ import app from "./app.js";
 import http from "http";
 import { Server } from "socket.io";
 import mongoose from "mongoose";
-import Socket from "./Middleware/Socket.js";
+import Socket from "./middleware/Socket.js";
 
 import { makeUserModel } from "./db/UserSchema.js";
 import { makeMsgModel } from "./db/MsgSchema.js";
