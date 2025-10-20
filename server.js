@@ -11,14 +11,15 @@ import { MsgDao } from "./daos/MsgDao.js";
 import userDac from "./dacs/userDac.js";
 import msgDac from "./dacs/msgDac.js";
 
+// 1. Connect to MongoDB
 const conn = await mongoose.createConnection(process.env.MONGO_URI).asPromise();
 const UserModel = makeUserModel(conn);
 const MessageModel = makeMsgModel(conn);
+// 2. Inject models into DAOs for persistence operations
 userDac.DAO = new UserDao({ UserModel });
 msgDac.DAO = new MsgDao({ MessageModel });
 
-
-//set up socket.io
+// 3. Create HTTP server and bind Socket.IO
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
@@ -28,6 +29,8 @@ const io = new Server(server, {
 });
 const socketInstance = new Socket(io);
 
+// 4. Expose Socket.IO to routes/middleware
+// set up socket.io instance in app
 app.set("io", io);
 app.set("socketInstance", socketInstance);
 
