@@ -5,7 +5,6 @@ import {
 } from "../controllers/publicChatController.js";
 import {
   getPrivateMessages,
-  sendNewPrivateMsgNotification,
   sendPrivateMessage,
 } from "../controllers/privateChatController.js";
 import { auth } from "../middleware/JWT.js";
