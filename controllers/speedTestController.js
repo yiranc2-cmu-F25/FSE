@@ -1,6 +1,13 @@
 import { Server } from "socket.io";
 import { v4 as uuid } from "uuid";
 import { getLimit, getPage } from "./../utils/speedTest/pagination.js";
+import {
+  createSpeedTestCollection,
+  dropSpeedTestCollection,
+  insertSpeedTestMsg,
+  readSpeedTestMessages,
+} from "./../data/speedTestTempDB.js";
+import { timeAsyncFunction } from "./../utils/speedTest/timer.js";
 
 // HTTP ERROR Codes
 // 409 Conflict: Conflict with current server state
@@ -78,11 +85,17 @@ export async function startSpeedTest(req, res) {
   const speedTestId = uuid();
   // Update global speed test state
   updateSpeedTestStateToStart(speedTestId, durationSec, intervalMs);
+  // create (or reset) the per-run collection
+  const { serverElapsedMs } = await timeAsyncFunction(
+    createSpeedTestCollection,
+  );
+
   return res.status(201).json({
     speedTestId,
     ESNTestStatus: speedTestState.state,
     message:
       "Speed Test Started Successfully. Use speed-test-id header for subsequent requests.",
+    creationTime: serverElapsedMs,
   });
 }
 
@@ -107,6 +120,10 @@ export async function postToSpeedTest(req, res) {
       errorCode: 422,
     });
   }
+  const { serverElapsedMs } = await timeAsyncFunction(insertSpeedTestMsg)(
+    speedTestId,
+    payload,
+  );
   speedTestState.postCount += 1;
   if (speedTestState.postCount > POSTLIMIT) {
     speedTestState.state = "STOPPING";
@@ -117,7 +134,7 @@ export async function postToSpeedTest(req, res) {
       limit: POSTLIMIT,
     });
   }
-  return res.status(200).json({ ok: true, severElapsedMs: 0 });
+  return res.status(200).json({ ok: true, serverElapsedMs });
 }
 
 // GET one msg from Server during POST phase
@@ -137,13 +154,16 @@ export async function getFromSpeedTest(req, res) {
   const page = getPage(req.query);
   const limit = getLimit(req.query);
   // TODO: read from test db in step 3
+  const { fnOutcome, serverElapsedMs } = await timeAsyncFunction(
+    readSpeedTestMessages,
+  )(speedTestId, page, limit);
   speedTestState.getCount += 1;
   return res.status(200).json({
     ok: true,
-    items: [],
+    ...fnOutcome, // {fecthedItems, docTotal, hasNext}
     page,
     limit,
-    serverElapsedMs: 0,
+    serverElapsedMs,
   });
 }
 
@@ -172,6 +192,7 @@ export async function stopSpeedTest(req, res) {
   console.log("Turning down speed test...");
   speedTestState.state = speedTestStateEnum.STOPPING;
   // TODO: drop db collection in step 3
+  await timeAsyncFunction(dropSpeedTestCollection)(speedTestId);
   const summary = writeSpeedTestSummary(speedTestState);
   updateSpeedTestStateToIdle();
 
