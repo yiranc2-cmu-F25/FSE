@@ -15,4 +15,9 @@ router.get("/messages", getFromSpeedTest);
 router.post("/next-phase", switchTestPhase);
 router.post("/stop", stopSpeedTest);
 router.get("/status", getSpeedTestStatus);
+
+router.get("/", (req, res) => {
+  res.render("speedTest/speedtest");
+});
+
 export default router;
