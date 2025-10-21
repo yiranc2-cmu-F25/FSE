@@ -62,7 +62,7 @@ app.use((req, res) => {
 });
 // Error Handling using err object
 app.use((err, req, res, next) => {
-  const status = err.status || error.statusCode || 500;
+  const status = err.status || err.statusCode || 500;
   const msg = err.message || "Internal Server Error";
 
   console.error(`Error Handling: ${err}`);
