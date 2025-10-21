@@ -94,4 +94,8 @@ document.addEventListener("DOMContentLoaded", () => {
   statusButton?.addEventListener("click", () => {
     window.location.href = "/status";
   });
+  const speedTestButton = document.getElementById("speed-test-button");
+  speedTestButton?.addEventListener("click", () => {
+    window.location.href = "/speed-test";
+  });
 });

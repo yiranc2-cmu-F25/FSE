@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>ESN Speed Test</title>
+        <%- include('../partials/head') %>
+    </head>
+
+    <body class="min-h-screen bg-white">
+        <div class="relative mx-auto flex h-screen w-full max-w-md flex-col items-center justify-center">
+            <!-- Header -->
+            <div class="absolute top-[5%] flex w-11/12 items-center justify-start gap-1">
+                <a href="/members">
+                    <img
+                        src="/images/icons/illustrations/icon-left.svg"
+                        alt="Back"
+                        class="w-10"
+                    />
+                </a>
+            </div>
+        
+            <p class="font-poppins font-semibold absolute top-[5%] text-center text-xl leading-normal text-black">
+                ESN Speed Test
+            </p>
+
+            <!-- Illustration -->
+            <div class="absolute top-[12%] flex w-full items-center justify-center px-2">
+                <img
+                    src="/images/esn-speed-test/undraw-graphics/esn-speed-check.svg"
+                    alt="Image"
+                    class="h-40"/>
+            </div>
+
+            <p class="font-poppins absolute top-[35%] text-center text-sm leading-normal text-gray-500">
+                As an administrator, <br>
+                you can check how fast the ESN system responds. <br>
+                Enter how long you'd like the test to run, <br>
+                and how often requests should be sent. <br>
+                Tap Initiate Performance Test to begin.
+            </p>
+
+            <!-- Duration -->
+            <div class="absolute top-[51%] w-5/6 px-1">
+                <label class="block text-left text-sm font-medium text-gray-700 mb-1">
+                    Desired Total Duration
+                </label>
+                <div class="flex h-12 items-center rounded-full bg-white px-4 shadow-md">
+                    <input
+                        id="durationSeconds"
+                        type="number"
+                        name="durationSeconds"
+                        min="1"
+                        step="1"
+                        required
+                        placeholder="Enter desired total duration in seconds"
+                        class="font-poppins w-full border-none text-sm text-gray-700 outline-none"
+                    />
+                </div>
+            </div>
+
+            <!-- Interval -->
+            <div class="absolute top-[63%] w-5/6 px-1">
+                <label class="block text-left text-sm font-medium text-gray-700 mb-1">
+                    Interval Between Requests
+                </label>
+                <div class="flex h-12 items-center rounded-full bg-white px-4 shadow-md">
+                    <input
+                        id="intervalMs"
+                        type="number"
+                        name="intervalMs"
+                        min="1"
+                        step="1"
+                        required
+                        placeholder="Enter desired interval in milliseconds"
+                        class="font-poppins w-full border-none text-sm text-gray-700 outline-none"
+                    />
+                </div>
+            </div>
+
+            <p class="font-poppins absolute top-[75%] text-center text-xs leading-normal text-gray-500">
+                *During speed test, all normal operations will be suspended.
+            </p>
+
+            <!-- Start Test -->
+            <button
+                id="startTestBtn"
+                class="font-poppins font-semibold absolute top-[78%] h-12 w-5/6 bg-theme text-lg text-white"
+            >
+                INITIATE PERFORMANCE TEST
+            </button>
+
+            <!-- Modal overlay (hidden by default) -->
+            <div id="runningModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/30 backdrop-blur-sm">
+
+                <!-- Modal card -->
+                <div class="w-[340px] sm:w-[420px] rounded-2xl shadow-2xl overflow-hidden bg-white">
+
+                    <!-- Top: gradient + illustration -->
+                    <div class="relative h-44 sm:h-40 bg-gradient-to-b from-sky-300 to-blue-600">
+                        <img 
+                            src="/images/esn-speed-test/in-test-graphics/in-progress/speedTestModal.png"
+                            alt="ESN illustration"
+                            class="absolute inset-0 w-full h-full object-cover"
+                        />
+                        <!-- Optional soft vignette for text contrast on some images -->
+                        <div class="absolute inset-0 bg-gradient-to-b from-white/0 via-transparent to-blue-600/0"></div>
+                    </div>
+
+                    <!-- Bottom: content area -->
+                    <div class="px-6 py-5 text-center">
+                        <p class="mt-4 text-sm font-semibold text-gray-900">Remaining Test Duration</p>
+                        <p class="text-gray-700 -mt-1"><span id="remaining">378</span> seconds</p>
+
+                        <p class="mt-4 text-sm font-semibold text-gray-900">Test Request Interval</p>
+                        <p class="text-gray-700 -mt-1"><span id="interval">300</span> milliseconds</p>
+
+                        <p class="mt-3 text-xs text-gray-400">
+                            Please wait for ESN speed test to end. We will present a test report when finished.
+                        </p>
+
+                        <!-- Big spinner -->
+                        <div class="mt-5 w-12 h-12 mx-auto border-4 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <script src="/js/speedTest/speedTest.js"></script>
+    </body>
+</html>
