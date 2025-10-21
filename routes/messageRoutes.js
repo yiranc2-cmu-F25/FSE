@@ -53,7 +53,7 @@ router.post("/public", auth, sendPublicMessage);
 // TODO: req.body || query parameter
 /**
  * @openapi
- * /api/messages/private:
+ * /api/messages/private/:peerId:
  *   get:
  *     tags: [Messages]
  *     summary: List latest private messages between two users
@@ -69,7 +69,8 @@ router.post("/public", auth, sendPublicMessage);
  *               items:
  *                 $ref: '#/components/schemas/PrivateMessage'
  */
-router.get("/private", auth, getPrivateMessages);
+router.get("/private/:peerId", auth, getPrivateMessages);
+
 /**
  * @openapi
  * /api/messages/private:

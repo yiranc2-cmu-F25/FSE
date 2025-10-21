@@ -29,15 +29,22 @@ router.get("/members", authView, (req, res) => {
     res.render("memberList/membersLanding", { username: req.username || "" });
 });
 
-/*
-router.get("/profiles", authView, (req, res) => {
-    res.render("memberProfile/memberFunction", { username: req.username || "" });
-});
-*/
-
-//TODO: Add parameter and state to this route, otherwise it will wrongly kick user offline 
 router.get("/status", authView, (req, res) => {
     res.render("memberProfile/profileUpdate");
+});
+
+router.get("/chats/private/:peerId", authView, (req, res) => {
+  const meId   = req.userId;
+  //console.log("MeId is: ",meId);
+  const peerId = String(req.params.peerId);
+
+  if (meId === peerId) return res.redirect("/members");
+
+  return res.render("privateChat/privateChat", {
+    username: req.username,
+    currentUserId: meId,
+    peerId,
+  });
 });
 
 export default router;
