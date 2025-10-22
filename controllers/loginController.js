@@ -11,16 +11,20 @@ export async function login(req, res) {
     const { username, password } = req.body;
 
     const user = await User.findByUsername(username);
-    // const user = await req.app.locals.userDao.findByUsername(username);
 
     if (!user) return res.status(404).json({ error: "User not found" });
 
     if (!(await User.validatePassword(username, password))) {
-      // if (!(await req.app.locals.userDao.validatePassword(username,password))) {
       return res.status(401).json({ error: "Invalid password" });
     }
 
-    setAuthCookie(res, username, EXPIRATION_TIME);
+    const userId = String(user._id ?? user.id ?? user.userId ?? "");
+    if (!userId) {
+      console.error("[login] missing userId for", username, user);
+      return res.status(500).json({ error: "login_failed_no_user_id" });
+    }
+    
+    setAuthCookie(res, userId, username, EXPIRATION_TIME);
     return res.json({ username: username, ok: true });
   } catch (err) {
     console.error("Login error:", err);
@@ -31,7 +35,6 @@ export async function login(req, res) {
 export async function getMe(req, res) {
   try {
     const user = await User.findByUsername(req.username);
-    // const user = await req.app.locals.userDao.findByUsername(req.username);
 
     if (!user) return res.status(404).json({ error: "User not found" });
 

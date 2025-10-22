@@ -1,18 +1,12 @@
-import { getAvatarColor, getInitialsSafe } from "../utils/avatars.js";
-import { formatDate, toStr } from "../utils/dateFormatter.js";
 import { getSocket } from "/js/utils/socket.js";
+import { renderMessage } from "/js/utils/renderMessage.js";
 // console.log("[chat] module eval at", performance.now(), "ms; readyState=", document.readyState);
 // console.log("[chat] __CURRENT_USER__ at import time =", window.__CURRENT_USER__);
 
 // Styling constants
 const lineHeight = 24;
 const maxRows = 5;
-const STATUS = {
-  undefined: "gray",
-  ok: "green",
-  help: "yellow",
-  emergency: "red",
-};
+
 // HTML element selectors
 const $ = (s) => document.querySelector(s);
 const ui = {
@@ -57,43 +51,6 @@ socket.on("public_message", (message) => {
   ui.messageList.appendChild(msgEl);
   ui.messageList.scrollTop = ui.messageList.scrollHeight;
 });
-
-// Render one message using template element
-function renderMessage({ name, text, status, timestamp, isOwn }) {
-  const tpl = document.getElementById("chat-message");
-  const li = tpl.content.firstElementChild.cloneNode(true);
-
-  const safeName = toStr(name, "Unknown").trim() || "Unknown";
-  const safeText = toStr(text, "");
-  const key = (status || "undefined").toString().toLowerCase();
-  const color = STATUS[key] || STATUS.undefined;
-
-  li.querySelector(".name").textContent = safeName;
-  li.querySelector(".time").textContent = formatDate(timestamp || new Date());
-  li.querySelector(".bubble").textContent = safeText;
-
-  const badge = li.querySelector(".status-badge");
-  badge.textContent = (
-    Object.keys(STATUS).includes(key) ? key : "undefined"
-  ).toUpperCase();
-  badge.classList.add(`bg-${color}-200`, `text-${color}-500`);
-
-  const avatar = li.querySelector(".avatar");
-  avatar.style.backgroundColor = getAvatarColor(safeName);
-  li.querySelector(".initials").textContent = getInitialsSafe(safeName);
-
-  if (isOwn) {
-    li.classList.add("flex-row-reverse");
-    li.querySelector(".header").classList.add("flex-row-reverse");
-    const content = li.querySelector(".content");
-    content.classList.remove("items-start");
-    content.classList.add("items-end");
-    const bubble = li.querySelector(".bubble");
-    bubble.classList.remove("bg-white");
-    bubble.classList.add("bg-blue-50");
-  }
-  return li;
-}
 
 // Async Message Sending and Retrieval
 const fetchPublicMessagesPath = "/api/messages/public";
@@ -204,16 +161,3 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // Top-level Scripts
 fetchMessages();
-// const currentUser = { username: "" };
-
-// async function identifyAndJoin() {
-//   try {
-//     const res = await fetch("/api/auth/accounts", { credentials: "include" });
-//     if (!res.ok) return;
-//     const me = await res.json();
-//     currentUser.username = me?.username || "";
-//     socket.emit("join", currentUser.username); // <<< JOIN ONCE
-//   } catch {}
-// }
-
-// identifyAndJoin();

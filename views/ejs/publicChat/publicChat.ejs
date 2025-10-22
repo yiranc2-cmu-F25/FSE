@@ -6,8 +6,9 @@
     <title>Public Chat</title>
     <%- include('../partials/head') %>
     <script>window.__CURRENT_USER__ = "<%= username %>";</script>
-    <!-- <script src="/socket.io/socket.io.js"></script> -->
     <script type="module" src="/js/publicChat/publicChat.js"></script>
+    <script type="module" src="/js/utils/notify-bootstrap.js"></script>
+    <script type="module" src="/js/utils/notify-listener.js"></script>
   </head>
   <body class="min-h-screen bg-white">
     <div
@@ -23,9 +24,9 @@
           <a href="/members">
             <img
               id="back-btn"
-              src="images/icons/illustrations/icon-left.svg"
+              src="images/chat-privately/keyboard_arrow_left.svg"
               alt="Back"
-              class="h-3 w-3"
+              class="h-6 w-6"
             />
           </a>
         </figure>

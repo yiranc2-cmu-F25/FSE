@@ -28,6 +28,10 @@ export function makeMsgModel(conn) {
         content: {
             type: String,
             required: true,
+        },
+        isRead: {
+            type: Boolean,
+            default: false
         }
     });
 
