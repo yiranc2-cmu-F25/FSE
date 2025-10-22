@@ -1,5 +1,6 @@
 import { getInitialsSafe, getAvatarColor } from "../utils/avatars.js";
 import { getSocket } from "/js/utils/socket.js";
+import { showToast } from "/js/utils/toasts.js";
 import {statusUpdate} from "../utils/statusPageUpdate.js";
 
 // ---------- DOM refs ----------
@@ -13,6 +14,8 @@ const $c = (tag, className) => {
   if (className) el.className = className;
   return el;
 };
+const DM_ROUTE = (peerId) => `/chats/private/${encodeURIComponent(peerId)}`;
+const choosePeerId = (u) => u?.id ?? u?._id ?? u?.userId ?? null;
 
 const STATUS_BADGE_CLASS = {
   HELP: "rounded bg-yellow-100 px-1.5 py-0.5 text-xs font-medium text-yellow-800",
@@ -29,6 +32,10 @@ function badgeFor(statusUpper) {
 
 // ---------- render ----------
 function renderUserItem(u, isOnline) {
+  const peerId = choosePeerId(u);
+  if (!peerId) console.warn("[members] user has NO id:", u);
+  const current = String(window.__CURRENT_USER_ID__ ?? "");
+  const isMe = peerId && String(peerId) === current;
   const li = $c("li", "px-4 py-3");
   const article = $c("article", `flex items-start gap-3${isOnline ? "" : " opacity-80"}`);
   li.appendChild(article);
@@ -65,6 +72,17 @@ function renderUserItem(u, isOnline) {
   right.appendChild(nameRow);
   right.appendChild(last);
   article.appendChild(right);
+
+  if (!isMe && peerId) {
+    li.dataset.peerId = peerId;
+    li.dataset.peerName = name;
+    li.classList.add("cursor-pointer", "hover:bg-stone-50");
+    avatar.dataset.peerId = peerId;
+    avatar.dataset.peerName = name;
+    avatar.classList.add("cursor-pointer", "ring-1", "ring-zinc-200", "hover:ring-emerald-400", "focus:ring-emerald-400");
+  } else {
+    avatar.classList.add("opacity-60", "cursor-default");
+  }
 
   return li;
 }
@@ -104,6 +122,8 @@ async function loadMe() {
   const me = await res.json();
 
   const name = (me.username || "").trim();
+  window.__CURRENT_USER_ID__ = me.id ?? me._id ?? me.userId ?? null;
+  window.__CURRENT_USER__    = name ?? '';
   const initials = getInitialsSafe(name);
   const color = getAvatarColor(name);
   const status = me.status ?? "UNDEFINED";
@@ -143,9 +163,63 @@ function setupPresence() {
   });
 }
 
+// ---------- click and renavigate ----------
+function setupAvatarNavigation() {
+  const containers = [onlineUL, offlineUL].filter(Boolean);
+
+  //const containers = [onlineUL?.parentElement, offlineUL?.parentElement].filter(Boolean);
+  containers.forEach(root => {
+    root.addEventListener("click", (e) => {
+      const target = e.target.closest("[data-peer-id]");
+      if (!target) return;
+      const peerId = target.dataset.peerId;
+      //console.debug("[members] click peer:", peerId, target.dataset.peerName);
+      const peerName = target.dataset.peerName;
+      const me = String(window.__CURRENT_USER_ID__ ?? "");
+
+      if (peerId && (peerId === me || peerName === me)) {
+        e.preventDefault();
+        return;
+      }
+      if (peerId) window.location.assign(DM_ROUTE(peerId));
+    });
+  });
+}
+
+// ---------- fetch unread messages and show toasts ----------
+async function fetchUnreadMessages() {
+  const res = await fetch("/api/messages/private/unread", {
+    credentials: "include",
+    headers: { "Accept": "application/json" },
+  });
+  if (!res.ok) {
+    console.warn("[members] fetchUnreadMessages failed:", res.status);
+    return;
+  }
+  const data = await res.json();
+  const messages = data?.messages || [];
+  console.log("[members] fetched unread messages:", messages);
+  for (const m of messages) {
+      showToast({
+      sender:    m?.sender || "Someone",
+      senderId:  String(m?.senderId || m?.fromId || ""),
+      timestamp: m?.timestamp || Date.now(),
+      text:      m?.content || "",
+      status:    m?.status  || "UNDEFINED",
+    });
+  }
+}
+
 // ---------- bootstrap ----------
-document.addEventListener("DOMContentLoaded", () => {
-  loadMe().catch(err => console.error("[members] loadMe failed:", err));
-  loadMembers().catch(err => console.error("[members] loadMembers failed:", err));
+
+document.addEventListener("DOMContentLoaded", async () => {
+  try {
+    await loadMe();
+    await loadMembers();
+  } catch (err) {
+    console.error("[members] bootstrap failed:", err);
+  }
   setupPresence();
+  setupAvatarNavigation();
+  await fetchUnreadMessages();
 });

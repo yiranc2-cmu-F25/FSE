@@ -6,6 +6,13 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     
     <%- include('../partials/head') %>
+    <script>
+      window.__CURRENT_USER__ = "<%= username %>";
+      console.log("[status] __CURRENT_USER__ =", window.__CURRENT_USER__);
+    </script>
+    <script type="module" src="/js/userProfile/statusUpdate.js"></script>
+    <script type="module" src="/js/utils/notify-bootstrap.js"></script>
+    <script type="module" src="/js/utils/notify-listener.js"></script>
   </head>
   <body class="bg-stone-50 text-stone-900">
     <main class="mx-auto px-8 py-6">
@@ -118,7 +125,8 @@
               </li>
               <!-- UNDEFINED -->
               <li
-                class="rounded-md transition duration-700 hover:bg-stone-50 hover:bg-gradient-to-r hover:from-[#C9C7C8] hover:to-[#F6F6F6] hover:font-bold hover:tracking-wide hover:text-black status-tab status-tab-UNDEFINED data-status="UNDEFINED"
+                class="rounded-md transition duration-700 hover:bg-stone-50 hover:bg-gradient-to-r hover:from-[#C9C7C8] hover:to-[#F6F6F6] hover:font-bold hover:tracking-wide hover:text-black status-tab status-tab-UNDEFINED"
+                data-status="UNDEFINED"
               >
                 <label class="flex items-center gap-4 px-2 py-4">
                   <img
@@ -136,7 +144,7 @@
         <div class="pt-2">
           <button
             type="submit"
-            class="w-full rounded-2xl bg-[#D8897E] px-6 py-4 text-center text-lg font-semibold text-white shadow transition duration-150 hover:bg-[#D65841] focus:outline-none focus:ring-2 focus:ring-[#D8897E]"
+            class="w-full rounded-2xl bg-[#C35F49] shadow hover:brightness-95 px-6 py-4 text-center text-lg font-semibold text-white"
           >
             Save Changes
           </button>
@@ -169,13 +177,13 @@
 
           <button
             id="status-modal-close"
-            class="w-full rounded-2xl bg-[#D8897E] px-6 py-3 text-white font-semibold hover:bg-[#D65841] transition"
+            class="w-full rounded-2xl bg-[#C35F49] shadow hover:brightness-95 px-6 py-3 text-white font-semibold"
           >
             Great!
           </button>
         </div>
       </div>
     </main>
-    <script type="module" src="/js/userProfile/statusUpdate.js"></script>
+    
   </body>
 </html>

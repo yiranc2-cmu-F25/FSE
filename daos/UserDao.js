@@ -29,6 +29,23 @@ export class UserDao extends iUserDao {
         return doc ? doc.username : null;
     }
 
+    async findById(id) {
+        //console.log("[UserDao.findById] in:", id);
+        try {
+            const doc = await this.UserModel.findById(id);
+            //console.log("[UserDao.findById] found?", !!doc, doc && {
+            // _id: doc._id?.toString(),
+            // username: doc.username,
+            // sharedstatus: doc.sharedstatus,
+            // status: doc.status
+            // });
+            return doc || null;
+        } catch (err) {
+            console.error("[UserDao.findById] error:", err);
+            throw err;
+        }
+    }
+
     async findByUsername(username) {
         const doc = await this.UserModel.findOne({ username });
         const obj = doc?.toObject();

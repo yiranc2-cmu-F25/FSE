@@ -12,9 +12,12 @@ export function auth(req, res, next) {
     if (!token) return res.status(401).json({ error: "Unauthorized" })
     try {
         const payload = jwt.verify(token, JWT_SECRET);
+        const userId = String(payload.userId ?? payload.sub ?? "");
         req.username = payload.username;
+        req.userId = userId;
+        req.user = { id: userId, username: payload.username };
         next();
-    } catch {
+    } catch (err){
         return res.status(403).json({ error: "Forbidden", reason: err.name });
     }
 }
@@ -25,18 +28,24 @@ export function authView(req, res, next) {
   if (!token) return res.redirect("/");
 
   try {
-    const payload = jwt.verify(token, process.env.JWT_SECRET);
+    const payload = jwt.verify(token, JWT_SECRET);
+    const userId = String(payload.userId ?? payload.sub ?? "");
     req.username = payload.username;
+    req.userId = userId;
+    req.user = { id: userId, username: payload.username };
     next();
   } catch (err) {
     return res.redirect("/");
   }
 }
 
-export function setAuthCookie(res, username, expiresInHr) {
+export function setAuthCookie(res, userId, username, expiresInHr) {
     const expiresIn = `${expiresInHr}h`;
-    const token = jwt.sign({ username }, JWT_SECRET, { expiresIn: expiresIn });
-
+    const token = jwt.sign(
+        { userId: String(userId), username },
+        JWT_SECRET,
+        { expiresIn }
+    );
     res.cookie("jwt_token", token, {
         httpOnly: true,
         secure: isProd,
