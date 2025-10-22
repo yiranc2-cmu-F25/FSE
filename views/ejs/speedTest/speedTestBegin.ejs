@@ -120,7 +120,20 @@
                         </p>
 
                         <!-- Big spinner -->
-                        <div class="mt-5 w-12 h-12 mx-auto border-4 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
+                        <div id="spinner" class="mt-5 w-12 h-12 mx-auto border-4 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
+
+                        <!-- Failure Banner -->
+                        <div id="failureBanner"
+                            class="hidden mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                            Test failed: POST request limit (1000) reached.
+                        </div>
+
+                        <!-- Stop Test Button -->
+                        <button id="stopTestBtn"
+                            class="mt-6 w-full rounded-xl bg-red-500 text-white py-3 font-semibold text-sm hover:bg-red-600 transition"
+                        >
+                            Stop Test
+                        </button>
                     </div>
                 </div>
             </div>

@@ -1,11 +1,14 @@
 // /public/js/speedTest/speedTest.js
 document.addEventListener('DOMContentLoaded', () => {
     const startBtn       = document.getElementById('startTestBtn');
+    const stopBtn        = document.getElementById('stopTestBtn');
     const durationInput  = document.getElementById('durationSeconds');
     const intervalInput  = document.getElementById('intervalMs');
     const modal          = document.getElementById('runningModal');
     const remainingEl    = document.getElementById('remaining');
     const intervalEl     = document.getElementById('interval');
+    const spinner        = document.getElementById('spinner');
+    const failureBanner  = document.getElementById('failureBanner');
 
     // ---- constants per spec ----
     const MAX_POSTS      = 1000;
@@ -16,6 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let postTimer        = null;
     let countdownTimer   = null;
     let testAborted      = false;
+    let exceededMaxPosts  = false;
 
     // ---- helpers ----
     const sleep = (ms) => new Promise(r => setTimeout(r, ms));
@@ -58,12 +62,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (postTimer) clearInterval(postTimer);
         if (countdownTimer) clearInterval(countdownTimer);
     }
-
-    modal.addEventListener('click', async (e) => {
-        if (e.target === modal) {
-            testAborted = true;
-        }
-    });
 
     // ---- API wrappers ----
     async function startTest(durationSec, intervalMs) {
@@ -134,6 +132,11 @@ document.addEventListener('DOMContentLoaded', () => {
             await sleep(Math.min(intervalMs, remaining));
         }
 
+        if (postCount >= MAX_POSTS) {
+            console.warn(`[POST] Reached maximum of ${MAX_POSTS} messages.`);
+            exceededMaxPosts = true;
+        }
+
         console.log(`[POST] Completed ${postCount} messages in ${(budgetMs / 1000).toFixed(2)}s`);
         return postCount;
     }
@@ -146,7 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const endTime = nowMs() + budgetMs;
         let getCount = 0;
 
-        while (nowMs() < endTime && !testAborted) {
+        while (nowMs() < endTime && !testAborted && !exceededMaxPosts) {
             try {
                 await fetchMessagesPage(1, 1);
                 getCount++;
@@ -200,17 +203,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // 5) Stop & summarize (official result)
             const summary = await stopTest();
-            console.log('Speed Test Summary:', summary);
-
-            // Close modal & go to report with data
-            closeModal();
 
             // Pass summary to the report page (client-side)
-            if (!testAborted) {
+            if (testAborted) {
+                // do nothing, user aborted
+            } else if (exceededMaxPosts) {
+                clearInterval(countdownTimer);
+                spinner.classList.add('hidden');
+                failureBanner.classList.remove('hidden');
+            } else {
+                closeModal();
                 sessionStorage.setItem('esnSpeedTestSummary', JSON.stringify(summary));
                 window.location.href = '/speed-test/reports';
-            } else {
-                window.location.href = '/speed-test';
+                console.log('Speed Test Summary:', summary);
             }
 
         } catch (err) {
@@ -220,5 +225,13 @@ document.addEventListener('DOMContentLoaded', () => {
             // Best-effort cleanup
             try { await stopTest(); } catch (_) {}
         }
+    });
+
+    // ---- Stop button ----
+    stopBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        testAborted = true;
+        closeModal();
+        window.location.href = '/speed-test';
     });
 });
