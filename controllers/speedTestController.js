@@ -56,6 +56,7 @@ export const requireSpeedTest = function (req, res) {
 };
 // POST to /speed-test/start to start a new speed test
 export async function startSpeedTest(req, res) {
+  console.log("Starting new speed test...");
   // Only one speed test at a time; Return conflict if already active
   if (speedTestState.active) {
     console.log(speedTestState);
