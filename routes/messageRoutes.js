@@ -6,6 +6,8 @@ import {
 import {
   getPrivateMessages,
   sendPrivateMessage,
+  markPrivateMessagesAsRead,
+  getUnreadMessages
 } from "../controllers/privateChatController.js";
 import { auth } from "../middleware/JWT.js";
 
@@ -53,7 +55,28 @@ router.post("/public", auth, sendPublicMessage);
 // TODO: req.body || query parameter
 /**
  * @openapi
- * /api/messages/private:
+ * /api/messages/private/unread:
+ *   get:
+ *     tags: [Messages]
+ *     summary: Get latest unread private messages from all users
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Array of private messages
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/PrivateMessage'
+ */
+router.get("/private/unread", auth, getUnreadMessages);
+
+// TODO: req.body || query parameter
+/**
+ * @openapi
+ * /api/messages/private/:peerId:
  *   get:
  *     tags: [Messages]
  *     summary: List latest private messages between two users
@@ -69,7 +92,8 @@ router.post("/public", auth, sendPublicMessage);
  *               items:
  *                 $ref: '#/components/schemas/PrivateMessage'
  */
-router.get("/private", auth, getPrivateMessages);
+router.get("/private/:peerId", auth, getPrivateMessages);
+
 /**
  * @openapi
  * /api/messages/private:
@@ -89,5 +113,25 @@ router.get("/private", auth, getPrivateMessages);
  *         description: Created
  */
 router.post("/private", auth, sendPrivateMessage);
+
+/**
+ * @openapi
+ * /api/messages/private/read:
+ *   post:
+ *     tags: [Messages]
+ *     summary: Post all DMs as read between two users
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       201:
+ *         description: Marked as read
+ */
+router.post("/private/read", auth, markPrivateMessagesAsRead);
 
 export default router;

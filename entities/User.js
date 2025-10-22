@@ -47,6 +47,10 @@ class User {
     static async findByUsername(username) {
         return await User.DAO.findByUsername(username);
     }
+    
+    static async findById(id) {
+        return await User.DAO.findById(id);
+    }
 
     static async validatePassword(username, plainPassword) {
         return await User.DAO.validatePassword(username, plainPassword);

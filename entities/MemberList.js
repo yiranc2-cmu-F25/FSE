@@ -3,11 +3,16 @@ import User from "./User.js";
 export async function getOnlineOfflineMembers(app) {
   // Fetch user basics from DB
   const docs = await User.getAllUsers();
+  //console.log("[lists] raw first doc keys:", docs?.[0] && Object.keys(docs[0]));
   // const docs = await app.locals.userDao.getAllUsers();
-  const all = docs.map(d => ({
-    name: d.username,
-    status: d.sharedstatus ?? "UNDEFINED",
-  }));
+
+  const all = docs
+    .map(d => ({
+      id: String(d._id ?? d.id ?? d.userId),
+      name: d.username,
+      status: d.sharedstatus ?? "UNDEFINED",
+    }))
+    .filter(u => !!u.id);
 
   // Get currently online usernames from socketInstance
   const onlineNames = app.get("socketInstance")?.getOnline?.() ?? [];

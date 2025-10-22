@@ -14,12 +14,20 @@ export async function register(req, res) {
 		// if (!isUsernameValid(username)) return res.status(400).json({ error: "Invalid username" });
 		// if (!isPasswordValid(password)) return res.status(400).json({ error: "Invalid password" });
 
-		const user = new User({ username, password });
-		await user.create();
-
 		// await req.app.locals.userDao.create({ username, password });
 
-		setAuthCookie(res, username, EXPIRATION_TIME);
+		const user = new User({ username, password });
+  		const created = await user.create();
+
+		const userId = String(
+			created?._id ?? created?.id ?? user?._id ?? user?.id
+		);
+
+		if (!userId) {
+			return res.status(500).json({ error: "register_failed_no_id" });
+		}
+
+		setAuthCookie(res, userId, username, EXPIRATION_TIME);
 		return res.status(201).json({
 			message: "User successfully registered",
 			username

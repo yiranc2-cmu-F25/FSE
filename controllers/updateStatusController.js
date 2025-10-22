@@ -8,13 +8,11 @@ export async function updateStatusById(req, res) {
             return res.status(400).json({ error: "Missing required fields" });
         }
         const user = await User.getUsernameById(userId);
-        // const user = await req.app.locals.userDao.getUsernameById(userId);
         
         if (!user) {
             return res.status(404).json({ error: "User not found" });
         }
         await User.updateStatusById(userId, newStatus);
-        // await req.app.locals.userDao.updateStatusById(userId, newStatus);
 
         const socketInstance = req.app.get("socketInstance");
         if (!socketInstance) {

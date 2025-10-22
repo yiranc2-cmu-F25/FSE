@@ -38,6 +38,14 @@ class Msg {
     static async getPublicMsg() {
         return await Msg.DAO.getPublicMsg();
     }
+
+    static async markMessagesAsRead(senderId, receiverId) {
+        return await Msg.DAO.markMessagesAsRead(senderId, receiverId);
+    }
+
+    static async getUnreadMessages(receiverId) {
+        return await Msg.DAO.getUnreadMessages(receiverId);
+    }
 }
 
 export default Msg;
