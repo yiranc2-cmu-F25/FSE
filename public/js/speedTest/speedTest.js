@@ -1,4 +1,5 @@
-// /public/js/speedTest/speedTest.js
+import { getSocket } from "../utils/socket.js";
+
 document.addEventListener('DOMContentLoaded', () => {
     const startBtn       = document.getElementById('startTestBtn');
     const stopBtn        = document.getElementById('stopTestBtn');
@@ -20,6 +21,17 @@ document.addEventListener('DOMContentLoaded', () => {
     let countdownTimer   = null;
     let testAborted      = false;
     let exceededMaxPosts  = false;
+
+    const sock = getSocket();
+    if (sock && !sock.connected) {
+        try {
+            sock.connect();
+            sock.on?.("connect", () => console.log("[status] socket connected", sock.id));
+            sock.on?.("connect_error", (e) => console.warn("[status] connect_error", e?.message || e));
+        } catch (e) {
+            console.error("[status] connect() failed", e);
+        }
+    }
 
     // ---- helpers ----
     const sleep = (ms) => new Promise(r => setTimeout(r, ms));
@@ -206,7 +218,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Pass summary to the report page (client-side)
             if (testAborted) {
-                // do nothing, user aborted
+                closeModal();
+                window.location.href = '/speed-test';
             } else if (exceededMaxPosts) {
                 clearInterval(countdownTimer);
                 spinner.classList.add('hidden');
@@ -230,8 +243,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // ---- Stop button ----
     stopBtn.addEventListener('click', async (e) => {
         e.preventDefault();
-        testAborted = true;
-        closeModal();
-        window.location.href = '/speed-test';
+        testAborted = true;        
     });
 });

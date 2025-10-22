@@ -1,8 +1,21 @@
+import { getSocket } from "../utils/socket.js";
+
 document.addEventListener('DOMContentLoaded', () => {
     const durationEl  = document.getElementById('duration');
     const postsPerSecEl = document.getElementById('post');
     const getsPerSecEl  = document.getElementById('get');
     const okayBtn       = document.getElementById('okayBtn');
+
+    const sock = getSocket();
+    if (sock && !sock.connected) {
+        try {
+            sock.connect();
+            sock.on?.("connect", () => console.log("[status] socket connected", sock.id));
+            sock.on?.("connect_error", (e) => console.warn("[status] connect_error", e?.message || e));
+        } catch (e) {
+            console.error("[status] connect() failed", e);
+        }
+    }
 
     // Try to get summary from sessionStorage
     let summary = null;
