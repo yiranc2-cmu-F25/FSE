@@ -1,17 +1,18 @@
 import { toStr } from "./dateFormatter.js";
 const colors = [
-  "#2EA328",
-  "#148ADE",
-  "#A32828",
-  "#28A38A",
-  "#A39128",
-  "#2870A3",
-  "#A34D28",
-  "#284FA3",
-  "#DECD14",
-  "#BC5656",
-  "#7D28A3",
+  "#148ADE", // blue
+  "#2EA328", // green
+  "#A32828", // red
+  "#28A38A", // teal
+  "#2870A3", // steel blue
+  "#A34D28", // warm orange
+  "#284FA3", // deep indigo
+  "#7D28A3", // purple
+  "#D9463E", // coral
+  "#4A9F82", // sea green
+  "#CC3FAA", // magenta
 ];
+
 
 export function getAvatarColor(name) {
   const charIndex = name.charCodeAt(0) + name.charCodeAt(name.length - 1);

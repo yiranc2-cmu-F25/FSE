@@ -93,4 +93,9 @@ export class inMemoryUserDao extends iUserDao {
       user.sharedstatus = newStatus;
     }
   }
+
+  async findById(id) {
+    const user = this.users.find((u) => id === u.id);
+    return user ? { ...user } : null;
+  }
 }
