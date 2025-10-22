@@ -50,7 +50,7 @@ async function scrollListToBottom() {
     el.scrollTop = el.scrollHeight;
 }
 
-// ---------- send & recieve messages ----------
+// ---------- send & receive messages ----------
 async function loadNames() {
     const meRes = await fetch(whoamiUrl, { credentials: "include" });
     const me = await meRes.json();
@@ -253,6 +253,18 @@ async function fillPeerHeader() {
     chipEl.textContent = chip.text;
     chipEl.className = `font-poppins inline-flex items-center rounded-md px-1.5 py-0.5 text-xs font-semibold ring-1 ${chip.classes}`;
 }
+
+// on leaving page, mark all messages as read
+window.addEventListener("beforeunload", () => {
+  if (!peerId) return;
+
+  const url = `/api/messages/private/read`;
+  console.log("[dm] marking messages as read:", url);
+  const body = JSON.stringify({ peerId });
+
+  const data = new Blob([body], { type: "application/json" });
+  navigator.sendBeacon(url, data);
+});
 
 // ---------- bootstrap ----------
 document.addEventListener("DOMContentLoaded", async () => {

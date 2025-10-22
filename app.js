@@ -54,7 +54,7 @@ app.use((req, res) => {
 });
 // Error Handling using err object
 app.use((err, req, res, next) => {
-  if (res.headersSent) return next(err);
+  // if (res.headersSent) return next(err);
   const status = err.status || err.statusCode || 500;
   const msg = err.message || "Internal Server Error";
 

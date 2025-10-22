@@ -130,3 +130,58 @@ export async function sendPrivateMessage(req, res) {
             .json({ status: "error", message: "Server error" });
     }
 }
+
+export async function markPrivateMessagesAsRead(req, res) {
+    try {
+        const meIdRaw   = req.user?.id ?? req.userId;
+        const { peerId: peerIdRaw } = req.body;
+        if (!meIdRaw || !peerIdRaw) {
+            console.warn("[markPrivateMessagesAsRead] missing ids", { meIdRaw, peerIdRaw });
+            return res.status(400).json({ status: "error", message: "meId/peerId required" });
+        }
+        const meId   = normId(meIdRaw);
+        const peerId = normId(peerIdRaw);
+
+        const updatedCount = await Msg.markMessagesAsRead(peerId, meId);
+
+        return res.status(200).json({ message: `${updatedCount} messages marked as read` });
+    } catch (err) {
+        console.error("[markPrivateMessagesAsRead] ERROR:", err);
+        return res.status(500).json({ status: "error", message: "Server error" });
+    }
+}
+
+export async function getUnreadMessages(req, res) {
+    try {
+        const meIdRaw   = req.user?.id ?? req.userId;
+        if (!meIdRaw) {
+            console.warn("[getUnreadMessages] missing meId", { meIdRaw });
+            return res.status(400).json({ status: "error", message: "meId required" });
+        }
+        const meId   = normId(meIdRaw);
+
+        const unreadMessages = await Msg.getUnreadMessages(meId);
+
+        const data = unreadMessages.map(m => {
+            const msgId = normId(m._id ?? m.id);
+            const sid = normId(m.senderId ?? m.sender);
+            const rid = normId(m.receiverId ?? m.receiver);
+            const own = sid === meId;
+            return {
+                id:         msgId,
+                sender:     m.sender?.username || "Unknown",
+                senderId:   sid,
+                receiverId: rid,
+                content:    m.content,
+                timestamp:  m.timestamp ?? m.createdAt,
+                status:     m.status ?? null,
+                isOwn:      own,
+            };
+        });
+
+        return res.status(200).json({ messages: data });
+    } catch (err) {
+        console.error("[getUnreadMessages] ERROR:", err);
+        return res.status(500).json({ status: "error", message: "Server error" });
+    }
+}

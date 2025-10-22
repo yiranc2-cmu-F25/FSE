@@ -1,5 +1,6 @@
 import { getInitialsSafe, getAvatarColor } from "../utils/avatars.js";
 import { getSocket } from "/js/utils/socket.js";
+import { showToast } from "/js/utils/toasts.js";
 import {statusUpdate} from "../utils/statusPageUpdate.js";
 
 // ---------- DOM refs ----------
@@ -185,6 +186,30 @@ function setupAvatarNavigation() {
   });
 }
 
+// ---------- fetch unread messages and show toasts ----------
+async function fetchUnreadMessages() {
+  const res = await fetch("/api/messages/private/unread", {
+    credentials: "include",
+    headers: { "Accept": "application/json" },
+  });
+  if (!res.ok) {
+    console.warn("[members] fetchUnreadMessages failed:", res.status);
+    return;
+  }
+  const data = await res.json();
+  const messages = data?.messages || [];
+  console.log("[members] fetched unread messages:", messages);
+  for (const m of messages) {
+      showToast({
+      sender:    m?.sender || "Someone",
+      senderId:  String(m?.senderId || m?.fromId || ""),
+      timestamp: m?.timestamp || Date.now(),
+      text:      m?.content || "",
+      status:    m?.status  || "UNDEFINED",
+    });
+  }
+}
+
 // ---------- bootstrap ----------
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -196,4 +221,5 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
   setupPresence();
   setupAvatarNavigation();
+  await fetchUnreadMessages();
 });

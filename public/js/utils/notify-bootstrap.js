@@ -3,7 +3,7 @@ function mountNotify() {
 
   const root = document.createElement("div");
   root.id = "notif-root";
-  root.className = "pointer-events-none fixed inset-0 z-[1000]";
+  root.className = "pointer-events-none fixed inset-0 z-[1000] overflow-y-auto flex flex-col items-center";
   document.body.appendChild(root);
 
   const tpl = document.createElement("template");
