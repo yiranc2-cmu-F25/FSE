@@ -16,6 +16,8 @@ export class UserDao extends iUserDao {
             status,
             role,
         });
+
+        return doc.toObject();
     }
 
     async validatePassword(username, plainPassword) {
