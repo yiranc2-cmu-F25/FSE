@@ -1,6 +1,5 @@
-import { getAvatarColor, getInitialsSafe } from "../utils/avatars.js";
 import { getSocket } from "/js/utils/socket.js";
-import { formatDate, toStr } from "../utils/dateFormatter.js";
+import { renderMessage } from "/js/utils/renderMessage.js";
 const hdr = document.getElementById("dm-header");
 const nameEl = document.getElementById("peer-name");
 const chipEl = document.getElementById("peer-status-chip");
@@ -9,7 +8,6 @@ const msgList = document.getElementById("msg-list");
 const meId = hdr?.dataset.meId;
 const peerId = hdr?.dataset.peerId;
 
-const EMPTY_ID = "dm-empty";
 const whoamiUrl = "/api/authentications/accounts";
 let meName = null;
 let peerName = null;
@@ -20,12 +18,6 @@ const ui = {
     form: $("#msg-form"),
     messageList: $("#msg-list"),
     sendBtn: $("#send-btn"),
-};
-const STATUS = {
-    undefined: "gray",
-    ok: "green",
-    help: "yellow",
-    emergency: "red",
 };
 
 // ---------- show empty ----------
@@ -38,47 +30,24 @@ function showEmptyState() {
 function hideEmptyState() {
     if (!msgList) return;
     msgList.classList.remove("grid", "place-content-center", "min-h-[70vh]");
-    msgList.classList.add("flex", "flex-col", "gap-2");
-    const empty = document.getElementById(EMPTY_ID);
-    if (empty) empty.remove();
+    msgList.classList.add("flex", "flex-col", "gap-2", "overflow-y-auto", "p-4");
+    const empties = msgList.querySelectorAll("#dm-empty,[data-empty],.js-empty,.empty-state");
+    if (empties.length) {
+    empties.forEach(n => n.remove());
+    } else if (msgList.children.length === 1) {
+        const only = msgList.children[0];
+        if (only?.textContent?.includes("No messages yet")) only.remove();
+    }
 }
 
+// ---------- utils ----------
 
-// ---------- render message ----------
-function renderMessage({ name, text, status, timestamp, isOwn }) {
-  const tpl = document.getElementById("chat-message");
-  const li = tpl.content.firstElementChild.cloneNode(true);
-
-  const safeName = toStr(name, "Unknown").trim() || "Unknown";
-  const safeText = toStr(text, "");
-  const key = (status || "undefined").toString().toLowerCase();
-  const color = STATUS[key] || STATUS.undefined;
-
-  li.querySelector(".name").textContent = safeName;
-  li.querySelector(".time").textContent = formatDate(timestamp || new Date());
-  li.querySelector(".bubble").textContent = safeText;
-
-  const badge = li.querySelector(".status-badge");
-  badge.textContent = (
-    Object.keys(STATUS).includes(key) ? key : "undefined"
-  ).toUpperCase();
-  badge.classList.add(`bg-${color}-200`, `text-${color}-500`);
-
-  const avatar = li.querySelector(".avatar");
-  avatar.style.backgroundColor = getAvatarColor(safeName);
-  li.querySelector(".initials").textContent = getInitialsSafe(safeName);
-
-  if (isOwn) {
-    li.classList.add("flex-row-reverse");
-    li.querySelector(".header").classList.add("flex-row-reverse");
-    const content = li.querySelector(".content");
-    content.classList.remove("items-start");
-    content.classList.add("items-end");
-    const bubble = li.querySelector(".bubble");
-    bubble.classList.remove("bg-white");
-    bubble.classList.add("bg-blue-50");
-  }
-  return li;
+const nextFrame = () => new Promise(r => requestAnimationFrame(r));
+async function scrollListToBottom() {
+    const el = ui.messageList;
+    if (!el) return;
+    await nextFrame();
+    el.scrollTop = el.scrollHeight;
 }
 
 // ---------- send & recieve messages ----------
@@ -92,13 +61,13 @@ async function loadNames() {
     peerName = p.username;
 }
 
-function initPrivateMessageSocket() {
-    socket.on("private_message", (m) => {
+async function initPrivateMessageSocket() {
+    socket.on("private_message", async (m) => {
         if (!meName || !peerName) return;
 
         const isFromPeerToMe = (m.sender === peerName && m.receiver === meName);
         if (!isFromPeerToMe) return;
-
+        hideEmptyState();
         msgList.appendChild(renderMessage({
             name:     peerName || m.sender,
             text:     m.content,
@@ -106,55 +75,63 @@ function initPrivateMessageSocket() {
             timestamp:m.timestamp,
             isOwn:    false,
         }));
-        msgList.scrollTop = msgList.scrollHeight;
+        await scrollListToBottom();
     });
 }
 
 async function sendPrivateMessage(text) {
-    try {
-        if (!text || !text.trim()) return;
-        if (!peerId) {
-            console.warn("[dm] missing peerId on page");
-            return;
-        }
-        ui.input.value = "";
-        ui.input.rows = 1;
-        ui.sendBtn.disabled = true;
-        const meRes = await fetch(whoamiUrl, { credentials: "include" });
-        if (!meRes.ok) throw new Error(`whoami failed: ${meRes.status}`);
-        const me = await meRes.json();
-
-        const now = new Date();
-        const payload = {
-            sender: me.id,
-            receiver: peerId,
-            content: text.trim(),
-            status: String(me.status || "undefined").toLowerCase(),
-            timestamp: now,
-        };
-        console.log("[dm.send] POST /api/messages/private payload", payload);
-        const postRes = await fetch("/api/messages/private", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(payload),
-        });
-        if (!postRes.ok) throw new Error(`send DM failed: ${postRes.status}`);
-        hideEmptyState();
-        ui.messageList.appendChild(renderMessage({
-            name:     meName || me.username,
-            text:     payload.content,
-            status:   payload.status,
-            timestamp: now,
-            isOwn:    true,
-        }));
-        ui.messageList.scrollTop = ui.messageList.scrollHeight;
-    } catch (e) {
-        console.error("[dm] Failed to send message:", e);
-    } finally {
-        ui.sendBtn.disabled = !ui.input.value;
+  try {
+    const content = (text || "").trim();
+    if (!content) return;
+    if (!peerId) {
+      console.warn("[dm] missing peerId on page");
+      return;
     }
+
+    ui.input.value = "";
+    ui.input.rows = 1;
+    ui.sendBtn.disabled = true;
+
+    const meRes = await fetch("/api/authentications/accounts", { credentials: "include" });
+    if (!meRes.ok) throw new Error(`whoami failed: ${meRes.status}`);
+    const me = await meRes.json();
+
+    const now = new Date();
+    const payload = {
+      sender: me.id,
+      receiver: peerId,
+      content,
+      status: String(me.status || "undefined").toLowerCase(),
+      timestamp: now,
+    };
+
+    const postRes = await fetch("/api/messages/private", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(payload),
+    });
+    if (!postRes.ok) throw new Error(`send DM failed: ${postRes.status}`);
+
+    hideEmptyState();
+    const node = renderMessage({
+      name:      meName || me.username,
+      text:      payload.content,
+      status:    payload.status,
+      timestamp: now,
+      isOwn:     true,
+    });
+    ui.messageList.appendChild(node);
+
+    await scrollListToBottom();
+
+  } catch (e) {
+    console.error("[dm] Failed to send message:", e);
+  } finally {
+    ui.sendBtn.disabled = !ui.input.value;
+  }
 }
+
 
 ui.form?.addEventListener("submit", (e) => {
     console.log("[dm.send] submit", { value: ui.input?.value });
@@ -178,35 +155,66 @@ ui.input?.addEventListener("input", () => {
 });
 
 // ---------- load history ----------
-async function loadHistory() {
-    if (!peerId) return console.warn("[dm] missing peerId");
-    const r = await fetch(`/api/messages/private/${encodeURIComponent(peerId)}`, {
-        credentials: "include"
-    });
-    if (!r.ok) {
-        console.error("[dm] loadHistory failed:", r.status);
-        return;
-    }
-    const { messages = [] } = await r.json();
+async function fetchPrivateMessages() {
+  if (!peerId) {
+    console.warn("[dm.fetch] missing peerId");
+    return;
+  }
+  try {
+    const url = `/api/messages/private/${encodeURIComponent(peerId)}`;
+    console.log("[dm.fetch] GET", url);
+
+    const res = await fetch(url, { credentials: "include" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+    const payload = await res.json();
+    const messages = Array.isArray(payload) ? payload : (payload.messages || []);
+    console.log("[dm.fetch] count =", messages.length);
+
     if (messages.length === 0) {
-        showEmptyState();
-        return;
+      showEmptyState();
+      return;
     }
     hideEmptyState();
-    const nodes = messages.map(m => {
-        const fromMe = String(m.senderId) === String(meId);
-        return renderMessage({
-            name:     fromMe ? (meName || "Me") : (peerName || "Peer"),
-            text:     m.content,
-            status:   m.status,
-            timestamp:m.timestamp,
-            isOwn:    m.isOwn,
-        });
+
+    msgList.innerHTML = "";
+
+    messages.forEach((m, i) => {
+      const own = typeof m.isOwn === "boolean"
+        ? m.isOwn
+        : String(m.senderId) === String(meId);
+
+      const displayName = own ? (meName || "Me") : (peerName || m.sender || "Peer");
+
+      const node = renderMessage({
+        name:      String(displayName ?? ""),
+        text:      String(m.content ?? ""),
+        status:    m.status ?? "UNDEFINED",
+        timestamp: m.timestamp ?? m.createdAt ?? Date.now(),
+        isOwn:     own,
+      });
+
+      if (!(node instanceof Node)) {
+        console.error("[dm.fetch] renderMessage returned non-Node at", i, node);
+        return;
+      }
+      msgList.appendChild(node);
     });
 
-    msgList.replaceChildren(...nodes);
+    await new Promise(r => requestAnimationFrame(r));
+    const last = msgList.lastElementChild;
+    if (last) last.scrollIntoView({ block: "end" });
     msgList.scrollTop = msgList.scrollHeight;
+
+    console.log("[dm.fetch] scrolled", {
+      top: msgList.scrollTop, height: msgList.scrollHeight
+    });
+
+  } catch (e) {
+    console.error("[dm.fetch] failed:", e);
+  }
 }
+
 
 // ---------- get username and status ----------
 
@@ -251,8 +259,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     try {
         await fillPeerHeader();
         await loadNames();
-        await loadHistory();
-        initPrivateMessageSocket();
+        await fetchPrivateMessages();
+        await initPrivateMessageSocket();
     } catch (err) {
         console.error("[dm] bootstrap socket failed:", err);
     }

@@ -172,7 +172,7 @@ function setupAvatarNavigation() {
       const target = e.target.closest("[data-peer-id]");
       if (!target) return;
       const peerId = target.dataset.peerId;
-      console.debug("[members] click peer:", peerId, target.dataset.peerName);
+      //console.debug("[members] click peer:", peerId, target.dataset.peerName);
       const peerName = target.dataset.peerName;
       const me = String(window.__CURRENT_USER_ID__ ?? "");
 

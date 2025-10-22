@@ -8,66 +8,6 @@ const normId = (idLike) => {
   }
   return idLike.toString ? idLike.toString() : String(idLike);
 };
-// export async function getPrivateMessages(req, res) {
-//   try {
-//     console.log("[getPrivateMessages] method=%s url=%s", req.method, req.originalUrl);
-//     console.log("[getPrivateMessages] params=%o query=%o body=%o", req.params, req.query, req.body);
-
-//     console.log("[getPrivateMessages] auth user=%o userId=%s username=%s", req.user, req.userId, req.username);
-//     if (!req.user?.id || !req.userId || !req.params.peerId) {
-//       return res.status(400).json({ status: "error", message: "meId/peerId required" });
-//     }
-//     const meId   = String(req.user?.id ?? req.userId);
-//     const peerId = String(req.params.peerId);
-
-//     const messages = await Msg.getPrivateMsg(meId, peerId);
-
-//     console.log("[getPrivateMessages] total=", Array.isArray(messages) ? messages.length : -1);
-
-//     const _s = (v) => (v && typeof v.toString === "function" ? v.toString() : String(v ?? ""));
-
-//     console.table(
-//     (messages || []).map((m, i) => ({
-//         "#": i,
-//         id: _s(m._id ?? m.id),
-//         sender: _s(m.senderId ?? m.sender),
-//         receiver: _s(m.receiverId ?? m.receiver),
-//         ts: _s(m.timestamp ?? m.createdAt),
-//         status: m.status ?? null,
-//         content: m.content,
-//     }))
-//     );
-
-//     (messages || []).forEach((m, i) => {
-//     console.log(
-//         "[getPrivateMessages][%d] id=%s sender=%s receiver=%s ts=%s status=%s content=%s",
-//         i,
-//         _s(m._id ?? m.id),
-//         _s(m.senderId ?? m.sender),
-//         _s(m.receiverId ?? m.receiver),
-//         _s(m.timestamp ?? m.createdAt),
-//         String(m.status ?? ""),
-//         m.content
-//     );
-//     });
-
-//     const data = messages.map(m => ({
-//       id:        String(m._id ?? m.id),
-//       senderId:  String(m.senderId ?? m.sender),
-//       receiverId:String(m.receiverId ?? m.receiver),
-//       content:   m.content,
-//       timestamp: m.timestamp ?? m.createdAt,
-//       status:    m.status ?? null,
-//       isOwn:     String(m.senderId ?? m.sender) === meId,
-//     }));
-
-
-//     return res.status(200).json({ messages: data });
-//   } catch (err) {
-//     console.error("Error fetching private messages:", err);
-//     return res.status(500).json({ status: "error", message: "Server error" });
-//   }
-// }
 
 export async function getPrivateMessages(req, res) {
   try {
@@ -178,6 +118,8 @@ export async function sendPrivateMessage(req, res) {
             content: content,
             timestamp: timestamp,
             status: status,
+            senderId:   sender,
+            receiverId: receiver,
         });
 
         return res.status(201).json({ message: "Message sent successfully" });

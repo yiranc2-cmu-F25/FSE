@@ -6,8 +6,10 @@
     <title>Private Chat</title>
     <%- include('../partials/head') %>
     <script>window.__CURRENT_USER__ = "<%= username %>";</script>
-    <!-- <script src="/socket.io/socket.io.js"></script> -->
+    <script src="/socket.io/socket.io.js"></script>
     <script type="module" src="/js/privateChat/privateChat.js"></script>
+    <script type="module" src="/js/utils/notify-bootstrap.js"></script>
+    <script type="module" src="/js/utils/notify-listener.js"></script>
   </head>
   <body class="min-h-screen bg-white">
     <div

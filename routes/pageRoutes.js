@@ -30,7 +30,7 @@ router.get("/members", authView, (req, res) => {
 });
 
 router.get("/status", authView, (req, res) => {
-    res.render("memberProfile/profileUpdate");
+    res.render("memberProfile/profileUpdate", { username: req.username || "" });
 });
 
 router.get("/chats/private/:peerId", authView, (req, res) => {

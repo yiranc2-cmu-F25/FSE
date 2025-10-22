@@ -2,7 +2,17 @@
 //loadinfo from backend
 import {loadInfo} from "../utils/loadInfo.js";
 import { getInitialsSafe,getAvatarColor } from "../utils/avatars.js";
-
+import { getSocket } from "../utils/socket.js";
+const sock = getSocket();
+if (sock && !sock.connected) {
+  try {
+    sock.connect();
+    sock.on?.("connect", () => console.log("[status] socket connected", sock.id));
+    sock.on?.("connect_error", (e) => console.warn("[status] connect_error", e?.message || e));
+  } catch (e) {
+    console.error("[status] connect() failed", e);
+  }
+}
 document.addEventListener("DOMContentLoaded", async () => {
   try {
     const user = await loadInfo();
@@ -105,8 +115,6 @@ function closeModal() {
   modal.classList.remove("flex");
   modal.setAttribute("aria-hidden", "true");
 }
-
-
 
 if (modal && modalClose) {
   modalClose.addEventListener("click", () => {
