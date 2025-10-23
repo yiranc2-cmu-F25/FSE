@@ -1,4 +1,4 @@
-import {loadInfo} from "../utils/loadinfo.js";
+import {loadInfo} from "../utils/loadUserInfo.js";
 import { getInitialsSafe,getAvatarColor } from "../utils/avatars.js";
 import { statusUpdate } from "../utils/statusPageUpdate.js";
 
@@ -93,5 +93,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const statusButton = document.getElementById("status-button");
   statusButton?.addEventListener("click", () => {
     window.location.href = "/status";
+  });
+  const speedTestButton = document.getElementById("speed-test-button");
+  speedTestButton?.addEventListener("click", () => {
+    window.location.href = "/speed-test";
   });
 });
