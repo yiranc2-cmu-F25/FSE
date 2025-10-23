@@ -5,7 +5,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 
-const EXPIRATION_TIME = process.env.EXPIRATION_TIME;
+const EXPIRATION_TIME = process.env.EXPIRATION_TIME || 1;
 
 export async function register(req, res) {
 	try{

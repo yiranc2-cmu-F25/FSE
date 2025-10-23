@@ -31,4 +31,3 @@ jobs:
         env:
           NODE_ENV: test
           JWT_SECRET: "test-secret"
-          EXPIRATION_TIME=1
