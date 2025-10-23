@@ -26,10 +26,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (sock && !sock.connected) {
         try {
             sock.connect();
-            sock.on?.("connect", () => console.log("[status] socket connected", sock.id));
-            sock.on?.("connect_error", (e) => console.warn("[status] connect_error", e?.message || e));
+            sock.on?.("connect", () => console.log("[speedTest] socket connected", sock.id));
+            sock.on?.("connect_error", (e) => console.warn("[speedTest] connect_error", e?.message || e));
         } catch (e) {
-            console.error("[status] connect() failed", e);
+            console.error("[speedTest] connect() failed", e);
         }
     }
 
@@ -236,7 +236,7 @@ document.addEventListener('DOMContentLoaded', () => {
             closeModal();
             alert(err.message || 'Speed test failed.');
             // Best-effort cleanup
-            try { await stopTest(); } catch (_) {}
+            await stopTest();
         }
     });
 

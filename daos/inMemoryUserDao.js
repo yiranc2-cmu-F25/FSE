@@ -72,8 +72,15 @@ export class inMemoryUserDao extends iUserDao {
   }
 
   async getUsernameById(id) {
-    const user = this.users.find((u) => id === u.id);
+    // Use == to handle both string and number IDs (e.g., "5" == 5)
+    const user = this.users.find((u) => id == u.id);
     return user ? user.username : null;
+  }
+
+  async findById(id) {
+    // Use == to handle both string and number IDs (e.g., "5" == 5)
+    const user = this.users.find((u) => id == u.id);
+    return user ? { ...user } : null;
   }
 
   async findByUsername(username) {
@@ -88,7 +95,8 @@ export class inMemoryUserDao extends iUserDao {
   }
 
   async updateStatusById(id, newStatus) {
-    const user = this.users.find((u) => id === u.id);
+    // Use == to handle both string and number IDs
+    const user = this.users.find((u) => id == u.id);
     if (user) {
       user.sharedstatus = newStatus;
     }

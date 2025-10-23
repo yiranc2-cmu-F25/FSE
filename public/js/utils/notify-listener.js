@@ -43,9 +43,9 @@ async function startDMNotify() {
   const sock = await waitForSocket(8000);
   if (!sock) { console.warn("[notify] socket not ready"); return; }
 
-  if (!sock.connected && sock.connect) { try { sock.connect(); } catch {} }
+  if (!sock.connected && sock.connect) { sock.connect(); }
 
-  try { sock.off?.("private_message"); } catch {}
+  sock.off?.("private_message");
   sock.on("private_message", (m) => {
     const currentPeerId = getCurrentDMIdFromURL();
     const senderIdStr   = String(m?.senderId || m?.fromId || "");

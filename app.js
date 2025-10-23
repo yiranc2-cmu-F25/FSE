@@ -7,7 +7,7 @@ import { fileURLToPath } from "url";
 import { dirname } from "path";
 import authRoutes from "./routes/authRoutes.js";
 import pageRoutes from "./routes/pageRoutes.js";
-import publicMessageRoutes from "./routes/messageRoutes.js";
+import messageRoutes from "./routes/messageRoutes.js";
 import speedTestRoutes from "./routes/speedTestRoutes.js";
 import userInfoRoutes from "./routes/userInfoRoutes.js";
 import swaggerUi from "swagger-ui-express";
@@ -38,10 +38,14 @@ app.use(blockWhenSpeedTest());
 
 //Routes
 app.use("/api/authentications", authRoutes); // User Login/logout; Account Info retrieval
-app.use("/", pageRoutes); // All routes for separate pages e.g. public chat wall
-app.use("/api/messages/", publicMessageRoutes); // Get & Post Public Messages
+// console.log("DEBUG messageRoutes typeof =", typeof messageRoutes);
+// console.log("DEBUG messageRoutes keys   =", Object.keys(messageRoutes || {}));
+app.use("/api/messages/", messageRoutes); // Get & Post Messages
 app.use("/api/users/", userInfoRoutes); 
 app.use("/speed-test", speedTestRoutes); // Speed Test Routes
+
+app.use("/", pageRoutes); // All routes for separate pages e.g. public chat wall
+
 
 app.use((req, res) => {
   res.status(404);
