@@ -1,127 +1,123 @@
-// tests/updateStatus.test.js
-import agent from "superagent";
-import axios from "axios";
+import request from "superagent";
 import app from "../app.js";
 import userDac from "../dacs/userDac.js";
 import { inMemoryUserDao } from "../daos/inMemoryUserDao.js";
-import http from "http";
 
-const PORT = Number(process.env.PORT) || 3000;
+const PORT = 3000;
 const BASE_URL = `http://127.0.0.1:${PORT}`;
 const AUTH_BASE = `${BASE_URL}/api/authentications`;
 
-let appListening;
+let server;
 
-beforeAll(() => {
-  // start the app so HTTP clients can hit it
-  const server = http.createServer(app);
-  appListening = app.listen(PORT);
-});
+describe("Authentications REST API Integration Tests", () => {
+  beforeAll(async () => {
+    server = await app.listen(PORT);
+  });
 
-beforeEach(() => {
-  // isolate tests by using fresh in-memory DAO
-  userDac.DAO = new inMemoryUserDao();
-});
+  beforeEach(() => {
+    userDac.DAO = new inMemoryUserDao();
+  });
 
-afterAll(async () => {
-  if (appListening) await appListening.close();
-});
+  afterAll(async () => {
+    if (server) {
+      await server.close();
+    }
+  });
 
-const registerUser = async (username) => {
-  const client = agent.agent();
-  const registration = await client
-    .post(`${AUTH_BASE}/registrations`)
-    .set("Accept", "application/json")
-    .send({ username, password: "testPassword" });
+  const registerUser = async (agentClient, username) => {
+    const registration = await agentClient
+      .post(`${AUTH_BASE}/registrations`)
+      .set("Accept", "application/json")
+      .send({ username, password: "testPassword" })
+      .ok((res) => true);
 
-  expect(registration.status).toBe(201);
+    expect(registration.status).toBe(201);
 
-  const cookieHeader = registration.headers["set-cookie"];
-  const cookie = Array.isArray(cookieHeader)
-    ? cookieHeader[0]?.split(";")[0]
-    : cookieHeader?.split(";")[0];
-  expect(cookie).toBeTruthy();
+    const cookieHeader = registration.headers["set-cookie"];
+    const cookie = Array.isArray(cookieHeader)
+      ? cookieHeader[0]?.split(";")[0]
+      : cookieHeader?.split(";")[0];
+    expect(cookie).toBeTruthy();
 
-  const profile = await client
-    .get(`${AUTH_BASE}/accounts`)
-    .set("Accept", "application/json");
-
-  expect(profile.status).toBe(200);
-  expect(profile.body?.id).toBeTruthy();
-
-  return {
-    username,
-    id: profile.body.id,
-    cookie,
-    client,
-  };
-};
-
-describe("Update status integration", () => {
-  test("PATCH /api/authentications/newstatuses updates user status and broadcasts", async () => {
-    const user = await registerUser(`status_user_${Date.now()}`);
-
-    // attach a mock socketInstance used by controller
-    // controller broadcasts (userId, newStatus)
-    const mockSocket = {
-      called: false,
-      last: null,
-      broadcastNewStatus(userId, status) {
-        this.called = true;
-        this.last = { userId, status };
-      },
-    };
-    app.set("socketInstance", mockSocket);
-
-    // call the status update endpoint
-    const response = await axios.request({
-      method: "PATCH",
-      url: `${AUTH_BASE}/newstatuses`,
-      data: { userId: user.id, newStatus: "OK" },
-      headers: { Cookie: user.cookie, Accept: "application/json" },
-      validateStatus: () => true,
-    });
-
-    expect(response.status).toBe(200);
-    expect(response.data).toEqual({ message: "User status updated" });
-
-    // verify DAO change via GET /accounts
-    const profileAfter = await user.client
+    const profile = await agentClient
       .get(`${AUTH_BASE}/accounts`)
-      .set("Accept", "application/json");
-    expect(profileAfter.status).toBe(200);
-    expect(profileAfter.body.status).toBe("OK");
+      .set("Accept", "application/json")
+      .ok((res) => true);
 
-    // verify broadcast called — controller uses userId for broadcast in this codebase
-    expect(mockSocket.called).toBe(true);
-    expect(mockSocket.last).toEqual({ userId: user.id, status: "OK" });
-  });
+    expect(profile.status).toBe(200);
+    expect(profile.body?.id).toBeTruthy();
 
-  test("PATCH /api/authentications/newstatuses returns 400 when missing fields", async () => {
-    const user = await registerUser(`status_missing_${Date.now()}`);
+    return {
+      username,
+      id: profile.body.id,
+      cookie, 
+      client: agentClient,
+    };
+  };
 
-    const response = await axios.request({
-      method: "PATCH",
-      url: `${AUTH_BASE}/newstatuses`,
-      data: {}, // missing both fields intentionally
-      headers: { Cookie: user.cookie, Accept: "application/json" },
-      validateStatus: () => true,
+  describe("PATCH /api/authentications/newstatuses - Update user status and broadcast", () => {
+    test("should update status and broadcast", async () => {
+      const agentClient = request.agent();
+      const user = await registerUser(
+        agentClient,
+        `status_user_${Date.now()}`
+      );
+
+      const mockSocket = {
+        called: false,
+        last: null,
+        broadcastNewStatus(userId, status) {
+          this.called = true;
+          this.last = { userId, status };
+        },
+      };
+      app.set("socketInstance", mockSocket);
+
+      const resp = await agentClient
+        .patch(`${AUTH_BASE}/newstatuses`)
+        .set("Accept", "application/json")
+        .send({ userId: user.id, newStatus: "OK" })
+        .ok((res) => true);
+
+      expect(resp.status).toBe(200);
+      expect(resp.body).toEqual({ message: "User status updated" });
+
+      const profileAfter = await agentClient
+        .get(`${AUTH_BASE}/accounts`)
+        .set("Accept", "application/json")
+        .ok((res) => true);
+
+      expect(profileAfter.status).toBe(200);
+      expect(profileAfter.body?.status).toBe("OK");
+
+
+      expect(mockSocket.called).toBe(true);
+      expect(mockSocket.last).toEqual({ userId: user.id, status: "OK" });
     });
 
-    expect(response.status).toBe(400);
-    expect(response.data).toEqual({ error: "Missing required fields" });
-  });
+    test("should return 400 when required fields are missing", async () => {
+      const agentClient = request.agent();
+      await registerUser(agentClient, `status_missing_${Date.now()}`);
 
-  test("PATCH /api/authentications/newstatuses returns 401 when unauthorized (no cookie)", async () => {
-    const response = await axios.request({
-      method: "PATCH",
-      url: `${AUTH_BASE}/newstatuses`,
-      data: { userId: 1, newStatus: "OK" },
-      headers: { Accept: "application/json" }, // no Cookie header
-      validateStatus: () => true,
+      const resp = await agentClient
+        .patch(`${AUTH_BASE}/newstatuses`)
+        .set("Accept", "application/json")
+        .send({}) 
+        .ok((res) => true);
+
+      expect(resp.status).toBe(400);
+      expect(resp.body).toEqual({ error: "Missing required fields" });
     });
 
-    expect(response.status).toBe(401);
-    expect(response.data).toEqual({ error: "Unauthorized" });
+    test("should return 401 when unauthorized (no cookie)", async () => {
+      const resp = await request
+        .patch(`${AUTH_BASE}/newstatuses`)
+        .set("Accept", "application/json")
+        .send({ userId: 1, newStatus: "OK" })
+        .ok((res) => true);
+
+      expect(resp.status).toBe(401);
+      expect(resp.body).toEqual({ error: "Unauthorized" });
+    });
   });
 });
