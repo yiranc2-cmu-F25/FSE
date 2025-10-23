@@ -236,7 +236,7 @@ document.addEventListener('DOMContentLoaded', () => {
             closeModal();
             alert(err.message || 'Speed test failed.');
             // Best-effort cleanup
-            try { await stopTest(); } catch (_) {}
+            await stopTest();
         }
     });
 

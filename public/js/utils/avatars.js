@@ -49,10 +49,8 @@ export function getInitials(input) {
 export function getInitialsSafe(name) {
   const s = toStr(name, "").trim();
   if (!s) return "?";
-  try {
-    const res = getInitials(s);
-    if (res && typeof res === "string" && res.length) return res;
-  } catch (_) {}
+  const res = getInitials(s);
+  if (res && typeof res === "string" && res.length) return res;
   // Fallback that works for CJK/emoji/etc.
   const chars = Array.from(s); // Unicode-safe split
   const first = chars[0] || "?";

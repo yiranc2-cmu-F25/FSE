@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // OK button → clear & go back (or to home)
     okayBtn.addEventListener('click', () => {
-        try { sessionStorage.removeItem('esnSpeedTestSummary'); } catch (_) {}
+        sessionStorage.removeItem('esnSpeedTestSummary'); 
         window.location.href = '/speed-test';
     });
 });
