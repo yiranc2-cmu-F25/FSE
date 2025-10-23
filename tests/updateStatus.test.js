@@ -1,6 +1,6 @@
 import request from "superagent";
 import app from "../app.js";
-import userDac from "../dacs/userDac.js";
+import UserDac from "../dacs/userDac.js";
 import { inMemoryUserDao } from "../daos/inMemoryUserDao.js";
 
 const PORT = 3000;
@@ -10,12 +10,12 @@ const AUTH_BASE = `${BASE_URL}/api/authentications`;
 let server;
 
 describe("Authentications REST API Integration Tests", () => {
-  beforeAll(async () => {
-    server = await app.listen(PORT);
+  beforeAll(() => {
+    server = app.listen(PORT);
   });
 
   beforeEach(() => {
-    userDac.DAO = new inMemoryUserDao();
+    UserDac.DAO = new inMemoryUserDao();
   });
 
   afterAll(async () => {
