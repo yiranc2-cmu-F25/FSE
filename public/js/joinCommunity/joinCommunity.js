@@ -82,10 +82,7 @@ async function postJSON(url, body) {
     body: JSON.stringify(body),
     credentials: "include",
   });
-  let data = null;
-  try {
-    data = await res.json();
-  } catch {}
+  let data = await res.json();
   return { res, data };
 }
 
@@ -173,9 +170,7 @@ async function onConfirmCreate(e) {
 
     if (success) {
       // Clean up and log out (required by TA), then go HOME
-      try {
-        sessionStorage.removeItem("pendingUser");
-      } catch {}
+      sessionStorage.removeItem("pendingUser");
       closeConfirmModal();
       window.location.href = NEXT_ROUTE_AFTER_REGISTER_VALIDATION;
       return;

@@ -1,4 +1,4 @@
-import {loadInfo} from "../utils/loadinfo.js";
+import {loadInfo} from "../utils/loadUserInfo.js";
 import { getInitialsSafe,getAvatarColor } from "../utils/avatars.js";
 import { statusUpdate } from "../utils/statusPageUpdate.js";
 

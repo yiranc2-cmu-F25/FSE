@@ -61,15 +61,15 @@ document.addEventListener('DOMContentLoaded', () => {
         modal.classList.remove("hidden");
         document.body.classList.add("overflow-hidden");
 
-        // UI countdown (visual only)
-        let remaining = durationSec;
-        if (countdownTimer) clearInterval(countdownTimer);
-        countdownTimer = setInterval(() => {
-            remaining = Math.max(0, remaining - 1);
-            remainingEl.textContent = String(remaining);
-            if (remaining === 0) clearInterval(countdownTimer);
-        }, 1000);
-    }
+    // UI countdown (visual only)
+    let remaining = durationSec;
+    if (countdownTimer) clearInterval(countdownTimer);
+    countdownTimer = setInterval(() => {
+      remaining = Math.max(0, remaining - 1);
+      remainingEl.textContent = String(remaining);
+      if (remaining === 0) clearInterval(countdownTimer);
+    }, 1000);
+  }
 
     function closeModal() {
         modal.classList.add("hidden");
@@ -135,7 +135,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return data; // includes summary { postCount, getCount, durationMs, intervalMs, ... }
     }
 
-    // ---- Phases ---- //
+  // ---- Phases ---- //
 
     /**
      * POST Phase — send test messages at a fixed interval until
@@ -222,19 +222,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const intervalMs = parseInt(intervalInput.value, 10);
         if (!(durationSec > 0) || !(intervalMs > 0)) return;
 
-        // Open modal + set interval label
-        openModal(durationSec, intervalMs);
+    // Open modal + set interval label
+    openModal(durationSec, intervalMs);
 
-        // Global deadline to enforce total runtime ~= durationSec (±5s handled by small buffers)
-        const globalEndAt = nowMs() + durationSec * 1000;
+    // Global deadline to enforce total runtime ~= durationSec (±5s handled by small buffers)
+    const globalEndAt = nowMs() + durationSec * 1000;
 
         // Split 50/50
         const postMs = Math.floor((durationSec * 1000) / 2);
         const getMs = durationSec * 1000 - postMs;
 
-        try {
-            // 1) Start test
-            await startTest(durationSec, intervalMs);
+    try {
+      // 1) Start test
+      await startTest(durationSec, intervalMs);
 
             // 2) POST phase (honor interval, stop at 1000 or time budget)
             console.log("Starting POST phase...");

@@ -10,10 +10,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (sock && !sock.connected) {
         try {
             sock.connect();
-            sock.on?.("connect", () => console.log("[status] socket connected", sock.id));
-            sock.on?.("connect_error", (e) => console.warn("[status] connect_error", e?.message || e));
+            sock.on?.("connect", () => console.log("[speedTest] socket connected", sock.id));
+            sock.on?.("connect_error", (e) => console.warn("[speedTest] connect_error", e?.message || e));
         } catch (e) {
-            console.error("[status] connect() failed", e);
+            console.error("[speedTest] connect() failed", e);
         }
     }
 
@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // OK button → clear & go back (or to home)
     okayBtn.addEventListener('click', () => {
-        try { sessionStorage.removeItem('esnSpeedTestSummary'); } catch (_) {}
+        sessionStorage.removeItem('esnSpeedTestSummary'); 
         window.location.href = '/speed-test';
     });
 });

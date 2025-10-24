@@ -1,17 +1,18 @@
 import { toStr } from "./dateFormatter.js";
 const colors = [
-  "#2EA328",
-  "#148ADE",
-  "#A32828",
-  "#28A38A",
-  "#A39128",
-  "#2870A3",
-  "#A34D28",
-  "#284FA3",
-  "#DECD14",
-  "#BC5656",
-  "#7D28A3",
+  "#148ADE", // blue
+  "#2EA328", // green
+  "#A32828", // red
+  "#28A38A", // teal
+  "#2870A3", // steel blue
+  "#A34D28", // warm orange
+  "#284FA3", // deep indigo
+  "#7D28A3", // purple
+  "#D9463E", // coral
+  "#4A9F82", // sea green
+  "#CC3FAA", // magenta
 ];
+
 
 export function getAvatarColor(name) {
   const charIndex = name.charCodeAt(0) + name.charCodeAt(name.length - 1);
@@ -48,10 +49,8 @@ export function getInitials(input) {
 export function getInitialsSafe(name) {
   const s = toStr(name, "").trim();
   if (!s) return "?";
-  try {
-    const res = getInitials(s);
-    if (res && typeof res === "string" && res.length) return res;
-  } catch (_) {}
+  const res = getInitials(s);
+  if (res && typeof res === "string" && res.length) return res;
   // Fallback that works for CJK/emoji/etc.
   const chars = Array.from(s); // Unicode-safe split
   const first = chars[0] || "?";

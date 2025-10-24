@@ -94,10 +94,7 @@ async function postJSON(url, body) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
     });
-    let data = null;
-    try {
-        data = await res.json();
-    } catch {}
+    let data = await res.json();
     return { res, data };
 }
 

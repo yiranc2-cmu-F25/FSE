@@ -12,30 +12,12 @@ class User {
         this.role = role;
     }
 
-    isActive() {
-        return this.status === "active";
-    }
-
-    isAdmin() {
-        return this.role === "admin";
-    }
-
-    toJSON() {
-        return {
-            id: this.id,
-            username: this.username,
-            sharedstatus: this.sharedstatus,
-            status: this.status,
-            role: this.role,
-        };
-    }
-
     static get DAO() {
         return userDac.DAO;
     }
 
     async create() {
-        await User.DAO.create({
+        return await User.DAO.create({
             username: this.username,
             password: this.password,
             sharedstatus: this.sharedstatus,
