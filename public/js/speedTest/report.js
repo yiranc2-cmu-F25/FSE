@@ -46,8 +46,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const durationSec = durationMs > 0 ? Math.round(durationMs / 1000) : 0;
 
     // Compute RPS if backend didn’t provide them
-    const postsPerSec = durationSec > 0 ? +(postCount / durationSec).toFixed(2) : 0;
-    const getsPerSec  = durationSec > 0 ? +(getCount  / durationSec).toFixed(2) : 0;
+    const postsPerSec = durationSec > 0 ? +(postCount / durationSec * 2).toFixed(2) : 0;
+    const getsPerSec  = durationSec > 0 ? +(getCount  / durationSec * 2).toFixed(2) : 0;
 
     // Populate UI
     durationEl.textContent      = durationSec ?? '—';
