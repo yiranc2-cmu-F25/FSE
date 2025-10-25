@@ -1,0 +1,123 @@
+import request from "superagent";
+import app from "../app.js";
+import UserDac from "../dacs/userDac.js";
+import { inMemoryUserDao } from "../daos/inMemoryUserDao.js";
+
+const PORT = 3000;
+const BASE_URL = `http://127.0.0.1:${PORT}`;
+const AUTH_BASE = `${BASE_URL}/api/authentications`;
+
+let server;
+
+describe("Authentications REST API Integration Tests", () => {
+  beforeAll(() => {
+    server = app.listen(PORT);
+  });
+
+  beforeEach(() => {
+    UserDac.DAO = new inMemoryUserDao();
+  });
+
+  afterAll(async () => {
+    if (server) {
+      await server.close();
+    }
+  });
+
+  const registerUser = async (agentClient, username) => {
+    const registration = await agentClient
+      .post(`${AUTH_BASE}/registrations`)
+      .set("Accept", "application/json")
+      .send({ username, password: "testPassword" })
+      .ok((res) => true);
+
+    expect(registration.status).toBe(201);
+
+    const cookieHeader = registration.headers["set-cookie"];
+    const cookie = Array.isArray(cookieHeader)
+      ? cookieHeader[0]?.split(";")[0]
+      : cookieHeader?.split(";")[0];
+    expect(cookie).toBeTruthy();
+
+    const profile = await agentClient
+      .get(`${AUTH_BASE}/accounts`)
+      .set("Accept", "application/json")
+      .ok((res) => true);
+
+    expect(profile.status).toBe(200);
+    expect(profile.body?.id).toBeTruthy();
+
+    return {
+      username,
+      id: profile.body.id,
+      cookie, 
+      client: agentClient,
+    };
+  };
+
+  describe("PATCH /api/authentications/newstatuses - Update user status and broadcast", () => {
+    test("should update status and broadcast", async () => {
+      const agentClient = request.agent();
+      const user = await registerUser(
+        agentClient,
+        `status_user_${Date.now()}`
+      );
+
+      const mockSocket = {
+        called: false,
+        last: null,
+        broadcastNewStatus(userId, status) {
+          this.called = true;
+          this.last = { userId, status };
+        },
+      };
+      app.set("socketInstance", mockSocket);
+
+      const resp = await agentClient
+        .patch(`${AUTH_BASE}/newstatuses`)
+        .set("Accept", "application/json")
+        .send({ userId: user.id, newStatus: "OK" })
+        .ok((res) => true);
+
+      expect(resp.status).toBe(200);
+      expect(resp.body).toEqual({ message: "User status updated" });
+
+      const profileAfter = await agentClient
+        .get(`${AUTH_BASE}/accounts`)
+        .set("Accept", "application/json")
+        .ok((res) => true);
+
+      expect(profileAfter.status).toBe(200);
+      expect(profileAfter.body?.status).toBe("OK");
+
+
+      expect(mockSocket.called).toBe(true);
+      expect(mockSocket.last).toEqual({ userId: user.id, status: "OK" });
+    });
+
+    test("should return 400 when required fields are missing", async () => {
+      const agentClient = request.agent();
+      await registerUser(agentClient, `status_missing_${Date.now()}`);
+
+      const resp = await agentClient
+        .patch(`${AUTH_BASE}/newstatuses`)
+        .set("Accept", "application/json")
+        .send({}) 
+        .ok((res) => true);
+
+      expect(resp.status).toBe(400);
+      expect(resp.body).toEqual({ error: "Missing required fields" });
+    });
+
+    test("should return 401 when unauthorized (no cookie)", async () => {
+      const resp = await request
+        .patch(`${AUTH_BASE}/newstatuses`)
+        .set("Accept", "application/json")
+        .send({ userId: 1, newStatus: "OK" })
+        .ok((res) => true);
+
+      expect(resp.status).toBe(401);
+      expect(resp.body).toEqual({ error: "Unauthorized" });
+    });
+  });
+});

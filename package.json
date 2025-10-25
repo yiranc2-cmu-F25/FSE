@@ -5,13 +5,15 @@
     "main": "app.js",
     "type": "module",
     "scripts": {
+        "lint": "eslint . --ext .js,.mjs",
         "dev": "concurrently \"node --watch server.js\" \"tailwindcss -i public/css/input.css -o public/css/output.css --watch\"",
         "build": "npm run build:css",
         "build:css": "tailwindcss -i public/css/input.css -o public/css/output.css --minify",
         "start": "node server.js",
         "prestart": "npm run build",
-        "test": "NODE_OPTIONS='--experimental-vm-modules --no-warnings' jest --detectOpenHandles",
+        "test": "NODE_OPTIONS='--experimental-vm-modules --no-warnings' jest --detectOpenHandles --coverage",
         "test:integration:chat-privately": "npm test tests/privateChat.test.js",
+        "test:integration:update-status": "npm test tests/updateStatus.test.js",
         "test:unit:join-community": "npm test tests/joinCommunity.test.js"
     },
     "repository": {
@@ -39,22 +41,25 @@
         "socket.io": "^4.8.1",
         "swagger-jsdoc": "^3.7.0",
         "swagger-ui-express": "^5.0.1",
+        "tailwindcss": "^3.4.17",
         "uuid": "^13.0.0"
     },
     "devDependencies": {
         "@babel/core": "^7.28.4",
         "@babel/preset-env": "^7.28.3",
+        "@eslint/js": "^9.38.0",
         "autoprefixer": "^10.4.21",
         "axios": "^1.12.2",
         "babel-loader": "^10.0.0",
         "concurrently": "^9.0.0",
+        "eslint": "^9.38.0",
+        "eslint-config-prettier": "^10.1.8",
         "nodemon": "^3.1.10",
         "postcss": "^8.5.6",
         "prettier": "^3.6.2",
         "prettier-plugin-ejs": "^1.0.3",
         "prettier-plugin-tailwindcss": "^0.6.14",
         "superagent": "^10.2.3",
-        "tailwindcss": "^3.4.17",
         "webpack": "^5.101.3",
         "webpack-cli": "^6.0.1"
     }

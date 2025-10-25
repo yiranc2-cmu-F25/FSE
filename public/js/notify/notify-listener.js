@@ -1,7 +1,5 @@
 
 import { getSocket } from "/js/utils/socket.js";
-import { getAvatarColor, getInitialsSafe } from "/js/utils/avatars.js";
-import { renderMessage } from "/js/utils/renderMessage.js";
 import { showToast } from "/js/utils/toasts.js";
 
 function getCurrentDMIdFromURL() {
@@ -43,9 +41,9 @@ async function startDMNotify() {
   const sock = await waitForSocket(8000);
   if (!sock) { console.warn("[notify] socket not ready"); return; }
 
-  if (!sock.connected && sock.connect) { try { sock.connect(); } catch {} }
+  if (!sock.connected && sock.connect) { sock.connect(); }
 
-  try { sock.off?.("private_message"); } catch {}
+  sock.off?.("private_message");
   sock.on("private_message", (m) => {
     const currentPeerId = getCurrentDMIdFromURL();
     const senderIdStr   = String(m?.senderId || m?.fromId || "");

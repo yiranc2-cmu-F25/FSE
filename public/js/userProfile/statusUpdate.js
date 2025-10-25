@@ -1,6 +1,6 @@
 //displayname, avatar, status
 //loadinfo from backend
-import {loadInfo} from "../utils/loadInfo.js";
+import {loadInfo} from "../utils/loadUserInfo.js";
 import { getInitialsSafe,getAvatarColor } from "../utils/avatars.js";
 import { getSocket } from "../utils/socket.js";
 const sock = getSocket();

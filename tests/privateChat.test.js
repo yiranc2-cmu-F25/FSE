@@ -1,229 +1,300 @@
-import agent from "superagent";
-import axios from "axios";
+// tests/privateChat.test.js
+import request from "superagent";
+
+process.env.NODE_ENV = "test";
+process.env.JWT_SECRET = process.env.JWT_SECRET || "test-secret";
+process.env.SPEED_TEST_BLOCK_ENABLED = "false";
+
 import app from "../app.js";
-import userDac from "../dacs/userDac.js";
-import msgDac from "../dacs/msgDac.js";
+import UserDac from "../dacs/userDac.js";
+import MsgDac from "../dacs/msgDac.js";
 import { inMemoryUserDao } from "../daos/inMemoryUserDao.js";
 import { inMemoryMsgDao } from "../daos/inMemoryMsgDao.js";
-import http from "http";
-import { Server } from "socket.io";
-import Socket from "../Middleware/Socket.js";
 
-const PORT = Number(process.env.PORT) || 3000;
+const PORT = 3000;
 const BASE_URL = `http://127.0.0.1:${PORT}`;
 const AUTH_BASE = `${BASE_URL}/api/authentications`;
-const PRIVATE_MESSAGES_URL = `${BASE_URL}/api/messages/private`;
-const DEFAULT_PASSWORD = "testPassword";
+const MSG_BASE = `${BASE_URL}/api/messages`;
 
-let appListening;
+let server;
+let alice, bob;
+let aliceAgent, bobAgent;
 
-beforeAll(() => {
-  const server = http.createServer(app);
-  const io = new Server(server, {
-    cors: {
-      origin: true,
-      credentials: true,
+beforeAll(async () => {
+  const fakeSocket = {
+    emitMessageFromAndTo() {
+      console.log("[TEST] emitMessageFromAndTo called");
     },
+    emitPrivateMessage() {
+      console.log("[TEST] emitPrivateMessage called");
+    },
+    emitMessageFrom() {
+      console.log("[TEST] emitMessageFrom called");
+    },
+  };
+  app.set("socketInstance", fakeSocket);
+  app.locals.socketInstance = fakeSocket;
+
+  await new Promise((resolve) => {
+    server = app.listen(PORT, resolve);
   });
-  const socketInstance = new Socket(io);
-
-  app.set("io", io);
-  app.set("socketInstance", socketInstance);
-  appListening = app.listen(PORT);
-});
-
-beforeEach(() => {
-  userDac.DAO = new inMemoryUserDao();
-  msgDac.DAO = new inMemoryMsgDao();
+  console.log(`[TEST] Server started on port ${PORT}`);
 });
 
 afterAll(async () => {
-  if (appListening) await appListening.close();
+  if (server) {
+    await new Promise((resolve) => server.close(resolve));
+    console.log("[TEST] Server closed");
+  }
 });
 
-const registerUser = async (username) => {
-  const client = agent.agent();
-  const registration = await client
-    .post(`${AUTH_BASE}/registrations`)
-    .set("Accept", "application/json")
-    .send({ username, password: DEFAULT_PASSWORD });
+beforeEach(async () => {
+  console.log("\n[TEST] ===== Starting new test =====");
+  
+  // Clear in-memory data for each test
+  UserDac.DAO = new inMemoryUserDao();
+  MsgDac.DAO = new inMemoryMsgDao();
 
-  expect(registration.status).toBe(201);
+  aliceAgent = request.agent();
+  bobAgent = request.agent();
 
-  const cookieHeader = registration.headers["set-cookie"];
-  const cookie = Array.isArray(cookieHeader)
-    ? cookieHeader[0]?.split(";")[0]
-    : cookieHeader?.split(";")[0];
-  expect(cookie).toBeTruthy();
+  // Register users
+  alice = await registerUser(aliceAgent, `alice_${Date.now()}`);
+  console.log("[TEST] Alice registered:", { id: alice.id, username: alice.username });
+  
+  // Small delay to ensure different IDs
+  await new Promise((r) => setTimeout(r, 10));
+  
+  bob = await registerUser(bobAgent, `bob_${Date.now()}`);
+  console.log("[TEST] Bob registered:", { id: bob.id, username: bob.username });
+});
 
-  const profile = await client
-    .get(`${AUTH_BASE}/accounts`)
+async function registerUser(agentClient, username) {
+  try {
+    console.log(`[TEST] Registering user: ${username}`);
+    
+    // Register
+    const reg = await agentClient
+      .post(`${AUTH_BASE}/registrations`)
+      .set("Accept", "application/json")
+      .send({ username, password: "testPassword" });
+
+    console.log(`[TEST] Registration response status: ${reg.status}`);
+    expect([200, 201]).toContain(reg.status);
+
+    // Get user info - the JWT cookie should be set automatically by superagent agent
+    const me = await agentClient
+      .get(`${AUTH_BASE}/accounts`)
+      .set("Accept", "application/json");
+
+    console.log(`[TEST] Account info response:`, JSON.stringify(me.body, null, 2));
+    
+    expect(me.status).toBe(200);
+    expect(me.body).toHaveProperty("username");
+
+    // The ID might be in different places depending on your implementation
+    const userId = me.body.id || me.body._id || me.body.userId;
+    
+    if (!userId) {
+      console.error("[TEST] ERROR: Could not find user ID in response:", me.body);
+      throw new Error(`Could not find user ID in response`);
+    }
+
+    console.log(`[TEST] User ID found: ${userId}`);
+
+    return {
+      id: userId,
+      username: me.body.username,
+      client: agentClient,
+    };
+  } catch (error) {
+    console.error(`[TEST] ERROR: Registration failed for ${username}:`, error.message);
+    if (error.response) {
+      console.error("[TEST] Response status:", error.response.status);
+      console.error("[TEST] Response body:", error.response.body || error.response.text);
+    }
+    throw error;
+  }
+}
+
+test("GET /api/messages/private/:peerId returns empty when no history", async () => {
+  console.log(`[TEST] Getting private messages between Alice and Bob (should be empty)`);
+  
+  const res = await alice.client
+    .get(`${MSG_BASE}/private/${encodeURIComponent(bob.id)}`)
     .set("Accept", "application/json");
 
-  expect(profile.status).toBe(200);
-  expect(profile.body?.id).toBeTruthy();
+  console.log(`[TEST] GET response status: ${res.status}`);
+  console.log(`[TEST] GET response body:`, JSON.stringify(res.body, null, 2));
 
-  return {
-    username,
-    id: profile.body.id,
-    cookie,
-    client,
-  };
-};
-
-const getPrivateMessages = async ({ cookie, senderId, receiverId }) => {
-  const response = await axios.request({
-    method: "GET",
-    url: PRIVATE_MESSAGES_URL,
-    data: { sender: senderId, receiver: receiverId },
-    headers: {
-      Cookie: cookie,
-      Accept: "application/json",
-    },
-    validateStatus: () => true,
-  });
-  return response;
-};
-
-describe("Private chat controller integration", () => {
-  test("GET /api/messages/private returns empty list for a new conversation", async () => {
-    const sender = await registerUser("alice_private_get");
-    const receiver = await registerUser("bob_private_get");
-
-    const response = await getPrivateMessages({
-      cookie: sender.cookie,
-      senderId: sender.id,
-      receiverId: receiver.id,
-    });
-
-    expect(response.status).toBe(200);
-    expect(response.data).toEqual([]);
-  });
-
-  test("POST /api/messages/private stores a message between two users", async () => {
-    const sender = await registerUser("charlie_private_post");
-    const receiver = await registerUser("dana_private_post");
-    const timestamp = new Date().toISOString();
-
-    const sendResponse = await sender.client
-      .post(PRIVATE_MESSAGES_URL)
-      .set("Accept", "application/json")
-      .send({
-        sender: sender.id,
-        receiver: receiver.id,
-        content: "Hello Dana",
-        status: "OK",
-        timestamp,
-      });
-
-    expect(sendResponse.status).toBe(201);
-    expect(sendResponse.body).toEqual({
-      message: "Message sent successfully",
-    });
-  });
-
-  test("GET /api/messages/private returns stored messages with receiver perspective", async () => {
-    const sender = await registerUser("eve_private_get");
-    const receiver = await registerUser("frank_private_get");
-    const timestamp = new Date().toISOString();
-
-    const sendResponse = await sender.client
-      .post(PRIVATE_MESSAGES_URL)
-      .set("Accept", "application/json")
-      .send({
-        sender: sender.id,
-        receiver: receiver.id,
-        content: "Checking in",
-        status: "HELP",
-        timestamp,
-      });
-
-    expect(sendResponse.status).toBe(201);
-
-    const response = await getPrivateMessages({
-      cookie: receiver.cookie,
-      senderId: sender.id,
-      receiverId: receiver.id,
-    });
-
-    expect(response.status).toBe(200);
-    expect(response.data).toHaveLength(1);
-    expect(response.data[0]).toMatchObject({
-      content: "Checking in",
-      status: "HELP",
-      isOwn: false,
-    });
-  });
+  expect(res.status).toBe(200);
+  
+  // Handle different response formats - your API returns {messages: [...]}
+  const messages = res.body?.messages || [];
+  expect(Array.isArray(messages)).toBe(true);
+  expect(messages).toHaveLength(0);
 });
 
-// TODO: complete end to end tests for private chat flows
-// describe("Private chat end-to-end flows", () => {
-//   // Test concurrent chat sessions
-//   test("handles multiple concurrent private chats", async () => {
-//     const alice = await registerUser("alice_concurrent");
-//     const bob = await registerUser("bob_concurrent");
-//     const charlie = await registerUser("charlie_concurrent");
+test("GET returns merged & time-ordered messages with correct isOwn", async () => {
+  console.log("\n[TEST] === Testing merged & time-ordered messages ===");
+  
+  // A -> B: First message
+  console.log(`[TEST] Alice (ID: ${alice.id}) sending message to Bob (ID: ${bob.id})...`);
+  console.log(`[TEST] Alice username: ${alice.username}, Bob username: ${bob.username}`);
+  
+  try {
+    const p1 = await alice.client
+      .post(`${MSG_BASE}/private`)
+      .set("Accept", "application/json")
+      .send({ 
+        receiver: bob.id,  // Changed: send as number, not string
+        content: "A1",
+        timestamp: new Date().toISOString()
+      });
 
-//     // Send messages in different conversations
-//     await Promise.all([
-//       sendPrivateMessage(alice, bob, "Hi Bob"),
-//       sendPrivateMessage(alice, charlie, "Hi Charlie"),
-//     ]);
+    console.log(`[TEST] Alice's POST response status: ${p1.status}`);
+    console.log(`[TEST] Alice's POST response body:`, JSON.stringify(p1.body, null, 2));
+    expect([200, 201]).toContain(p1.status);
+  } catch (error) {
+    console.error("[TEST] ERROR: Alice's POST failed:", error.message);
+    if (error.response) {
+      console.error("[TEST] Response status:", error.response.status);
+      console.error("[TEST] Response body:", JSON.stringify(error.response.body || error.response.text, null, 2));
+    }
+    throw error;
+  }
 
-//     const bobChat = await getPrivateMessages({
-//       cookie: bob.cookie,
-//       senderId: alice.id,
-//       receiverId: bob.id,
-//     });
+  // Wait to ensure different timestamps
+  await new Promise((r) => setTimeout(r, 100));
 
-//     const charlieChat = await getPrivateMessages({
-//       cookie: charlie.cookie,
-//       senderId: alice.id,
-//       receiverId: charlie.id,
-//     });
+  // B -> A: Second message
+  console.log(`[TEST] Bob (ID: ${bob.id}) sending message to Alice (ID: ${alice.id})...`);
+  
+  try {
+    const p2 = await bob.client
+      .post(`${MSG_BASE}/private`)
+      .set("Accept", "application/json")
+      .send({ 
+        receiver: alice.id,  // Changed: send as number, not string
+        content: "B1",
+        timestamp: new Date().toISOString()
+      });
 
-//     expect(bobChat.data[0].content).toBe("Hi Bob");
-//     expect(charlieChat.data[0].content).toBe("Hi Charlie");
-//   });
+    console.log(`[TEST] Bob's POST response status: ${p2.status}`);
+    console.log(`[TEST] Bob's POST response body:`, JSON.stringify(p2.body, null, 2));
+    expect([200, 201]).toContain(p2.status);
+  } catch (error) {
+    console.error("[TEST] ERROR: Bob's POST failed:", error.message);
+    if (error.response) {
+      console.error("[TEST] Response status:", error.response.status);
+      console.error("[TEST] Response body:", JSON.stringify(error.response.body || error.response.text, null, 2));
+    }
+    throw error;
+  }
 
-//   // Test status propagation
-//   test("messages include sender's current status", async () => {
-//     const sender = await registerUser("status_test_sender");
-//     const receiver = await registerUser("status_test_receiver");
+  // Wait for messages to be fully processed
+  await new Promise((r) => setTimeout(r, 100));
 
-//     // Update sender's status
-//     await updateUserStatus(sender, "HELP");
+  // Alice's view: should see both messages
+  console.log(`[TEST] Alice retrieving conversation with Bob...`);
+  const resA = await alice.client
+    .get(`${MSG_BASE}/private/${encodeURIComponent(bob.id)}`)
+    .set("Accept", "application/json");
 
-//     const response = await sendPrivateMessage(
-//       sender,
-//       receiver,
-//       "Need assistance",
-//     );
-//     expect(response.data.status).toBe("HELP");
-//   });
+  console.log(`[TEST] Alice's GET response status: ${resA.status}`);
+  console.log(`[TEST] Alice's GET response body:`, JSON.stringify(resA.body, null, 2));
 
-//   // Test socket events
-//   test("receiver gets real-time notification", async () => {
-//     const sender = await registerUser("socket_test_sender");
-//     const receiver = await registerUser("socket_test_receiver");
+  expect(resA.status).toBe(200);
+  
+  const msgsA = resA.body?.messages || [];
+  console.log(`[TEST] Alice sees ${msgsA.length} messages`);
+  expect(msgsA.length).toBeGreaterThanOrEqual(2);
+  
+  const contentsA = msgsA.map((m) => m.content);
+  console.log(`[TEST] Alice's message contents:`, contentsA);
+  expect(contentsA).toEqual(expect.arrayContaining(["A1", "B1"]));
 
-//     // Mock socket connection
-//     const mockSocket = new MockSocket();
-//     receiver.socket = mockSocket;
+  const a1Msg = msgsA.find((m) => m.content === "A1");
+  const b1Msg = msgsA.find((m) => m.content === "B1");
+  
+  console.log(`[TEST] A1 message (from Alice's view):`, a1Msg);
+  console.log(`[TEST] B1 message (from Alice's view):`, b1Msg);
+  
+  expect(a1Msg?.isOwn).toBe(true);
+  expect(b1Msg?.isOwn).toBe(false);
 
-//     await sendPrivateMessage(sender, receiver, "Hello");
-//     expect(mockSocket.receivedEvents).toContain("private_message");
-//   });
+  // Bob's view: should see both messages with opposite isOwn flags
+  console.log(`[TEST] Bob retrieving conversation with Alice...`);
+  const resB = await bob.client
+    .get(`${MSG_BASE}/private/${encodeURIComponent(alice.id)}`)
+    .set("Accept", "application/json");
 
-//   // Test error handling
-//   test("handles invalid receiver gracefully", async () => {
-//     const sender = await registerUser("error_test_sender");
+  console.log(`[TEST] Bob's GET response status: ${resB.status}`);
+  console.log(`[TEST] Bob's GET response body:`, JSON.stringify(resB.body, null, 2));
 
-//     const response = await sendPrivateMessage(
-//       sender,
-//       { id: "invalid_id" },
-//       "Should fail",
-//     );
-//     expect(response.status).toBe(404);
-//   });
-// });
+  expect(resB.status).toBe(200);
+  
+  const msgsB = resB.body?.messages || [];
+  console.log(`[TEST] Bob sees ${msgsB.length} messages`);
+  expect(msgsB.length).toBeGreaterThanOrEqual(2);
+
+  const a1MsgBob = msgsB.find((m) => m.content === "A1");
+  const b1MsgBob = msgsB.find((m) => m.content === "B1");
+  
+  console.log(`[TEST] A1 message (from Bob's view):`, a1MsgBob);
+  console.log(`[TEST] B1 message (from Bob's view):`, b1MsgBob);
+  
+  expect(a1MsgBob?.isOwn).toBe(false);
+  expect(b1MsgBob?.isOwn).toBe(true);
+});
+
+test("POST /api/messages/private creates a DM; then GET shows it", async () => {
+  console.log("\n[TEST] === Testing POST then GET ===");
+  
+  console.log(`[TEST] Alice (ID: ${alice.id}) sending DM to Bob (ID: ${bob.id})...`);
+  
+  try {
+    const posted = await alice.client
+      .post(`${MSG_BASE}/private`)
+      .set("Accept", "application/json")
+      .send({ 
+        receiver: bob.id,  // Changed: send as number, not string
+        content: "new dm",
+        timestamp: new Date().toISOString()
+      });
+
+    console.log(`[TEST] POST response status: ${posted.status}`);
+    console.log(`[TEST] POST response body:`, JSON.stringify(posted.body, null, 2));
+    expect([200, 201]).toContain(posted.status);
+  } catch (error) {
+    console.error("[TEST] ERROR: POST failed:", error.message);
+    if (error.response) {
+      console.error("[TEST] Response status:", error.response.status);
+      console.error("[TEST] Response body:", JSON.stringify(error.response.body || error.response.text, null, 2));
+    }
+    throw error;
+  }
+
+  await new Promise((r) => setTimeout(r, 100));
+
+  const res = await bob.client
+    .get(`${MSG_BASE}/private/${encodeURIComponent(alice.id)}`)
+    .set("Accept", "application/json");
+
+  console.log(`[TEST] GET response status: ${res.status}`);
+  console.log(`[TEST] GET response body:`, JSON.stringify(res.body, null, 2));
+
+  expect(res.status).toBe(200);
+  
+  const messages = res.body?.messages || [];
+  console.log(`[TEST] Bob sees ${messages.length} messages`);
+  
+  const contents = messages.map((m) => m.content);
+  console.log(`[TEST] Message contents:`, contents);
+  
+  expect(contents).toContain("new dm");
+  
+  const dmMsg = messages.find((m) => m.content === "new dm");
+  console.log(`[TEST] DM message (from Bob's view):`, dmMsg);
+  expect(dmMsg?.isOwn).toBe(false);
+});

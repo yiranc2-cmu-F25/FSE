@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>ESN Speed Test</title>
+        <%- include('../partials/head') %>
+    </head>
+
+    <body class="min-h-screen bg-white">
+        <div class="relative mx-auto flex h-screen w-full max-w-md flex-col items-center justify-center">
+            <!-- Header -->
+            <div class="absolute top-[5%] flex w-11/12 items-center justify-start gap-1">
+                <a href="/speed-test">
+                    <img
+                        src="/images/icons/illustrations/icon-left.svg"
+                        alt="Back"
+                        class="w-10"
+                    />
+                </a>
+            </div>
+        
+            <p class="font-poppins font-semibold absolute top-[5%] text-center text-xl leading-normal text-black">
+                ESN Speed Test Report
+            </p>
+
+            <!-- Illustration -->
+            <div class="absolute top-[12%] flex w-full items-center justify-center px-2">
+                <img
+                    src="/images/esn-speed-test/undraw-graphics/esn-speed-test-board.svg"
+                    alt="Image"
+                />
+            </div>
+
+            <!-- Performance -->
+            <div class="absolute top-[42%] w-5/6">
+                <p class="text-left text-sm font-medium text-gray-700">
+                    Performance (Throughput)
+                </p>
+                <p class="text-left text-xs font-poppins text-gray-500">
+                    <br> During <span id="duration" class="font-semibold text-gray-700">378</span> seconds, ESN Public Chat Wall performed: <br><br>
+                    &nbsp;&nbsp;• <span id="post" class="font-semibold text-gray-800">40</span> Post requests per second <br><br>
+                    &nbsp;&nbsp;• <span id="get" class="font-semibold text-gray-800">50</span> Get requests per second
+                </p>
+            </div>
+
+            <!-- Okay! -->
+            <button
+                id="okayBtn"
+                class="font-poppins font-semibold absolute top-[58%] h-12 w-5/6 bg-theme text-lg text-white"
+            >
+                Okay!
+            </button>
+        </div>
+        <script>window.__CURRENT_USER__ = "<%= username %>";</script>
+        <script type="module" src="/js/speedTest/report.js"></script>
+    </body>
+</html>

@@ -7,8 +7,8 @@
     <%- include('../partials/head') %>
     <script>window.__CURRENT_USER__ = "<%= username %>";</script>
     <script type="module" src="/js/publicChat/publicChat.js"></script>
-    <script type="module" src="/js/utils/notify-bootstrap.js"></script>
-    <script type="module" src="/js/utils/notify-listener.js"></script>
+    <script type="module" src="/js/notify/notify-bootstrap.js"></script>
+    <script type="module" src="/js/notify/notify-listener.js"></script>
   </head>
   <body class="min-h-screen bg-white">
     <div
@@ -87,7 +87,7 @@
         ></div>
       </main>
 
-      <div class="w-full border-t-2 border-slate-200 bg-white px-6 py-4">
+      <div class="w-full border-t-2 border-slate-200 bg-white px-6 pt-4 pb-[6rem]">
         <form
           id="msg-form"
           class="flex w-full items-end justify-center gap-2 rounded-xl border border-gray-200 p-2"
