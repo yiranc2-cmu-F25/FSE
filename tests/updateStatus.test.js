@@ -55,7 +55,7 @@ describe("Authentications REST API Integration Tests", () => {
     };
   };
 
-  describe("PATCH /api/authentications/newstatuses - Update user status and broadcast", () => {
+  describe("PATCH /api/authentications/statuses/new - Update user status and broadcast", () => {
     test("should update status and broadcast", async () => {
       const agentClient = request.agent();
       const user = await registerUser(
@@ -74,7 +74,7 @@ describe("Authentications REST API Integration Tests", () => {
       app.set("socketInstance", mockSocket);
 
       const resp = await agentClient
-        .patch(`${AUTH_BASE}/newstatuses`)
+        .patch(`${AUTH_BASE}/statuses/new`)
         .set("Accept", "application/json")
         .send({ userId: user.id, newStatus: "OK" })
         .ok((res) => true);
@@ -100,7 +100,7 @@ describe("Authentications REST API Integration Tests", () => {
       await registerUser(agentClient, `status_missing_${Date.now()}`);
 
       const resp = await agentClient
-        .patch(`${AUTH_BASE}/newstatuses`)
+        .patch(`${AUTH_BASE}/statuses/new`)
         .set("Accept", "application/json")
         .send({}) 
         .ok((res) => true);
@@ -111,7 +111,7 @@ describe("Authentications REST API Integration Tests", () => {
 
     test("should return 401 when unauthorized (no cookie)", async () => {
       const resp = await request
-        .patch(`${AUTH_BASE}/newstatuses`)
+        .patch(`${AUTH_BASE}/statuses/new`)
         .set("Accept", "application/json")
         .send({ userId: 1, newStatus: "OK" })
         .ok((res) => true);

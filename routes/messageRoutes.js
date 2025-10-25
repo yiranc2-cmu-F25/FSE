@@ -19,8 +19,9 @@ const router = Router();
  *   get:
  *     tags: [Messages]
  *     summary: List latest public messages
+ *     description: Retrieves all public messages from the community wall
  *     security:
- *       - bearerAuth: []
+ *       - cookieAuth: []
  *     responses:
  *       200:
  *         description: Array of public messages
@@ -29,68 +30,253 @@ const router = Router();
  *             schema:
  *               type: array
  *               items:
- *                 $ref: '#/components/schemas/PublicMessage'
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: string
+ *                     example: "1"
+ *                   sender:
+ *                     type: string
+ *                     example: "alice"
+ *                   content:
+ *                     type: string
+ *                     example: "Hello everyone!"
+ *                   timestamp:
+ *                     type: string
+ *                     format: date-time
+ *                     example: "2024-10-24T10:30:00.000Z"
+ *                   status:
+ *                     type: string
+ *                     example: "OK"
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error: { type: string, example: "Unauthorized" }
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status: { type: string, example: "error" }
+ *                 message: { type: string, example: "Server error" }
  */
 router.get("/public", auth, getPublicMessages);
+
 /**
  * @openapi
  * /api/messages/public:
  *   post:
  *     tags: [Messages]
  *     summary: Post a new public message
+ *     description: Creates a new public message on the community wall
  *     security:
- *       - bearerAuth: []
+ *       - cookieAuth: []
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/PublicMessage'
+ *             type: object
+ *             required:
+ *               - sender
+ *               - content
+ *               - status
+ *             properties:
+ *               sender:
+ *                 type: string
+ *                 description: User ID of the sender
+ *                 example: "4"
+ *               content:
+ *                 type: string
+ *                 description: Message text content
+ *                 example: "Hello everyone!"
+ *               status:
+ *                 type: string
+ *                 description: Sender's current status
+ *                 example: "OK"
+ *               timestamp:
+ *                 type: string
+ *                 format: date-time
+ *                 description: Optional timestamp (defaults to current time)
+ *                 example: "2024-10-24T10:30:00.000Z"
  *     responses:
  *       201:
- *         description: Created
+ *         description: Message sent successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message: { type: string, example: "Message sent successfully" }
+ *       400:
+ *         description: Missing required fields
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status: { type: string, example: "error" }
+ *                 message: { type: string, example: "Missing required fields" }
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error: { type: string, example: "Unauthorized" }
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status: { type: string, example: "error" }
+ *                 message: { type: string, example: "Server error" }
  */
 router.post("/public", auth, sendPublicMessage);
 
-// TODO: req.body || query parameter
 /**
  * @openapi
  * /api/messages/private/unread:
  *   get:
  *     tags: [Messages]
- *     summary: Get latest unread private messages from all users
+ *     summary: Get latest unread private messages
+ *     description: Retrieves all unread private messages sent to the authenticated user
  *     security:
- *       - bearerAuth: []
+ *       - cookieAuth: []
  *     responses:
  *       200:
- *         description: Array of private messages
+ *         description: Array of unread private messages
  *         content:
  *           application/json:
  *             schema:
  *               type: array
  *               items:
- *                 $ref: '#/components/schemas/PrivateMessage'
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: string
+ *                     example: "1"
+ *                   sender:
+ *                     type: string
+ *                     example: "4"
+ *                   receiver:
+ *                     type: string
+ *                     example: "5"
+ *                   content:
+ *                     type: string
+ *                     example: "Hi there!"
+ *                   timestamp:
+ *                     type: string
+ *                     format: date-time
+ *                     example: "2024-10-24T10:30:00.000Z"
+ *                   read:
+ *                     type: boolean
+ *                     example: false
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error: { type: string, example: "Unauthorized" }
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status: { type: string, example: "error" }
+ *                 message: { type: string, example: "Server error" }
  */
 router.get("/private/unread", auth, getUnreadMessages);
 
-// TODO: req.body || query parameter
 /**
  * @openapi
- * /api/messages/private/:peerId:
+ * /api/messages/private/{peerId}:
  *   get:
  *     tags: [Messages]
- *     summary: List latest private messages between two users
+ *     summary: List private messages between two users
+ *     description: Retrieves all private messages exchanged between the authenticated user and another user (peerId). Messages are merged, deduplicated, and sorted by timestamp.
  *     security:
- *       - bearerAuth: []
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: peerId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: User ID of the other person in the conversation
+ *         example: "5"
  *     responses:
  *       200:
- *         description: Array of private messages
+ *         description: Conversation messages between two users
  *         content:
  *           application/json:
  *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/PrivateMessage'
+ *               type: object
+ *               properties:
+ *                 messages:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                         example: "1"
+ *                       sender:
+ *                         type: string
+ *                         example: "alice"
+ *                       content:
+ *                         type: string
+ *                         example: "Hi Bob!"
+ *                       timestamp:
+ *                         type: string
+ *                         format: date-time
+ *                         example: "2024-10-24T10:30:00.000Z"
+ *                       status:
+ *                         type: string
+ *                         example: "OK"
+ *                       isOwn:
+ *                         type: boolean
+ *                         description: True if the authenticated user sent this message
+ *                         example: true
+ *       400:
+ *         description: Missing required parameters
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status: { type: string, example: "error" }
+ *                 message: { type: string, example: "Missing userId or peerId" }
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error: { type: string, example: "Unauthorized" }
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status: { type: string, example: "error" }
+ *                 message: { type: string, example: "Server error" }
  */
 router.get("/private/:peerId", auth, getPrivateMessages);
 
@@ -99,18 +285,72 @@ router.get("/private/:peerId", auth, getPrivateMessages);
  * /api/messages/private:
  *   post:
  *     tags: [Messages]
- *     summary: Post a new private message to channel between 2 users
+ *     summary: Send a private message
+ *     description: Creates a new private message from the authenticated user to another user
  *     security:
- *       - bearerAuth: []
+ *       - cookieAuth: []
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/PrivateMessage'
+ *             type: object
+ *             required:
+ *               - receiver
+ *               - content
+ *             properties:
+ *               receiver:
+ *                 type: string
+ *                 description: User ID of the message recipient
+ *                 example: "5"
+ *               content:
+ *                 type: string
+ *                 description: Message text content
+ *                 example: "Hi there!"
+ *               status:
+ *                 type: string
+ *                 description: Sender's current status (optional)
+ *                 example: "OK"
+ *               timestamp:
+ *                 type: string
+ *                 format: date-time
+ *                 description: Optional timestamp (defaults to current time)
+ *                 example: "2024-10-24T10:30:00.000Z"
  *     responses:
  *       201:
- *         description: Created
+ *         description: Message sent successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message: { type: string, example: "Message sent successfully" }
+ *       400:
+ *         description: Missing required fields
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status: { type: string, example: "error" }
+ *                 message: { type: string, example: "Receiver and content are required" }
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error: { type: string, example: "Unauthorized" }
+ *       500:
+ *         description: Server error (e.g., sender or receiver not found)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status: { type: string, example: "error" }
+ *                 message: { type: string, example: "Sender or receiver not found" }
  */
 router.post("/private", auth, sendPrivateMessage);
 
@@ -119,18 +359,58 @@ router.post("/private", auth, sendPrivateMessage);
  * /api/messages/private/read:
  *   post:
  *     tags: [Messages]
- *     summary: Post all DMs as read between two users
+ *     summary: Mark private messages as read
+ *     description: Marks all messages from a specific sender to the authenticated user as read
  *     security:
- *       - bearerAuth: []
+ *       - cookieAuth: []
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - senderId
+ *             properties:
+ *               senderId:
+ *                 type: string
+ *                 description: User ID of the sender whose messages should be marked as read
+ *                 example: "4"
  *     responses:
- *       201:
- *         description: Marked as read
+ *       200:
+ *         description: Messages marked as read successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message: { type: string, example: "Messages marked as read" }
+ *       400:
+ *         description: Missing required fields
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status: { type: string, example: "error" }
+ *                 message: { type: string, example: "Sender ID is required" }
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error: { type: string, example: "Unauthorized" }
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status: { type: string, example: "error" }
+ *                 message: { type: string, example: "Server error" }
  */
 router.post("/private/read", auth, markPrivateMessagesAsRead);
 
