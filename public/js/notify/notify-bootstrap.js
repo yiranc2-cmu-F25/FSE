@@ -17,7 +17,10 @@ function mountNotify() {
       </div>
       <div class="min-w-0 flex-1">
         <div class="flex items-baseline justify-between">
-          <div class="truncate font-semibold text-zinc-900" data-title></div>
+          <div class="flex items-center gap-2 min-w-0">
+            <div class="truncate font-semibold text-zinc-900" data-title></div>
+            <span class="status-badge rounded-full px-2 py-0.5 text-[10px] font-semibold"></span>
+          </div>
           <div class="ml-3 shrink-0 text-xs text-zinc-500" data-time></div>
         </div>
         <div class="mt-1 truncate text-zinc-600 text-[15px]" data-sub>1 new message</div>

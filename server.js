@@ -39,7 +39,7 @@ app.set("socketInstance", socketInstance);
 
 let serverInstance = server.listen(process.env.PORT || 3000, () => {
   console.log(
-    "Swagger docs at http://localhost:3000/api-docs",
+    "Server running at http://localhost:3000/",
   );
   console.log(
     "Swagger docs at http://localhost:3000/api-docs",

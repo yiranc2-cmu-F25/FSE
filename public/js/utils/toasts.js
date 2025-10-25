@@ -1,6 +1,11 @@
 import { getInitialsSafe, getAvatarColor } from "./avatars.js";
 import { renderMessage } from "./renderMessage.js";
-
+const STATUS = {
+    undefined: "gray",
+    ok: "green",
+    help: "yellow",
+    emergency: "red",
+};
 function timeStr(ts) {
   return new Date(ts || Date.now()).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 }
@@ -50,6 +55,13 @@ function showToast({ sender, senderId, timestamp, text, status }) {
   el.querySelector("[data-title]").textContent = name;
   el.querySelector("[data-time]").textContent  = timeStr(timestamp);
   el.querySelector("[data-sub]").textContent   = "You received a new message";
+  const key = (status || "undefined").toString().toLowerCase();
+  const color = STATUS[key] || STATUS.undefined;
+  const badge = el.querySelector(".status-badge");
+  badge.textContent = (
+      Object.keys(STATUS).includes(key) ? key : "undefined"
+  ).toUpperCase();
+  badge.classList.add(`bg-${color}-200`, `text-${color}-500`);
 
   el.querySelector("[data-dismiss]").addEventListener("click", () => { el.remove(); });
   el.querySelector("[data-view]").addEventListener("click", () => { 
