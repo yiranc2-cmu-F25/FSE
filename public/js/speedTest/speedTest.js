@@ -147,7 +147,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const startTime = nowMs();
         const endTime = nowMs() + budgetMs;
         let postCount = 0;
-        let lastPost = nowMs();
+        // let lastPost = nowMs();
         let startPost = 0;
         let endPost = 0;
 
@@ -165,8 +165,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             } else{
                 try {
-                    console.log(`[POST] Posting #${postCount} message, took ${nowMs() - lastPost}ms since last post.`);
-                    lastPost = nowMs();
+                    // console.log(`[POST] Posting #${postCount} message, took ${nowMs() - lastPost}ms since last post.`);
+                    // lastPost = nowMs();
                     postOneMessage();
                     postCount++;
                 } catch (err) {
@@ -176,7 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 endPost = nowMs();
                 const elapsed = endPost - startPost;
                 const waitTime = intervalMs - elapsed;
-                console.log(`[POST] Message #${postCount} took ${elapsed}ms, waiting additional ${waitTime}ms to honor interval.`);
+                // console.log(`[POST] Message #${postCount} took ${elapsed}ms, waiting additional ${waitTime}ms to honor interval.`);
                 if (waitTime > 0) {
                     await sleep(waitTime);
                 }
