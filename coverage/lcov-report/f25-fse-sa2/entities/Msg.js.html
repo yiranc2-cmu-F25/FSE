@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">53.84% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>7/13</span>
+                <span class='fraction'>0/13</span>
             </div>
         
             
@@ -37,16 +37,16 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">33.33% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>3/9</span>
+                <span class='fraction'>0/9</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">53.84% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>7/13</span>
+                <span class='fraction'>0/13</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line medium'></div>
+    <div class='status-line low'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -118,11 +118,15 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -134,11 +138,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -168,12 +168,12 @@
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import MsgDac from "../dacs/msgDac.js";
 &nbsp;
 class Msg {
-    constructor({ sender, receiver, timestamp, status, content }) {
-        this.sender = sender;
-        this.receiver = receiver;
-        this.timestamp = timestamp;
-        this.status = status;
-        this.content = content;
+<span class="fstat-no" title="function not covered" >    co</span>nstructor({ sender, receiver, timestamp, status, content }) {
+<span class="cstat-no" title="statement not covered" >        this.sender = sender;</span>
+<span class="cstat-no" title="statement not covered" >        this.receiver = receiver;</span>
+<span class="cstat-no" title="statement not covered" >        this.timestamp = timestamp;</span>
+<span class="cstat-no" title="statement not covered" >        this.status = status;</span>
+<span class="cstat-no" title="statement not covered" >        this.content = content;</span>
     }
 &nbsp;
 <span class="fstat-no" title="function not covered" >    is</span>Public() {
@@ -184,12 +184,12 @@ class Msg {
 <span class="cstat-no" title="statement not covered" >        return this.receiver !== null;</span>
     }
 &nbsp;
-    static get DAO() {
-        return MsgDac.DAO;
+<span class="fstat-no" title="function not covered" >    st</span>atic get DAO() {
+<span class="cstat-no" title="statement not covered" >        return MsgDac.DAO;</span>
     }
 &nbsp;
-    async create() {
-        await Msg.DAO.create({
+<span class="fstat-no" title="function not covered" >    as</span>ync create() {
+<span class="cstat-no" title="statement not covered" >        await Msg.DAO.create({</span>
             sender: this.sender,
             receiver: this.receiver,
             timestamp: this.timestamp,
@@ -223,7 +223,7 @@ export default Msg;
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-10-23T03:52:28.590Z
+                at 2025-10-25T23:59:31.001Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

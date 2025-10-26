@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">12.35% </span>
+                <span class="strong">1.12% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>11/89</span>
+                <span class='fraction'>1/89</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">7.89% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>6/76</span>
+                <span class='fraction'>0/76</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">10% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>1/10</span>
+                <span class='fraction'>0/10</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">12.94% </span>
+                <span class="strong">1.17% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>11/85</span>
+                <span class='fraction'>1/85</span>
             </div>
         
             
@@ -252,7 +252,7 @@
 <a name='L187'></a><a href='#L187'>187</a>
 <a name='L188'></a><a href='#L188'>188</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -329,27 +329,27 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -507,7 +507,7 @@ export async function <span class="fstat-no" title="function not covered" >getPr
   }
 }
 &nbsp;
-export async function sendPrivateMessage(req, res) {
+export async function <span class="fstat-no" title="function not covered" >sendPrivateMessage(</span>req, res) {
     // Req parameters:
     // Sender, Receiver (UID)
     // Message Text, Timestamp
@@ -516,27 +516,27 @@ export async function sendPrivateMessage(req, res) {
     // void with Status code
     // 201: "Message sent successfully"
     // 500: "Internal server error: Unable to create new private message to channel."
-    try {
-        const { receiver, content, status, timestamp } = req.body;
-        const sender = String(req.user?.id ?? <span class="branch-1 cbranch-no" title="branch not covered" >req.userId)</span>;
+<span class="cstat-no" title="statement not covered" >    try {</span>
+        const { receiver, content, status, timestamp } = <span class="cstat-no" title="statement not covered" >req.body;</span>
+        const sender = <span class="cstat-no" title="statement not covered" >String(req.user?.id ?? req.userId);</span>
 &nbsp;
-        <span class="missing-if-branch" title="if path not taken" >I</span>if (!receiver || !content) {
+<span class="cstat-no" title="statement not covered" >        if (!receiver || !content) {</span>
 <span class="cstat-no" title="statement not covered" >            return res.status(400).json({ status: "error", message: "receiver/content required" });</span>
         }
 &nbsp;
-        const msg = new Msg({
+        const msg = <span class="cstat-no" title="statement not covered" >new Msg({</span>
             sender,
             receiver,
             content: content.trim(),
             status,
             timestamp,
         });
-        await msg.create();
+<span class="cstat-no" title="statement not covered" >        await msg.create();</span>
 &nbsp;
-        const senderUsername = await User.getUsernameById(sender);
-        const receiverUsername = await User.getUsernameById(receiver);
-        <span class="missing-if-branch" title="else path not taken" >E</span>if (!senderUsername || <span class="branch-1 cbranch-no" title="branch not covered" >!receiverUsername)</span> {
-            return res
+        const senderUsername = <span class="cstat-no" title="statement not covered" >await User.getUsernameById(sender);</span>
+        const receiverUsername = <span class="cstat-no" title="statement not covered" >await User.getUsernameById(receiver);</span>
+<span class="cstat-no" title="statement not covered" >        if (!senderUsername || !receiverUsername) {</span>
+<span class="cstat-no" title="statement not covered" >            return res</span>
                 .status(500)
                 .json({
                     status: "error",
@@ -631,7 +631,7 @@ export async function <span class="fstat-no" title="function not covered" >getUn
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-10-23T03:52:28.590Z
+                at 2025-10-25T23:59:31.001Z
             </div>
         <script src="../../prettify.js"></script>
         <script>
