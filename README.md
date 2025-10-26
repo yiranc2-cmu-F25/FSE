@@ -1,3 +1,12 @@
+# UPDATE NOTE
+Sigrid is now enabled for this repo.
+
+You have new GitHub Actions workflow files.
+
+Accept your Sigrid invitation and review the analysis of your repo.
+
+Visit Sigrid at [https://sigrid-says.com/cmusvfse](https://sigrid-says.com/cmusvfse)
+
 # PURPOSE
 
 This is your team's repo for the ESN Application, the group project conducted in 18652.
