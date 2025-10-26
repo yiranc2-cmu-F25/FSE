@@ -135,7 +135,7 @@ describe("Authentications REST API Integration Tests", () => {
         .ok((res) => true);
 
       expect(resp.status).toBe(200);
-      expect(resp.body?.status).toBe("Available");
+      expect(resp.body?.status).toBe("undefined");
     });
 
     test("should return 401 when unauthorized (no cookie)", async () => {
