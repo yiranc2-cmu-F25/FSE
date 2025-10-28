@@ -112,19 +112,6 @@ export async function postToSpeedTest(req, res) {
     });
     return null;
   }
-  const { payload } = req.body ?? {};
-  if (typeof payload !== "string" || payload.length != 20) {
-    return res.status(422).json({
-      errorMessage:
-        "POST msg during ESN Speed Test should be exactly 20-char long string.",
-      errorStatus: "SPEED_TEST_POST_INPUT_ERROR",
-      errorCode: 422,
-    });
-  }
-  const { serverElapsedMs } = await timeAsyncFunction(insertSpeedTestMsg)(
-    speedTestId,
-    payload,
-  );
   speedTestState.postCount += 1;
   if (speedTestState.postCount > POSTLIMIT) {
     speedTestState.state = "STOPPING";
@@ -135,6 +122,20 @@ export async function postToSpeedTest(req, res) {
       limit: POSTLIMIT,
     });
   }
+  const { payload } = req.body ?? {};
+  if (typeof payload !== "string" || payload.length != 20) {
+    return res.status(422).json({
+      errorMessage:
+        "POST msg during ESN Speed Test should be exactly 20-char long string.",
+      errorStatus: "SPEED_TEST_POST_INPUT_ERROR",
+      errorCode: 422,
+    });
+  }
+
+  const { serverElapsedMs } = await timeAsyncFunction(insertSpeedTestMsg)(
+    speedTestId,
+    payload,
+  );
   return res.status(200).json({ ok: true, serverElapsedMs });
 }
 
