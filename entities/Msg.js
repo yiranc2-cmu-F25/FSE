@@ -14,7 +14,7 @@ class Msg {
     }
 
     isPrivate() {
-        return this.receiver !== null;
+        return this.receiver !== null && this.receiver !== "announcement";
     }
 
     static get DAO() {
@@ -45,6 +45,10 @@ class Msg {
 
     static async getUnreadMessages(receiverId) {
         return await Msg.DAO.getUnreadMessages(receiverId);
+    }
+
+    static async getAnnouncement() {
+        return await Msg.DAO.getAnnouncement();
     }
 }
 
