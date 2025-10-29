@@ -14,7 +14,7 @@ class Msg {
     }
 
     isPrivate() {
-        return this.receiver !== null && this.receiver !== "announcement";
+        return this.receiver !== null;
     }
 
     static get DAO() {
