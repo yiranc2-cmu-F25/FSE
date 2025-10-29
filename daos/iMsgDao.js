@@ -10,8 +10,4 @@ export class iMsgDao {
     async getPublicMsg() {
         throw new Error("To be implemented!");
     }
-
-    async getAnnouncement() {
-        throw new Error("To be implemented!");
-    }
 }

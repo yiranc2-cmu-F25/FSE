@@ -1,10 +1,10 @@
 import User from "../entities/User.js";
-import Msg from "../entities/Msg.js";
+import Announcement from "../entities/Announcement.js";
 
 
 export async function getAnnouncements(req, res) {
     try {
-        const announcements = await Msg.getAnnouncement();
+        const announcements = await Announcement.getAnnouncement();
         const data = announcements.map((msg) => {
             return {
                 sender: msg.sender.username,
@@ -26,7 +26,7 @@ export async function postAnnouncement(req, res) {
 
     try {
         const { sender, content, status, timestamp } = req.body;
-        const announcement = new Msg({ sender, receiver: "announcement", content: content.trim(), status, timestamp });
+        const announcement = new Announcement({ sender, content: content.trim(), status, timestamp });
 
         await announcement.create();
         const username = await User.getUsernameById(sender);

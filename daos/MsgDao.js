@@ -99,19 +99,4 @@ export class MsgDao extends iMsgDao {
         }
     }
 
-    async getAnnouncement() {
-        const docs = await this.MessageModel.find({ receiver: "announcement" })
-            .sort({ timestamp: 1 })
-            .populate("sender", "username")
-            .lean();
-        return docs.map((doc) => ({
-            id: doc._id,
-            sender: doc.sender,
-            receiver: doc.receiver,
-            timestamp: doc.timestamp,
-            status: doc.status,
-            content: doc.content,
-        }));
-    }
-
 }
