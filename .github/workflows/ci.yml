@@ -40,13 +40,20 @@ jobs:
           if-no-files-found: error
 
       - name: Add coverage to job summary
+        if: ${{ hashFiles('coverage/coverage-summary.json') != '' }}
         run: |
-          node -e "const s=require('./coverage/coverage-summary.json').total;
-          const md = `### Jest Coverage
-          |Metric|%|Covered/Total|
-          |---|---:|---:|
-          |Branches|${s.branches.pct}|${s.branches.covered}/${s.branches.total}|
-          |Functions|${s.functions.pct}|${s.functions.covered}/${s.functions.total}|
-          |Lines|${s.lines.pct}|${s.lines.covered}/${s.lines.total}|
-          |Statements|${s.statements.pct}|${s.statements.covered}/${s.statements.total}|`;
-          require('fs').appendFileSync(process.env.GITHUB_STEP_SUMMARY, md);"
+          node - <<'NODE'
+          const s = require('./coverage/coverage-summary.json').total;
+          const md = [
+            '### Jest Coverage',
+            '',
+            '|Metric|%|Covered/Total|',
+            '|---|---:|---:|',
+            `|Branches|${s.branches.pct}|${s.branches.covered}/${s.branches.total}|`,
+            `|Functions|${s.functions.pct}|${s.functions.covered}/${s.functions.total}|`,
+            `|Lines|${s.lines.pct}|${s.lines.covered}/${s.lines.total}|`,
+            `|Statements|${s.statements.pct}|${s.statements.covered}/${s.statements.total}|`,
+            ''
+          ].join('\n');
+          require('fs').appendFileSync(process.env.GITHUB_STEP_SUMMARY, md);
+          NODE
