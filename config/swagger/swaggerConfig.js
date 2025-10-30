@@ -39,6 +39,27 @@ const options = {
 };
 
 console.log("[swagger] scanning:", options.apis);
+
+import fs from "fs";
+const probeFiles = [
+  "routes/authRoutes.js",
+  "routes/announcementRoutes.js",
+  "routes/speedTestRoutes.js",
+];
+
+for (const rel of probeFiles) {
+  const abs = path.resolve(ROOT, rel);
+  const exists = fs.existsSync(abs);
+  let hasOpenapi = false;
+  if (exists) {
+    try {
+      const txt = fs.readFileSync(abs, "utf8");
+      hasOpenapi = /@openapi/.test(txt);
+    } catch {}
+  }
+  console.log(`[swagger][probe] ${rel} exists=${exists} has@openapi=${hasOpenapi}`);
+}
+
 const swaggerSpec = swaggerJsdoc(options);
 console.log("[swagger] paths:", swaggerSpec.paths ? Object.keys(swaggerSpec.paths).length : 0);
 
