@@ -79,7 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // TODO: save logic here in future
     try{
       const user = await loadInfo();
-      const pathStatus = await fetch('/api/authentications/newstatuses', {
+      const pathStatus = await fetch('/api/authentications/statuses/new', {
         method: 'PATCH',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },

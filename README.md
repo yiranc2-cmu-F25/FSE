@@ -56,6 +56,3 @@ This is your team's repo for the ESN Application, the group project conducted in
     - **Weaknesses**: Less efficient for highly dynamic or real-time applications.
 
 ## Documentation
-- API Reference: [api-doc.md](./api-doc.md)
-
-

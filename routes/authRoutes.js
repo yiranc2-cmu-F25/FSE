@@ -383,7 +383,7 @@ router.get("/lists", auth, listMembers);
  *                 status: { type: string, example: "error" }
  *                 message: { type: string, example: "Server error" }
  */
-router.patch("/newstatuses", auth, updateStatusById);
+router.patch("/statuses/new", auth, updateStatusById);
 
 
 export default router;

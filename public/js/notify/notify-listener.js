@@ -1,7 +1,5 @@
 
 import { getSocket } from "/js/utils/socket.js";
-import { getAvatarColor, getInitialsSafe } from "/js/utils/avatars.js";
-import { renderMessage } from "/js/utils/renderMessage.js";
 import { showToast } from "/js/utils/toasts.js";
 
 function getCurrentDMIdFromURL() {
