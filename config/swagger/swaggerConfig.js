@@ -52,10 +52,8 @@ for (const rel of probeFiles) {
   const exists = fs.existsSync(abs);
   let hasOpenapi = false;
   if (exists) {
-    try {
-      const txt = fs.readFileSync(abs, "utf8");
-      hasOpenapi = /@openapi/.test(txt);
-    } catch {}
+    const txt = fs.readFileSync(abs, "utf8");
+    hasOpenapi = /@openapi/.test(txt);
   }
   console.log(`[swagger][probe] ${rel} exists=${exists} has@openapi=${hasOpenapi}`);
 }
