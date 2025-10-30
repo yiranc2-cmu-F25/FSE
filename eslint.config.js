@@ -24,4 +24,12 @@ export default [
       "build/",
     ],
   },
+  {
+    files: ["**/*.test.mjs"],
+    languageOptions: {
+      globals: {
+        ...globals.jest,
+      },
+    },
+  },
 ];
