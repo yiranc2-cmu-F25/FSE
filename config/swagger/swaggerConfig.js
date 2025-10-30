@@ -1,9 +1,6 @@
 // config/swagger/swaggerConfig.js
 import swaggerJsdoc from "swagger-jsdoc";
 import path from "path";
-import { fileURLToPath } from "url";
-
-const __filename = fileURLToPath(import.meta.url);
 
 const ROOT = process.cwd();
 const P = (...segs) => path.resolve(ROOT, ...segs).replace(/\\/g, "/");
@@ -39,24 +36,6 @@ const options = {
 };
 
 console.log("[swagger] scanning:", options.apis);
-
-import fs from "fs";
-const probeFiles = [
-  "routes/authRoutes.js",
-  "routes/announcementRoutes.js",
-  "routes/speedTestRoutes.js",
-];
-
-for (const rel of probeFiles) {
-  const abs = path.resolve(ROOT, rel);
-  const exists = fs.existsSync(abs);
-  let hasOpenapi = false;
-  if (exists) {
-    const txt = fs.readFileSync(abs, "utf8");
-    hasOpenapi = /@openapi/.test(txt);
-  }
-  console.log(`[swagger][probe] ${rel} exists=${exists} has@openapi=${hasOpenapi}`);
-}
 
 const swaggerSpec = swaggerJsdoc(options);
 console.log("[swagger] paths:", swaggerSpec.paths ? Object.keys(swaggerSpec.paths).length : 0);
