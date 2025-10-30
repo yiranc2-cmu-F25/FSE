@@ -64,8 +64,8 @@ const options = {
 
   // 👇 IMPORTANT: point to your real files
   apis: [
-    path.join(__dirname, "../../routes/*.js"),
-    path.join(__dirname, "../../controllers/*.js"),
+    path.resolve(__dirname, "../../routes/**/*.js").replace(/\\/g, "/"),
+    path.resolve(__dirname, "../../controllers/**/*.js").replace(/\\/g, "/"),
     // you can also keep standalone yaml files in this folder:
     path.join(__dirname, "./*.yaml"),
   ],
