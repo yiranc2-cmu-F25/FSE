@@ -46,6 +46,10 @@ class Msg {
     static async getUnreadMessages(receiverId) {
         return await Msg.DAO.getUnreadMessages(receiverId);
     }
+
+    static async getAnnouncement() {
+        return await Msg.DAO.getAnnouncement();
+    }
 }
 
 export default Msg;

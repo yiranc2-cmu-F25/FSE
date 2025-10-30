@@ -151,40 +151,37 @@ document.addEventListener("DOMContentLoaded", () => {
     let startPost = 0;
     let endPost = 0;
 
-    while (nowMs() < endTime) {
-      startPost = nowMs();
-      if (testAborted) {
-        return;
-      } else if (postCount >= MAX_POSTS) {
-        console.warn(
-          `[POST] Reached maximum of ${MAX_POSTS} messages after ${((nowMs() - startTime) / 1000).toFixed(2)}s.`,
-        );
-        exceededMaxPosts = true;
-        spinner.classList.add("hidden");
-        failureBanner.classList.remove("hidden");
-        clearInterval(countdownTimer);
-        await stopTest();
-        return;
-      } else {
-        try {
-          // console.log(`[POST] Posting #${postCount} message, took ${nowMs() - lastPost}ms since last post.`);
-          // lastPost = nowMs();
-          postCount++;
-          postOneMessage();
-        } catch (err) {
-          console.warn(
-            `[POST] Error after ${postCount} messages:`,
-            err.message,
-          );
-          return postCount;
+        while (nowMs() < endTime) {
+            startPost = nowMs();
+            if (testAborted) {
+                return;
+            } else if (postCount >= MAX_POSTS) {
+                console.warn(`[POST] Reached maximum of ${MAX_POSTS} messages after ${((nowMs() - startTime) / 1000).toFixed(2)}s.`);
+                exceededMaxPosts = true;
+                spinner.classList.add("hidden");
+                failureBanner.classList.remove("hidden");
+                clearInterval(countdownTimer);
+                await stopTest();
+                return;
+            } else{
+                try {
+                    // console.log(`[POST] Posting #${postCount} message, took ${nowMs() - lastPost}ms since last post.`);
+                    // lastPost = nowMs();
+                    postOneMessage();
+                    postCount++;
+                } catch (err) {
+                    console.warn(`[POST] Error after ${postCount} messages:`, err.message);
+                    return postCount;
+                }
+                endPost = nowMs();
+                const elapsed = endPost - startPost;
+                const waitTime = intervalMs - elapsed;
+                // console.log(`[POST] Message #${postCount} took ${elapsed}ms, waiting additional ${waitTime}ms to honor interval.`);
+                if (waitTime > 0) {
+                    await sleep(waitTime);
+                }
+            }
         }
-        endPost = nowMs();
-        const elapsed = endPost - startPost;
-        const waitTime = Math.max(0, intervalMs - elapsed);
-        // console.log(`[POST] Message #${postCount} took ${elapsed}ms, waiting additional ${waitTime}ms to honor interval.`);
-        await sleep(waitTime);
-      }
-    }
 
     console.log(
       `[POST] Sent ${postCount} messages in ${((nowMs() - startTime) / 1000).toFixed(2)}s`,

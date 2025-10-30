@@ -10,6 +10,9 @@ import { UserDao } from "./daos/UserDao.js";
 import { MsgDao } from "./daos/MsgDao.js";
 import userDac from "./dacs/userDac.js";
 import msgDac from "./dacs/msgDac.js";
+import { makeAnnouncementModel } from "./db/AnnouncementSchema.js";
+import { AnnouncementDao } from "./daos/AnnouncementDao.js";
+import AnnouncementDac from "./dacs/announcementDac.js";
 
 // 1. Connect to MongoDB
 await mongoose.connect(process.env.MONGO_URI, {
@@ -19,9 +22,11 @@ await mongoose.connect(process.env.MONGO_URI, {
 // now these use the default connection:
 const UserModel = makeUserModel(mongoose.connection);
 const MessageModel = makeMsgModel(mongoose.connection);
+const AnnouncementModel = makeAnnouncementModel(mongoose.connection);
 // 2. Inject models into DAOs for persistence operations
 userDac.DAO = new UserDao({ UserModel });
 msgDac.DAO = new MsgDao({ MessageModel });
+AnnouncementDac.DAO = new AnnouncementDao({ AnnouncementModel });
 // 3. Create HTTP server and bind Socket.IO
 const server = http.createServer(app);
 const io = new Server(server, {
