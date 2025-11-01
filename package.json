@@ -54,6 +54,7 @@
     "concurrently": "^9.0.0",
     "eslint": "^9.38.0",
     "eslint-config-prettier": "^10.1.8",
+    "express-list-endpoints": "^7.1.1",
     "nodemon": "^3.1.10",
     "postcss": "^8.5.6",
     "prettier": "^3.6.2",

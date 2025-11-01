@@ -13,33 +13,53 @@ const router = Router();
 
 /**
  * @openapi
- * /api/queries/citizens/{criteria}:
+ * /api/queries/citizens:
  *   get:
- *     tags: [Auth]
- *     summary: Search to get list of community members by username
+ *     tags: [Search]
+ *     summary: Search community members by (partial) username
  *     security:
  *       - cookieAuth: []
  *     parameters:
- *       - in: path
- *         name: criteria
+ *       - in: query
+ *         name: username
  *         required: true
- *         schema:
- *           type: string
- *         description: Search criteria
+ *         schema: { type: string }
+ *         description: Username or its substring to search (case-insensitive).
  *         example: "Alice"
+ *       - in: query
+ *         name: limit
+ *         required: false
+ *         schema: { type: integer, minimum: 0, default: 50 }
+ *       - in: query
+ *         name: offset
+ *         required: false
+ *         schema: { type: integer, minimum: 0, default: 0 }
  *     responses:
  *       200:
- *         description: Array of members
+ *         description: Search results (online first, alphabetical within groups)
  *         content:
  *           application/json:
  *             schema:
- *               type: array
- *               items:
- *                 type: object
- *                 properties:
- *                   username: { type: string }
- *                   status: { type: string, nullable: true }
- *                   role: { type: string }
+ *               type: object
+ *               properties:
+ *                 count:
+ *                   type: integer
+ *                   example: 2
+ *                 results:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       u:
+ *                         type: object
+ *                         properties:
+ *                           id:     { type: string, example: "68db1cc4050ba3718fab04c3" }
+ *                           name:   { type: string, example: "alice" }
+ *                           status: { type: string, nullable: true, example: "EMERGENCY" }
+ *                       availability:
+ *                         type: string
+ *                         enum: [online, offline]
+ *                         example: online
  *       400:
  *         description: Missing required parameters
  *         content:
@@ -47,7 +67,7 @@ const router = Router();
  *             schema:
  *               type: object
  *               properties:
- *                 status: { type: string, example: "error" }
+ *                 status:  { type: string, example: "error" }
  *                 message: { type: string, example: "Missing criteria" }
  *       401:
  *         description: Unauthorized
@@ -64,7 +84,7 @@ const router = Router();
  *             schema:
  *               type: object
  *               properties:
- *                 error: { type: string, example: "Forbidden" }
+ *                 error:  { type: string, example: "Forbidden" }
  *                 reason: { type: string, example: "TokenExpiredError" }
  *       500:
  *         description: Server error
@@ -73,37 +93,55 @@ const router = Router();
  *             schema:
  *               $ref: '#/components/schemas/ServerError'
  */
-router.get("/citizens/:criteria", auth, searchCitizensByUsername);
+router.get("/citizens", auth, searchCitizensByUsername);
 
 /**
  * @openapi
- * /api/queries/citizens-by-status/{criteria}:
+ * /api/queries/citizens-by-status:
  *   get:
- *     tags: [Auth]
- *     summary: Search to get list of community members by status
+ *     tags: [Search]
+ *     summary: Search community members by user status (online first, alphabetical within groups)
  *     security:
  *       - cookieAuth: []
  *     parameters:
- *       - in: path
- *         name: criteria
+ *       - in: query
+ *         name: status
  *         required: true
- *         schema:
- *           type: string
- *         description: Search criteria
- *         example: "Alice"
+ *         schema: { type: string }
+ *         description: User status to match (e.g., OK / EMERGENCY)
+ *         example: "OK"
+ *       - in: query
+ *         name: limit
+ *         required: false
+ *         schema: { type: integer, minimum: 0, default: 50 }
+ *       - in: query
+ *         name: offset
+ *         required: false
+ *         schema: { type: integer, minimum: 0, default: 0 }
  *     responses:
  *       200:
- *         description: Array of members
+ *         description: Search results
  *         content:
  *           application/json:
  *             schema:
- *               type: array
- *               items:
- *                 type: object
- *                 properties:
- *                   username: { type: string }
- *                   status: { type: string, nullable: true }
- *                   role: { type: string }
+ *               type: object
+ *               properties:
+ *                 count: { type: integer, example: 1 }
+ *                 results:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       u:
+ *                         type: object
+ *                         properties:
+ *                           id:     { type: string, example: "68db1cc4050ba3718fab04c3" }
+ *                           name:   { type: string, example: "tester18" }
+ *                           status: { type: string, nullable: true, example: "EMERGENCY" }
+ *                       availability:
+ *                         type: string
+ *                         enum: [online, offline]
+ *                         example: online
  *       400:
  *         description: Missing required parameters
  *         content:
@@ -111,7 +149,7 @@ router.get("/citizens/:criteria", auth, searchCitizensByUsername);
  *             schema:
  *               type: object
  *               properties:
- *                 status: { type: string, example: "error" }
+ *                 status:  { type: string, example: "error" }
  *                 message: { type: string, example: "Missing criteria" }
  *       401:
  *         description: Unauthorized
@@ -128,7 +166,7 @@ router.get("/citizens/:criteria", auth, searchCitizensByUsername);
  *             schema:
  *               type: object
  *               properties:
- *                 error: { type: string, example: "Forbidden" }
+ *                 error:  { type: string, example: "Forbidden" }
  *                 reason: { type: string, example: "TokenExpiredError" }
  *       500:
  *         description: Server error
@@ -137,24 +175,24 @@ router.get("/citizens/:criteria", auth, searchCitizensByUsername);
  *             schema:
  *               $ref: '#/components/schemas/ServerError'
  */
-router.get("/citizens-by-status/:criteria", auth, searchCitizensByStatus);
+router.get("/citizens-by-status", auth, searchCitizensByStatus);
 
 /**
  * @openapi
- * /api/queries/announcements/{criteria}:
+ * /api/queries/announcements?content={content}:
  *   get:
- *     tags: [Announcements]
+ *     tags: [Search]
  *     summary: Search to get list of announcements
  *     security:
  *       - cookieAuth: []
  *     parameters:
- *       - in: path
- *         name: criteria
+ *       - in: query
+ *         name: content
  *         required: true
  *         schema:
  *           type: string
  *         description: Search criteria
- *         example: "Alice"
+ *         example: "hello"
  *     responses:
  *       200:
  *         description: Array of announcements
@@ -209,59 +247,69 @@ router.get("/citizens-by-status/:criteria", auth, searchCitizensByStatus);
  *                 status: { type: string, example: "error" }
  *                 message: { type: string, example: "Server error" }
  */
-router.get("/announcements/:criteria", auth, searchAnnouncements);
+router.get("/announcements", auth, searchAnnouncements);
 
 /**
  * @openapi
- * /api/queries/messages/public/{criteria}:
+ * /api/queries/messages/public:
  *   get:
- *     tags: [Messages]
- *     summary: Search from public messages
+ *     tags: [Search]
+ *     summary: Search public messages by keywords (reverse chronological, cursor pagination)
  *     security:
  *       - cookieAuth: []
  *     parameters:
- *       - in: path
- *         name: criteria
+ *       - in: query
+ *         name: content
  *         required: true
- *         schema:
- *           type: string
- *         description: Search criteria
- *         example: "Alice"
+ *         schema: { type: string }
+ *         description: Search text. If it contains only stop words, no results are returned.
+ *         example: "hello"
+ *       - in: query
+ *         name: limit
+ *         required: false
+ *         schema: { type: integer, minimum: 1, maximum: 100, default: 10 }
+ *         description: Number of items per page (default 10).
+ *       - in: query
+ *         name: cursor
+ *         required: false
+ *         schema: { type: string }
+ *         description: Cursor for the next page. Format is "<ISO timestamp>|<messageId>".
  *     responses:
  *       200:
- *         description: Array of public messages
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 type: object
- *                 properties:
- *                   id:
- *                     type: string
- *                     example: "1"
- *                   sender:
- *                     type: string
- *                     example: "alice"
- *                   content:
- *                     type: string
- *                     example: "Hello everyone!"
- *                   timestamp:
- *                     type: string
- *                     format: date-time
- *                     example: "2024-10-24T10:30:00.000Z"
- *                   status:
- *                     type: string
- *                     example: "OK"
- *       400:
- *         description: Missing required parameters
+ *         description: Search results (online latest first, reverse chronological)
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
- *                 status: { type: string, example: "error" }
- *                 message: { type: string, example: "Missing criteria" }
+ *                 count:
+ *                   type: integer
+ *                   description: Total number of matched messages (without applying the cursor).
+ *                   example: 23
+ *                 results:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:        { type: string, example: "68db1cc4050ba3718fab04c3" }
+ *                       sender:    { type: string, example: "alice" }
+ *                       content:   { type: string, example: "Road is blocked near the library." }
+ *                       timestamp: { type: string, format: date-time, example: "2025-11-01T07:12:45.000Z" }
+ *                       status:    { type: string, example: "EMERGENCY" }
+ *                       isOwn:     { type: boolean, example: false }
+ *                 nextCursor:
+ *                   type: string
+ *                   nullable: true
+ *                   description: Pass this value to the next request to fetch the next page. Null means no more data.
+ *                   example: "2025-11-01T07:12:45.000Z|68db1cc4050ba3718fab04c3"
+ *       400:
+ *         description: Missing or invalid parameters
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:   { type: string, example: "Missing query param: content" }
  *       401:
  *         description: Unauthorized
  *         content:
@@ -277,10 +325,10 @@ router.get("/announcements/:criteria", auth, searchAnnouncements);
  *             schema:
  *               type: object
  *               properties:
- *                 status: { type: string, example: "error" }
+ *                 status:  { type: string, example: "error" }
  *                 message: { type: string, example: "Server error" }
  */
-router.get("/messages/public/:criteria", auth, searchPublicMessages);
+router.get("/messages/public", auth, searchPublicMessages);
 
 /**
  * @openapi

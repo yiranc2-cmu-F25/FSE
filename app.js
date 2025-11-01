@@ -21,7 +21,20 @@ const __dirname = dirname(__filename);
 const app = express();
 
 // Serve Swagger UI
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.use(
+  "/api-docs",
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpec, {
+    swaggerOptions: {
+      persistAuthorization: true,
+      requestInterceptor: (req) => {
+        req.withCredentials = true;
+        req.credentials = "include";
+        return req;
+      },
+    },
+  })
+);
 
 // Set EJS as the template engine
 app.set("view engine", "ejs");

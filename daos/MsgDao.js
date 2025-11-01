@@ -1,6 +1,6 @@
 import { iMsgDao } from "./iMsgDao.js";
-import userDac from "../dacs/userDac.js";
 import mongoose from "mongoose";
+const { ObjectId } = mongoose.Types;
 
 export class MsgDao extends iMsgDao {
     constructor({ MessageModel }) {
@@ -49,12 +49,43 @@ export class MsgDao extends iMsgDao {
         }));
     }
 
-    async markMessagesAsRead(senderId, receiverId) {
-        const result = await this.MessageModel.updateMany(
-            { sender: senderId, receiver: receiverId, isRead: false },
-            { $set: { isRead: true } }
-        );
-        return result.modifiedCount;
+    async searchPublicMsg({ keywords, limit = 10, cursor }) {
+        const text = keywords.join(' ').trim();
+        const baseQuery = {
+            receiver: null,
+            $text: { $search: text },
+        };
+
+        const query = { ...baseQuery };
+        if (cursor) {
+            const [tsStr, idStr] = String(cursor).split('|');
+            const ts = new Date(tsStr);
+            if (!Number.isNaN(ts.getTime()) && idStr) {
+            query.$or = [
+                { timestamp: { $lt: ts } },
+                { timestamp: ts, _id: { $lt: new ObjectId(idStr) } },
+            ];
+            }
+        }
+
+        const sort = { timestamp: -1, _id: -1 };
+
+        const [items, count] = await Promise.all([
+            this.MessageModel.find(query)
+            .sort(sort)
+            .limit(Math.min(Math.max(1, +limit || 10), 100))
+            .select('sender content timestamp status')
+            .populate('sender', 'username')
+            .lean(),
+            this.MessageModel.countDocuments(baseQuery),
+        ]);
+
+        const last = items[items.length - 1];
+        const nextCursor = last
+            ? `${new Date(last.timestamp).toISOString()}|${String(last._id)}`
+            : null;
+
+        return { count, items, nextCursor };
     }
 
     /** instead of getting all unread messages, 
