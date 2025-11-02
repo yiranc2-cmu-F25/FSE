@@ -1,23 +1,16 @@
-import { STOP_WORDS, splitTokensForStopwords} from "../../utils/search/search.js"
 import Msg from "../../entities/Msg.js";
-
+import { parseQuery } from "../../utils/search/parseQuery.js"
 
 export const publicMessagesStrategy = {
   async execute({ req }) {
     try {
-      const raw = String(req.query.content ?? "").trim();
-      if (!raw) return { error: "Missing query param: content" };
+      const parsed = parseQuery(req, { qKey: "content" });
+      if (parsed.early) return parsed.early;
 
-      const tokens = splitTokensForStopwords(raw);
-      if (tokens.length === 0 || tokens.every(t => STOP_WORDS.has(t))) {
-      return { count: 0, results: [], nextCursor: null };
-      }
+      const limit  = Math.min(Math.max(1, Number(req.query.limit) || 10), 100);
+      const cursor = typeof req.query.cursor === "string" ? req.query.cursor : "";
 
-      const nonStop = tokens.filter(t => !STOP_WORDS.has(t));
-
-      const limit  = Math.min(Number(req.query.limit ?? 10), 100);
-      const cursor = String(req.query.cursor ?? "");
-
+      const { raw, nonStop } = parsed;
       const { count, items, nextCursor } = await Msg.searchPublicMsg({
         terms: nonStop,
         phrase: raw,
@@ -27,12 +20,12 @@ export const publicMessagesStrategy = {
 
       const me = (req.username || "").toLowerCase();
       const results = items.map(m => ({
-      id: String(m._id),
-      sender: m.sender?.username ?? m.sender ?? null,
-      content: m.content,
-      timestamp: m.timestamp,
-      status: m.status,
-      isOwn: ((m.sender?.username ?? m.sender ?? "").toLowerCase() === me),
+        id: String(m._id),
+        sender: m.sender?.username ?? m.sender ?? null,
+        content: m.content,
+        timestamp: m.timestamp,
+        status: m.status,
+        isOwn: ((m.sender?.username ?? m.sender ?? "").toLowerCase() === me),
       }));
 
       return { count, results, nextCursor };

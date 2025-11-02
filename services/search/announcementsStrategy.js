@@ -1,27 +1,21 @@
-import { STOP_WORDS, splitTokensForStopwords} from "../../utils/search/search.js"
 import Announcement from "../../entities/Announcement.js";
+import { parseQuery } from "../../utils/search/parseQuery.js"
 
 export const announcementsStrategy = {
   async execute({ req }) {
     try {
-      const raw = String(req.query.content ?? "").trim();
-      if (!raw) return { error: "Missing query param: content" };
+      const parsed = parseQuery(req, { qKey: "content" });
+      if (parsed.early) return parsed.early;
 
-      const tokens = splitTokensForStopwords(raw);
-      if (tokens.length === 0 || tokens.every(t => STOP_WORDS.has(t))) {
-      return { count: 0, results: [], nextCursor: null };
-      }
+      const limit  = Math.min(Math.max(1, Number(req.query.limit) || 10), 100);
+      const cursor = typeof req.query.cursor === "string" ? req.query.cursor : "";
 
-      const nonStop = tokens.filter(t => !STOP_WORDS.has(t));
-
-      const limit  = Math.min(Number(req.query.limit ?? 10), 100);
-      const cursor = String(req.query.cursor ?? "");
-
+      const { raw, nonStop } = parsed;
       const { count, items, nextCursor } = await Announcement.searchAnnouncement({
-      terms: nonStop,
-      phrase: raw,
-      limit,
-      cursor,
+        terms: nonStop,
+        phrase: raw,
+        limit,
+        cursor,
       });
 
       const results = items.map(m => ({
