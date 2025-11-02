@@ -1,21 +1,29 @@
 <% const filteredMessages = [ { sender: "sender1", sendTime: "2026/10/20",
-senderStatus: "OK", msgContent: "Content of message sent by sender1"}, {
-sender:"sender2", sendTime: "2026/10/21", senderStatus: "EMERGENCY", msgContent:
-"Content ofmessage sent by sender2"},{ sender:"sender2", sendTime: "2026/10/21",
-senderStatus: "EMERGENCY", msgContent: "Content ofmessage sent by sender2"},{
+senderStatus: "OK", msgContent: "Content of message sent by sender1",
+senderOnline: true}, { sender:"sender2", sendTime: "2026/10/21", senderStatus:
+"EMERGENCY", msgContent: "Content ofmessage sent by sender2", senderOnline:
+true},{ sender:"sender2", sendTime: "2026/10/21", senderStatus: "EMERGENCY",
+msgContent: "Content ofmessage sent by sender2", senderOnline: true},{
 sender:"sender3", sendTime: "2026/10/21", senderStatus: "UNDEFINED", msgContent:
-"Content ofmessage sent by sender3"},{ sender:"sender4", sendTime: "2026/10/21",
-senderStatus: "UNDEFINED", msgContent: "Content ofmessage sent by sender4"}, {
-sender:"sender5", sendTime: "2026/10/21", senderStatus: "UNDEFINED", msgContent:
-"Content ofmessage sent by sender5"},{ sender:"sender6", sendTime: "2026/10/21",
-senderStatus: "UNDEFINED", msgContent: "Content ofmessage sent by sender6"},{
-sender:"sender7", sendTime: "2026/10/21", senderStatus: "HELP", msgContent:
-"Content ofmessage sent by sender7"},{ sender:"sender8", sendTime: "2026/10/21",
-senderStatus: "UNDEFINED", msgContent: "Content ofmessage sent by sender8"},{
-sender:"sender9", sendTime: "2026/10/21", senderStatus: "OK", msgContent:
-"Content ofmessage sent by sender9"},] %>
+"Content ofmessage sent by sender3", senderOnline: false},{ sender:"sender4",
+sendTime: "2026/10/21", senderStatus: "UNDEFINED", msgContent:
+"Contentofmessagge", senderOnline: false}, { sender:"sender5", sendTime:
+"2026/10/21", senderStatus: "UNDEFINED", msgContent: "Content ofmessage ",
+senderOnline: false},{ sender:"sender6", sendTime: "2026/10/21", senderStatus:
+"UNDEFINED", msgContent: "Content ofmessage sent by sender6", senderOnline:
+false},{ sender:"sender7", sendTime: "2026/10/21", senderStatus: "HELP",
+msgContent: "Content ofmessage sent by sender7", senderOnline: true},{
+sender:"sender8", sendTime: "2026/10/21", senderStatus: "UNDEFINED", msgContent:
+"Content ofmessage sent by sender8", senderOnline: false},{ sender:"sender9",
+sendTime: "2026/10/21", senderStatus: "OK", msgContent: "Content ofmessage se",
+senderOnline: true},]; %> <% const searchMembers = true; %>
 
 <section class="max-h-5/6 m-2 h-5/6 w-full overflow-auto">
+  <!-- Insert online members list spliter and  offline members list spliter-->
+  <div>
+    <% if (searchMembers === true) { %>
+    <%-include('../partials/search-member-list-status/online-member.ejs') %>
+    <% } %>
   <ul>
     <% filteredMessages.forEach(message => { %>
     <li class="mb-2 rounded-md bg-white p-2">
