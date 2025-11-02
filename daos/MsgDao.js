@@ -1,6 +1,7 @@
 import { iMsgDao } from "./iMsgDao.js";
 import mongoose from "mongoose";
 import {buildSubstringRegex} from "../utils/search/search.js";
+import { searchByModel } from "../services/search/searchCommon.js";
 
 export class MsgDao extends iMsgDao {
     constructor({ MessageModel }) {
@@ -48,44 +49,53 @@ export class MsgDao extends iMsgDao {
             content: doc.content,
         }));
     }
+    // async searchPublicMsg({ terms = [], phrase = "", limit = 10, cursor }) {
+    //     const regex = buildSubstringRegex(terms, phrase);
+    //     const baseQuery = { receiver: null, content: { $regex: regex } };
+    //     const query = { ...baseQuery };
 
-    async searchPublicMsg({ terms = [], phrase = "", limit = 10, cursor }) {
+    //     if (cursor) {
+    //         const [tsStr, idStr] = String(cursor).split("|");
+    //         const ts = new Date(tsStr);
+    //         if (!Number.isNaN(ts.getTime()) && idStr) {
+    //         query.$or = [
+    //             { timestamp: { $lt: ts } },
+    //             { timestamp: ts, _id: { $lt: idStr} },
+    //         ];
+    //         }
+    //     }
+    //     console.log("[searchPublicMsg] query:", JSON.stringify(query));
+    //     const sort = { timestamp: -1, _id: -1 };
+    //     const safeLimit = Math.min(Math.max(1, +limit || 10), 100);
+
+    //     const itemsPlusOne = await this.MessageModel.find(query)
+    //         .sort(sort)
+    //         .limit(safeLimit + 1)
+    //         .select("sender content timestamp status")
+    //         .populate("sender", "username")
+    //         .lean();
+
+    //     const hasMore = itemsPlusOne.length > safeLimit;
+    //     const pageItems = hasMore ? itemsPlusOne.slice(0, safeLimit) : itemsPlusOne;
+
+    //     const last = pageItems[pageItems.length - 1];
+    //     const nextCursor = hasMore
+    //         ? `${new Date(last.timestamp).toISOString()}|${String(last._id)}`
+    //         : null;
+
+    //     const count = await this.MessageModel.countDocuments(baseQuery);
+
+    //     return { count, items: pageItems, nextCursor };
+    // }
+    async searchPublicMsg({ terms = [], phrase = "", limit = 10, cursor } = {}) {
         const regex = buildSubstringRegex(terms, phrase);
-        const baseQuery = { receiver: null, content: { $regex: regex } };
-        const query = { ...baseQuery };
-
-        if (cursor) {
-            const [tsStr, idStr] = String(cursor).split("|");
-            const ts = new Date(tsStr);
-            if (!Number.isNaN(ts.getTime()) && idStr) {
-            query.$or = [
-                { timestamp: { $lt: ts } },
-                { timestamp: ts, _id: { $lt: idStr} },
-            ];
-            }
-        }
-        console.log("[searchPrivateMsg] query:", JSON.stringify(query));
-        const sort = { timestamp: -1, _id: -1 };
-        const safeLimit = Math.min(Math.max(1, +limit || 10), 100);
-
-        const itemsPlusOne = await this.MessageModel.find(query)
-            .sort(sort)
-            .limit(safeLimit + 1)
-            .select("sender content timestamp status")
-            .populate("sender", "username")
-            .lean();
-
-        const hasMore = itemsPlusOne.length > safeLimit;
-        const pageItems = hasMore ? itemsPlusOne.slice(0, safeLimit) : itemsPlusOne;
-
-        const last = pageItems[pageItems.length - 1];
-        const nextCursor = hasMore
-            ? `${new Date(last.timestamp).toISOString()}|${String(last._id)}`
-            : null;
-
-        const count = await this.MessageModel.countDocuments(baseQuery);
-
-        return { count, items: pageItems, nextCursor };
+        return searchByModel({
+            Model: this.MessageModel,
+            baseFilter: { receiver: null },
+            regex,
+            limit,
+            cursor,
+        });
     }
 
     /** instead of getting all unread messages, 
