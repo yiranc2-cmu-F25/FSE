@@ -1,6 +1,6 @@
 import { iMsgDao } from "./iMsgDao.js";
 import mongoose from "mongoose";
-const { ObjectId } = mongoose.Types;
+import {buildSubstringRegex} from "../utils/search/search.js";
 
 export class MsgDao extends iMsgDao {
     constructor({ MessageModel }) {
@@ -49,43 +49,43 @@ export class MsgDao extends iMsgDao {
         }));
     }
 
-    async searchPublicMsg({ keywords, limit = 10, cursor }) {
-        const text = keywords.join(' ').trim();
-        const baseQuery = {
-            receiver: null,
-            $text: { $search: text },
-        };
-
+    async searchPublicMsg({ terms = [], phrase = "", limit = 10, cursor }) {
+        const regex = buildSubstringRegex(terms, phrase);
+        const baseQuery = { receiver: null, content: { $regex: regex } };
         const query = { ...baseQuery };
+
         if (cursor) {
-            const [tsStr, idStr] = String(cursor).split('|');
+            const [tsStr, idStr] = String(cursor).split("|");
             const ts = new Date(tsStr);
             if (!Number.isNaN(ts.getTime()) && idStr) {
             query.$or = [
                 { timestamp: { $lt: ts } },
-                { timestamp: ts, _id: { $lt: new ObjectId(idStr) } },
+                { timestamp: ts, _id: { $lt: idStr} },
             ];
             }
         }
-
+        console.log("[searchPrivateMsg] query:", JSON.stringify(query));
         const sort = { timestamp: -1, _id: -1 };
+        const safeLimit = Math.min(Math.max(1, +limit || 10), 100);
 
-        const [items, count] = await Promise.all([
-            this.MessageModel.find(query)
+        const itemsPlusOne = await this.MessageModel.find(query)
             .sort(sort)
-            .limit(Math.min(Math.max(1, +limit || 10), 100))
-            .select('sender content timestamp status')
-            .populate('sender', 'username')
-            .lean(),
-            this.MessageModel.countDocuments(baseQuery),
-        ]);
+            .limit(safeLimit + 1)
+            .select("sender content timestamp status")
+            .populate("sender", "username")
+            .lean();
 
-        const last = items[items.length - 1];
-        const nextCursor = last
+        const hasMore = itemsPlusOne.length > safeLimit;
+        const pageItems = hasMore ? itemsPlusOne.slice(0, safeLimit) : itemsPlusOne;
+
+        const last = pageItems[pageItems.length - 1];
+        const nextCursor = hasMore
             ? `${new Date(last.timestamp).toISOString()}|${String(last._id)}`
             : null;
 
-        return { count, items, nextCursor };
+        const count = await this.MessageModel.countDocuments(baseQuery);
+
+        return { count, items: pageItems, nextCursor };
     }
 
     /** instead of getting all unread messages, 
@@ -130,4 +130,52 @@ export class MsgDao extends iMsgDao {
         }
     }
 
+    async searchPrivateMsg({ terms, senderId, peerId, phrase, limit = 10, cursor }) {
+        const regex = buildSubstringRegex(terms, phrase);
+
+        const convoOr = { $or: [
+            { sender: senderId, receiver: peerId },
+            { sender: peerId, receiver: senderId },
+        ]};
+
+        const contentCond = { content: { $regex: regex } };
+
+        const andConds = [convoOr, contentCond];
+        if (cursor) {
+            const [tsStr, idStr] = String(cursor).split("|");
+            const ts  = new Date(tsStr);
+            if (!Number.isNaN(ts.getTime()) && idStr) {
+            andConds.push({
+                $or: [
+                { timestamp: { $lt: ts } },
+                { timestamp: ts, _id: { $lt: idStr } },
+                ],
+            });
+            }
+        }
+
+        const query = { $and: andConds };
+        const sort = { timestamp: -1, _id: -1 };
+        const safeLimit = Math.min(Math.max(1, +limit || 10), 100);
+
+        const itemsPlusOne = await this.MessageModel.find(query)
+            .sort(sort)
+            .limit(safeLimit + 1)
+            .select("sender receiver content timestamp status")
+            .populate("sender", "username")
+            .lean();
+
+        const hasMore   = itemsPlusOne.length > safeLimit;
+        const pageItems = hasMore ? itemsPlusOne.slice(0, safeLimit) : itemsPlusOne;
+
+        const last = pageItems[pageItems.length - 1];
+        const nextCursor = hasMore
+            ? `${new Date(last.timestamp).toISOString()}|${String(last._id)}`
+            : null;
+
+        const baseQuery = { $and: [convoOr, contentCond] };
+        const count = await this.MessageModel.countDocuments(baseQuery);
+
+        return { items: pageItems, nextCursor, count };
+    }
 }

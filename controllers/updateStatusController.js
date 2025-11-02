@@ -1,4 +1,5 @@
 import User from "../entities/User.js";
+import Status from "../entities/Status.js";
 
 export async function updateStatusById(req, res) {
     try{
@@ -13,6 +14,7 @@ export async function updateStatusById(req, res) {
             return res.status(404).json({ error: "User not found" });
         }
         await User.updateStatusById(userId, newStatus);
+        await Status.recordChange({ userId, status: newStatus, username: user});
 
         const socketInstance = req.app.get("socketInstance");
         if (!socketInstance) {

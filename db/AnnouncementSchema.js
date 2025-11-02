@@ -25,6 +25,9 @@ export function makeAnnouncementModel(conn) {
             required: true,
         },
     });
+    
+    AnnouncementSchema.index({ content: "text" });
+    AnnouncementSchema.index({ timestamp: -1, _id: -1 });
 
     return conn.model("Announcement", AnnouncementSchema);
 }

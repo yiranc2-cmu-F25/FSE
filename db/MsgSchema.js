@@ -37,6 +37,7 @@ export function makeMsgModel(conn) {
 
     MessageSchema.index({ content: "text" });
     MessageSchema.index({ timestamp: -1, _id: -1 });
+    MessageSchema.index({ sender: 1, receiver: 1, timestamp: -1, _id: -1 });
 
     return conn.model("Message", MessageSchema);
 }

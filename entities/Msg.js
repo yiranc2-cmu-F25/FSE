@@ -53,6 +53,11 @@ class Msg {
     static async searchPublicMsg(params) {
         return await Msg.DAO.searchPublicMsg(params);
     }
+
+    static async searchPrivateMsg(params) {
+        return await Msg.DAO.searchPrivateMsg(params);
+    }
+
 }
 
 export default Msg;
