@@ -2,6 +2,7 @@
 import mongoose from "mongoose";
 import { SHARED_STATUS } from "../constants/sharedStatus.js";
 import { iStatusDao } from "./iStatusDao.js";
+import { pushCursorClause } from "../utils/search/cursor.js";
 const ALLOWED = new Set(Object.values(SHARED_STATUS));
 
 export class StatusDao extends iStatusDao {
@@ -34,22 +35,12 @@ export class StatusDao extends iStatusDao {
     }
     const uid = userId;
     const baseQuery = { user: uid };
-
     const andConds = [baseQuery];
-    if (cursor) {
-      const [tsStr, idStr] = String(cursor).split("|");
-      const ts = new Date(tsStr);
-      if (!Number.isNaN(ts.getTime()) && idStr) {
-        andConds.push({
-          $or: [
-            { timestamp: { $lt: ts } },
-            { timestamp: ts, _id: { $lt: idStr } },
-          ],
-        });
-      }
-    }
 
-    const query = andConds.length > 1 ? { $and: andConds } : baseQuery;
+    pushCursorClause(andConds, cursor, { tsField: "timestamp", idField: "_id" });
+
+    const query = andConds.length > 1 ? { $and: andConds } : andConds[0];
+
     const sort = { timestamp: -1, _id: -1 };
     const safeLimit = Math.min(Math.max(1, +limit || 10), 100);
 

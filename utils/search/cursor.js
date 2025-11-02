@@ -12,3 +12,14 @@ export function buildCursorClause({ ts, idStr }) {
     { timestamp: ts, _id: { $lt: idStr } },
   ];
 }
+
+export function pushCursorClause(andConds, cursor, opts = {}) {
+  const parsed = parseCursor(cursor);
+  if (!parsed) return false;
+
+  const clause = buildCursorClause(parsed, opts);
+  const normalized = Array.isArray(clause) ? { $or: clause } : clause; 
+
+  andConds.push(normalized);
+  return true;
+}

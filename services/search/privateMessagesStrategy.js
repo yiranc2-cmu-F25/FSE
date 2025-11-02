@@ -24,46 +24,46 @@ export const privateMessagesStrategy = {
 
   async execute({ req }) {
     try {
-        const senderId = String(req.userId || "").trim();
-        const peerId   = String(req.query.peerId || "").trim();
+      const senderId = String(req.userId || "").trim();
+      const peerId   = String(req.query.peerId || "").trim();
 
-        if (!senderId) return { error: "Unauthorized" };
-        if (!peerId)   return { error: "Missing query param: peerId" };
+      if (!senderId) return { error: "Unauthorized" };
+      if (!peerId)   return { error: "Missing query param: peerId" };
 
-        if (!mongoose.Types.ObjectId.isValid(senderId) || !mongoose.Types.ObjectId.isValid(peerId)) {
+      if (!mongoose.Types.ObjectId.isValid(senderId) || !mongoose.Types.ObjectId.isValid(peerId)) {
         return { error: "Invalid user id(s)" };
-        }
+      }
 
-        const parsed = parseQuery(req, { qKey: "content" });
-        if (parsed.early) return parsed.early;
-        const { raw, nonStop } = parsed;
+      const parsed = parseQuery(req, { qKey: "content" });
+      if (parsed.early) return parsed.early;
+      const { raw, nonStop } = parsed;
 
-        const limit  = Math.min(Number(req.query.limit ?? 10), 100);
-        const cursor = String(req.query.cursor ?? "");
+      const limit  = Math.min(Number(req.query.limit ?? 10), 100);
+      const cursor = String(req.query.cursor ?? "");
 
-        const maybeStatus = await this.tryStatus({ raw, peerId, limit, cursor });
-        if (maybeStatus) return maybeStatus;
-        
-        const { items, nextCursor, count } = await Msg.searchPrivateMsg({
-          senderId,
-          peerId,
-          terms: nonStop,
-          phrase: raw,
-          limit,
-          cursor,
-        });
+      const maybeStatus = await this.tryStatus({ raw, peerId, limit, cursor });
+      if (maybeStatus) return maybeStatus;
+      
+      const { items, nextCursor, count } = await Msg.searchPrivateMsg({
+        senderId,
+        peerId,
+        terms: nonStop,
+        phrase: raw,
+        limit,
+        cursor,
+      });
 
-        const senderName = (req.username || "").toLowerCase();
-        const results = items.map(m => ({
-          id: String(m._id),
-          sender: m.sender?.username ?? m.sender ?? null,
-          content: m.content,
-          timestamp: m.timestamp,
-          status: m.status,
-          isOwn: ((m.sender?.username ?? m.sender ?? "").toLowerCase() === senderName),
-        }));
+      const senderName = (req.username || "").toLowerCase();
+      const results = items.map(m => ({
+        id: String(m._id),
+        sender: m.sender?.username ?? m.sender ?? null,
+        content: m.content,
+        timestamp: m.timestamp,
+        status: m.status,
+        isOwn: ((m.sender?.username ?? m.sender ?? "").toLowerCase() === senderName),
+      }));
 
-        return { mode: "messages", count, results, nextCursor };
+      return { mode: "messages", count, results, nextCursor };
     } catch (err) {
         console.error("[searchPrivate] error:", err);
         return { status: "error", message: "Server error" };
