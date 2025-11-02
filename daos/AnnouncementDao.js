@@ -1,6 +1,5 @@
 import { iAnnouncementDao } from "./iAnnouncementDao.js";
-import userDac from "../dacs/userDac.js";
-import mongoose from "mongoose";
+import {buildSubstringRegex} from "../utils/search/search.js";
 
 export class AnnouncementDao extends iAnnouncementDao {
     constructor({ AnnouncementModel }) {
@@ -31,4 +30,14 @@ export class AnnouncementDao extends iAnnouncementDao {
         }));
     }
 
+    async searchAnnouncement({ terms = [], phrase = "", limit = 10, cursor } = {}) {
+        const regex = buildSubstringRegex(terms, phrase);
+        return searchByModel({
+            Model: this.AnnouncementModel,
+            baseFilter: { receiver: null },
+            regex,
+            limit,
+            cursor,
+        });
+    }
 }

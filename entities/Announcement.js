@@ -24,6 +24,10 @@ class Announcement {
     static async getAnnouncement() {
         return await Announcement.DAO.getAnnouncement();
     }
+
+    static async searchAnnouncement(params) {
+        return await Announcement.DAO.searchAnnouncement(params);
+    }
 }
 
 export default Announcement;

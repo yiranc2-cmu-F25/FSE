@@ -1,6 +1,8 @@
 import { iMsgDao } from "./iMsgDao.js";
-import userDac from "../dacs/userDac.js";
 import mongoose from "mongoose";
+import {buildSubstringRegex} from "../utils/search/search.js";
+import { searchByModel } from "../services/search/searchCommon.js";
+import { pushCursorClause } from "../utils/search/cursor.js";
 
 export class MsgDao extends iMsgDao {
     constructor({ MessageModel }) {
@@ -48,13 +50,16 @@ export class MsgDao extends iMsgDao {
             content: doc.content,
         }));
     }
-
-    async markMessagesAsRead(senderId, receiverId) {
-        const result = await this.MessageModel.updateMany(
-            { sender: senderId, receiver: receiverId, isRead: false },
-            { $set: { isRead: true } }
-        );
-        return result.modifiedCount;
+    
+    async searchPublicMsg({ terms = [], phrase = "", limit = 10, cursor } = {}) {
+        const regex = buildSubstringRegex(terms, phrase);
+        return searchByModel({
+            Model: this.MessageModel,
+            baseFilter: { receiver: null },
+            regex,
+            limit,
+            cursor,
+        });
     }
 
     /** instead of getting all unread messages, 
@@ -98,5 +103,49 @@ export class MsgDao extends iMsgDao {
             throw err;
         }
     }
+    async markMessagesAsRead(senderId, receiverId) {
+        const result = await this.MessageModel.updateMany(
+            { sender: senderId, receiver: receiverId, isRead: false },
+            { $set: { isRead: true } }
+        );
+        return result.modifiedCount;
+    }
 
+    async searchPrivateMsg({ terms, senderId, peerId, phrase, limit = 10, cursor }) {
+        const regex = buildSubstringRegex(terms, phrase);
+
+        const convoOr = { $or: [
+            { sender: senderId, receiver: peerId },
+            { sender: peerId, receiver: senderId },
+        ]};
+
+        const contentCond = { content: { $regex: regex } };
+
+        const andConds = [convoOr, contentCond];
+        pushCursorClause(andConds, cursor, { tsField: "timestamp", idField: "_id" });
+
+        const query = { $and: andConds };
+        const sort = { timestamp: -1, _id: -1 };
+        const safeLimit = Math.min(Math.max(1, +limit || 10), 100);
+
+        const itemsPlusOne = await this.MessageModel.find(query)
+            .sort(sort)
+            .limit(safeLimit + 1)
+            .select("sender receiver content timestamp status")
+            .populate("sender", "username")
+            .lean();
+
+        const hasMore   = itemsPlusOne.length > safeLimit;
+        const pageItems = hasMore ? itemsPlusOne.slice(0, safeLimit) : itemsPlusOne;
+
+        const last = pageItems[pageItems.length - 1];
+        const nextCursor = hasMore
+            ? `${new Date(last.timestamp).toISOString()}|${String(last._id)}`
+            : null;
+
+        const baseQuery = { $and: [convoOr, contentCond] };
+        const count = await this.MessageModel.countDocuments(baseQuery);
+
+        return { items: pageItems, nextCursor, count };
+    }
 }
