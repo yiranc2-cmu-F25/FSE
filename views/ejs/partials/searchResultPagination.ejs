@@ -1,0 +1,40 @@
+<% const prevOne = 1; %> <% const prevTwo = 2; %> <% const prevThree = 3; %> <%
+const nextOne = 7; %> <% const nextTwo = 8; %> <% const nextThree = 9; %>
+<div class="flex w-full items-center justify-center">
+  <div class="flex flex-row">
+    <button
+      class="rounded-md bg-white p-2 text-sm font-semibold text-[#D8937F]"
+    >
+      <%= prevOne %>
+    </button>
+
+    <button
+      class="mx-1 rounded-md bg-[#D8937F] p-2 text-sm font-semibold text-white"
+    >
+      <%= prevTwo %>
+    </button>
+    <button
+      class="rounded-md bg-white p-2 text-sm font-semibold text-[#D8937F]"
+    >
+      <%= prevThree %>
+    </button>
+    <span class="rounded-md bg-white p-2 text-sm font-semibold text-[#D8937F]">
+      ...
+    </span>
+    <button
+      class="rounded-md bg-white p-2 text-sm font-semibold text-[#D8937F]"
+    >
+      <%= nextOne %>
+    </button>
+    <button
+      class="rounded-md bg-white p-2 text-sm font-semibold text-[#D8937F]"
+    >
+      <%= nextTwo %>
+    </button>
+    <button
+      class="rounded-md bg-white p-2 text-sm font-semibold text-[#D8937F]"
+    >
+      <%= nextThree %>
+    </button>
+  </div>
+</div>

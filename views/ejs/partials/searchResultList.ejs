@@ -1,0 +1,47 @@
+<% const filteredMessages = [ { sender: "sender1", sendTime: "2026/10/20",
+senderStatus: "OK", msgContent: "Content of message sent by sender1"}, {
+sender:"sender2", sendTime: "2026/10/21", senderStatus: "EMERGENCY", msgContent:
+"Content ofmessage sent by sender2"},{ sender:"sender2", sendTime: "2026/10/21",
+senderStatus: "EMERGENCY", msgContent: "Content ofmessage sent by sender2"},{
+sender:"sender3", sendTime: "2026/10/21", senderStatus: "UNDEFINED", msgContent:
+"Content ofmessage sent by sender3"},{ sender:"sender4", sendTime: "2026/10/21",
+senderStatus: "UNDEFINED", msgContent: "Content ofmessage sent by sender4"}, {
+sender:"sender5", sendTime: "2026/10/21", senderStatus: "UNDEFINED", msgContent:
+"Content ofmessage sent by sender5"},{ sender:"sender6", sendTime: "2026/10/21",
+senderStatus: "UNDEFINED", msgContent: "Content ofmessage sent by sender6"},{
+sender:"sender7", sendTime: "2026/10/21", senderStatus: "HELP", msgContent:
+"Content ofmessage sent by sender7"},{ sender:"sender8", sendTime: "2026/10/21",
+senderStatus: "UNDEFINED", msgContent: "Content ofmessage sent by sender8"},{
+sender:"sender9", sendTime: "2026/10/21", senderStatus: "OK", msgContent:
+"Content ofmessage sent by sender9"},] %>
+
+<section class="max-h-5/6 m-2 h-5/6 w-full overflow-auto">
+  <ul>
+    <% filteredMessages.forEach(message => { %>
+    <li class="mb-2 rounded-md bg-white p-2">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="text-sm font-semibold capitalize text-[#9c9c9c]"
+            ><%= message.sender %></span
+          >
+
+          <% if (message.senderStatus === "OK") { %> <%-
+          include('../partials/status-search-tag/OK-tag.ejs') %> <% } %> <% if
+          (message.senderStatus === "HELP") { %> <%-
+          include('../partials/status-search-tag/HELP-tag.ejs') %> <% } %> <% if
+          (message.senderStatus === "EMERGENCY") { %> <%-
+          include('../partials/status-search-tag/EMERGENCY-tag.ejs') %> <% } %>
+          <% if (message.senderStatus === "UNDEFINED") { %> <%-
+          include('../partials/status-search-tag/UNDEFINED-tag.ejs') %> <% } %>
+        </div>
+        <span class="font-semibold text-[#bebebe]">
+          <span class="text-xs"><%= message.sendTime %></span>
+        </span>
+      </div>
+      <span class="text-[#bebebe]">
+        <p class="mt-1 text-sm"><%= message.msgContent %></p>
+      </span>
+    </li>
+    <% }); %>
+  </ul>
+</section>
