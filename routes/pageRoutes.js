@@ -22,11 +22,18 @@ router.get("/acknowledgements", (req, res) => {
 });
 
 router.get("/chats", authView, (req, res) => {
-    res.render(PUB_CHAT_PATH + "publicChat", { username: req.username || ""});
+    res.render(PUB_CHAT_PATH + "publicChat", {
+        username: req.username || "",
+        searchMode: "set",
+    });
 });
 
 router.get("/members", authView, (req, res) => {
-    res.render("memberList/membersLanding", { username: req.username || "" });
+    res.render("memberList/membersLanding", {
+        username: req.username || "",
+        searchMode: "all",
+        searchMembers: true,
+    });
 });
 
 router.get("/status", authView, (req, res) => {
@@ -44,6 +51,7 @@ router.get("/chats/private/:peerId", authView, (req, res) => {
     username: req.username,
     currentUserId: meId,
     peerId,
+    searchMode: "set",
   });
 });
 

@@ -23,7 +23,9 @@ export const citizensByStatusStrategy = {
         const merged = [...on.map(u => toItem(u, 'online')), ...off.map(u => toItem(u, 'offline'))];
 
         const count = merged.length;
-        const results = merged.slice(offset, offset + limit);
+        const results = req.query.limit ? 
+            merged.slice(offset, offset + limit) :
+            merged.slice(offset);
 
         return { count, results };
     } catch (err) {

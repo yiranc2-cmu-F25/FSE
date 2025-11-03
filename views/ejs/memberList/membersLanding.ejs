@@ -14,7 +14,7 @@
 
     <main class="">
       <header
-        class="sticky top-0 z-50 overflow-x-hidden rounded-2xl bg-stone-50/80 ring-1 ring-stone-200 backdrop-blur supports-[backdrop-filter]:bg-stone-50/60"
+        class="sticky top-0 z-10 overflow-x-hidden rounded-2xl bg-stone-50/80 ring-1 ring-stone-200 backdrop-blur supports-[backdrop-filter]:bg-stone-50/60"
         aria-label="Landing header"
       >
         <!-- padding from screen edges -->
@@ -162,8 +162,9 @@
           <ul role="list" class="divide-y divide-stone-100"></ul>
         </div>
       </section>
-      <%- include('../partials/featureModal.ejs') %> <%-
-      include('../partials/fixedFAB.ejs') %>
+      <%- include('../partials/featureModal.ejs') %>
+      <%- include('../partials/fixedFAB.ejs') %>
+      <%- include('../partials/searchScreen.ejs') %>
     </main>
     <script type="module" src="/js/extensionFeatures/featureModal.js"></script>
 
@@ -173,5 +174,7 @@
     <script type="module" src="/js/joinCommunity/memberList.js"></script>
     <script type="module" src="/js/notify/notify-bootstrap.js"></script>
     <script type="module" src="/js/notify/notify-listener.js"></script>
+    <script type="module" src="/js/searchInfo/searchCitizens.js"></script>
+    
   </body>
 </html>
