@@ -7,6 +7,7 @@
     <%- include('../partials/head') %>
     <script type="module" src="/js/announcement/getAnnouncement.js"></script>
     <script type="module" src="/js/announcement/postAnnouncement.js"></script>
+    <script type="module" src="/js/searchInfo/searchAnnouncement.js"></script>
   </head>
 
   <body class="min-h-screen bg-white">
@@ -128,7 +129,9 @@
           </article>
         </section>
       </div>
+      <%- include('../partials/relativeFAB.ejs') %>
     </div>
+    <%- include('../partials/searchScreen.ejs') %>
   </body>
 </html>
 

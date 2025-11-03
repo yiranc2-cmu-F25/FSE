@@ -22,7 +22,9 @@ export const citizensByUsernameStrategy = {
         ];
 
         const count = merged.length;
-        const results = merged.slice(offset, offset + limit);
+        const results = req.query.limit ? 
+            merged.slice(offset, offset + limit) :
+            merged.slice(offset);
 
         return { count, results };
     } catch (err) {
