@@ -163,7 +163,7 @@ export function normalizeQuery(raw) {
 }
 
 export function processData(data) {
-  if (data.count === 0) {
+  if (!data.count || data.count === 0) {
     showNoResultsMessage();
     hideFooter();
     return;

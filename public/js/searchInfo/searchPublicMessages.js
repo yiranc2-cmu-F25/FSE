@@ -9,7 +9,9 @@ async function searchPublicMessages(query) {
     hideFooter();
   }
 
-  const endpoint = `/api/queries?type=messages_public&content=${encodeURIComponent(trimmed)}&limit=10`;
+  const endpoint = `/api/queries?type=messages_public
+    &content=${encodeURIComponent(trimmed)}
+    &limit=10`;
 
   try {
     const res = await fetch(endpoint, { credentials: "include" });
@@ -34,7 +36,10 @@ async function morePublicMessages() {
 
   const trimmed = normalizeQuery(lastQuery);
 
-  const endpoint = `/api/queries?type=messages_public&content=${encodeURIComponent(trimmed)}&limit=10&cursor=${encodeURIComponent(lastCursor)}`;
+  const endpoint = `/api/queries?type=messages_public
+    &content=${encodeURIComponent(trimmed)}
+    &limit=10
+    &cursor=${encodeURIComponent(lastCursor)}`;
 
   try {
     const res = await fetch(endpoint, { credentials: "include" });

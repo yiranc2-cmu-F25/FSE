@@ -31,7 +31,10 @@ async function searchPrivateMessages(query) {
     hideStatusChangeSection();
   }
 
-  const endpoint = `/api/queries?type=messages_private&content=${encodeURIComponent(trimmed)}&limit=10&peerId=${encodeURIComponent(peerId || "")}`;
+  const endpoint = `/api/queries?type=messages_private
+    &content=${encodeURIComponent(trimmed)}
+    &limit=10
+    &peerId=${encodeURIComponent(peerId || "")}`;
 
   try {
     const res = await fetch(endpoint, { credentials: "include" });
@@ -42,6 +45,8 @@ async function searchPrivateMessages(query) {
     const data = await res.json();
     lastQuery = trimmed;
     lastCursor = data.nextCursor || null;
+    console.log("[Search results] ", data);
+    console.log("status", res.status);
     processData(data);
   } catch (error) {
     console.error("Error during search:", error);
@@ -59,7 +64,11 @@ async function morePrivateMessages() {
     return;
   }
 
-  const endpoint = `/api/queries?type=messages_private&content=${encodeURIComponent(trimmed)}&limit=10&peerId=${encodeURIComponent(peerId || "")}&cursor=${encodeURIComponent(lastCursor)}`;
+  const endpoint = `/api/queries?type=messages_private
+    &content=${encodeURIComponent(trimmed)}
+    &limit=10
+    &peerId=${encodeURIComponent(peerId || "")}
+    &cursor=${encodeURIComponent(lastCursor)}`;
 
   try {
     const res = await fetch(endpoint, { credentials: "include" });
