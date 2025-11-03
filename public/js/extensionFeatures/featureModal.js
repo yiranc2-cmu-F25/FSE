@@ -98,4 +98,9 @@ document.addEventListener("DOMContentLoaded", () => {
   speedTestButton?.addEventListener("click", () => {
     window.location.href = "/speed-test";
   });
+
+  const announcementButton = document.getElementById("post-public-announcement-button");
+  announcementButton?.addEventListener("click", () => {
+    window.location.href = "/postPublicAnnouncements";
+  });
 });
