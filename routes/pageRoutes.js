@@ -55,4 +55,8 @@ router.get("/chats/private/:peerId", authView, (req, res) => {
   });
 });
 
+router.get("/postPublicAnnouncements", authView, (req, res) => {
+    res.render("announcement/publicAnnouncement", { username: req.username || "" });
+});
+
 export default router;
