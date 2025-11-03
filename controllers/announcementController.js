@@ -26,7 +26,8 @@ export async function postAnnouncement(req, res) {
 
     try {
         const { sender, content, status, timestamp } = req.body;
-        const announcement = new Announcement({ sender, content: content.trim(), status, timestamp });
+        const announcement = new Announcement({ sender, content: content.trim(), status:status.toLowerCase(), timestamp });
+        console.log("Creating announcement:", announcement);
 
         await announcement.create();
         const username = await User.getUsernameById(sender);
