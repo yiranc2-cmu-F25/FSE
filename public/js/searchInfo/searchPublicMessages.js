@@ -1,5 +1,4 @@
-import { initializeSearch, normalizeQuery, hideFooter, showFooter, hideNoResultsMessage, showNoResultsMessage, RESULT_BEGIN_INDEX, processData } from "../utils/searchInit.js";
-import { renderSearchItem } from "../utils/renderSearchItem.js";
+import { initializeSearch, normalizeQuery, hideFooter, processData } from "../utils/searchInit.js";
 
 let lastQuery = "";
 let lastCursor = null;
@@ -10,7 +9,7 @@ async function searchPublicMessages(query) {
     hideFooter();
   }
 
-  let endpoint = `/api/queries?type=messages_public&content=${encodeURIComponent(trimmed)}&limit=10`;
+  const endpoint = `/api/queries?type=messages_public&content=${encodeURIComponent(trimmed)}&limit=10`;
 
   try {
     const res = await fetch(endpoint, { credentials: "include" });
@@ -35,7 +34,7 @@ async function morePublicMessages() {
 
   const trimmed = normalizeQuery(lastQuery);
 
-  let endpoint = `/api/queries?type=messages_public&content=${encodeURIComponent(trimmed)}&limit=10&cursor=${encodeURIComponent(lastCursor)}`;
+  const endpoint = `/api/queries?type=messages_public&content=${encodeURIComponent(trimmed)}&limit=10&cursor=${encodeURIComponent(lastCursor)}`;
 
   try {
     const res = await fetch(endpoint, { credentials: "include" });

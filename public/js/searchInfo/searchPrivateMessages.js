@@ -31,7 +31,7 @@ async function searchPrivateMessages(query) {
     hideStatusChangeSection();
   }
 
-  let endpoint = `/api/queries?type=messages_private&content=${encodeURIComponent(trimmed)}&limit=10&peerId=${encodeURIComponent(peerId || "")}`;
+  const endpoint = `/api/queries?type=messages_private&content=${encodeURIComponent(trimmed)}&limit=10&peerId=${encodeURIComponent(peerId || "")}`;
 
   try {
     const res = await fetch(endpoint, { credentials: "include" });
@@ -59,7 +59,7 @@ async function morePrivateMessages() {
     return;
   }
 
-  let endpoint = `/api/queries?type=messages_private&content=${encodeURIComponent(trimmed)}&limit=10&peerId=${encodeURIComponent(peerId || "")}&cursor=${encodeURIComponent(lastCursor)}`;
+  const endpoint = `/api/queries?type=messages_private&content=${encodeURIComponent(trimmed)}&limit=10&peerId=${encodeURIComponent(peerId || "")}&cursor=${encodeURIComponent(lastCursor)}`;
 
   try {
     const res = await fetch(endpoint, { credentials: "include" });
