@@ -11,7 +11,7 @@ import { updateStatusById } from "../controllers/updateStatusController.js";
 const router = Router();
 /**
  * @openapi
- * /api/auth/registrations:
+ * /api/authentications/registrations:
  *   post:
  *     tags: [Auth]
  *     summary: Register a new user
@@ -57,7 +57,7 @@ const router = Router();
 router.post("/registrations", register);
 /**
  * @openapi
- * /api/auth/login:
+ * /api/authentications/login:
  *   post:
  *     tags: [Auth]
  *     summary: Log in and get a JWT
@@ -67,7 +67,14 @@ router.post("/registrations", register);
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/LoginRequest'
+ *             type: object
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 example: "tester7"
+ *               password:
+ *                 type: string
+ *                 example: "tester7"
  *     responses:
  *       200:
  *         description: Login OK
@@ -109,7 +116,7 @@ router.post("/registrations", register);
 router.post("/login", login);
 /**
  * @openapi
- * /api/auth/users/usernames:
+ * /api/authentications/users/usernames:
  *   post:
  *     tags: [Auth]
  *     summary: Check username reservation/availability status
@@ -151,7 +158,7 @@ router.post("/login", login);
 router.post("/users/usernames", usernameStatus);
 /**
  * @openapi
- * /api/auth/accounts:
+ * /api/authentications/accounts:
  *   get:
  *     tags: [Auth]
  *     summary: Get the authenticated user's profile
@@ -204,7 +211,7 @@ router.post("/users/usernames", usernameStatus);
 router.get("/accounts", auth, getMe);
 /**
  * @openapi
- * /api/auth/logout:
+ * /api/authentications/logout:
  *   post:
  *     tags: [Auth]
  *     summary: Log out current user
@@ -252,7 +259,7 @@ router.get("/accounts", auth, getMe);
 router.post("/logout", auth, logout);
 /**
  * @openapi
- * /api/auth/lists:
+ * /api/authentications/lists:
  *   get:
  *     tags: [Auth]
  *     summary: Get list of community members
@@ -298,7 +305,7 @@ router.post("/logout", auth, logout);
 router.get("/lists", auth, listMembers);
 /**
  * @openapi
- * /api/auth/status:
+ * /api/authentications/status:
  *   put:
  *     tags: [Auth]
  *     summary: Update a user's status by ID

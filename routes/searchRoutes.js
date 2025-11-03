@@ -1,445 +1,206 @@
 import { Router } from "express";
-import {
-  searchCitizensByUsername,
-  searchCitizensByStatus,
-  searchAnnouncements,
-  searchPublicMessages,
-  searchPrivateMessages,
-  searchStatusChange
-} from "../controllers/searchInformationController.js";
 import { auth } from "../middleware/JWT.js";
+import { search } from "../controllers/searchController.js";
 
 const router = Router();
 
 /**
  * @openapi
- * /api/queries/citizens/{criteria}:
+ * /api/queries:
  *   get:
- *     tags: [Auth]
- *     summary: Search to get list of community members by username
+ *     tags: [Search]
+ *     summary: Unified search endpoint (Strategy pattern)
+ *     description: Use `type` to choose the search strategy.
  *     security:
  *       - cookieAuth: []
  *     parameters:
- *       - in: path
- *         name: criteria
+ *       - in: query
+ *         name: type
  *         required: true
  *         schema:
  *           type: string
- *         description: Search criteria
- *         example: "Alice"
- *     responses:
- *       200:
- *         description: Array of members
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 type: object
- *                 properties:
- *                   username: { type: string }
- *                   status: { type: string, nullable: true }
- *                   role: { type: string }
- *       400:
- *         description: Missing required parameters
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 status: { type: string, example: "error" }
- *                 message: { type: string, example: "Missing criteria" }
- *       401:
- *         description: Unauthorized
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error: { type: string, example: "Unauthorized" }
- *       403:
- *         description: Forbidden (token verification failed)
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error: { type: string, example: "Forbidden" }
- *                 reason: { type: string, example: "TokenExpiredError" }
- *       500:
- *         description: Server error
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ServerError'
- */
-router.get("/citizens/:criteria", auth, searchCitizensByUsername);
-
-/**
- * @openapi
- * /api/queries/citizens-by-status/{criteria}:
- *   get:
- *     tags: [Auth]
- *     summary: Search to get list of community members by status
- *     security:
- *       - cookieAuth: []
- *     parameters:
- *       - in: path
- *         name: criteria
- *         required: true
- *         schema:
- *           type: string
- *         description: Search criteria
- *         example: "Alice"
- *     responses:
- *       200:
- *         description: Array of members
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 type: object
- *                 properties:
- *                   username: { type: string }
- *                   status: { type: string, nullable: true }
- *                   role: { type: string }
- *       400:
- *         description: Missing required parameters
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 status: { type: string, example: "error" }
- *                 message: { type: string, example: "Missing criteria" }
- *       401:
- *         description: Unauthorized
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error: { type: string, example: "Unauthorized" }
- *       403:
- *         description: Forbidden (token verification failed)
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error: { type: string, example: "Forbidden" }
- *                 reason: { type: string, example: "TokenExpiredError" }
- *       500:
- *         description: Server error
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ServerError'
- */
-router.get("/citizens-by-status/:criteria", auth, searchCitizensByStatus);
-
-/**
- * @openapi
- * /api/queries/announcements/{criteria}:
- *   get:
- *     tags: [Announcements]
- *     summary: Search to get list of announcements
- *     security:
- *       - cookieAuth: []
- *     parameters:
- *       - in: path
- *         name: criteria
- *         required: true
- *         schema:
- *           type: string
- *         description: Search criteria
- *         example: "Alice"
- *     responses:
- *       200:
- *         description: Array of announcements
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 type: object
- *                 properties:
- *                   sender:
- *                     type: string
- *                     description: Username of the announcement sender
- *                     example: "admin"
- *                   content:
- *                     type: string
- *                     description: Announcement message content
- *                     example: "System maintenance scheduled for tonight"
- *                   timestamp:
- *                     type: string
- *                     format: date-time
- *                     description: Time when announcement was posted
- *                     example: "2024-10-24T10:30:00.000Z"
- *                   status:
- *                     type: string
- *                     description: Status of the sender when posting
- *                     example: "OK"
- *       400:
- *         description: Missing required parameters
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 status: { type: string, example: "error" }
- *                 message: { type: string, example: "Missing criteria" }
- *       401:
- *         description: Unauthorized
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error: { type: string, example: "Unauthorized" }
- *       500:
- *         description: Server error
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 status: { type: string, example: "error" }
- *                 message: { type: string, example: "Server error" }
- */
-router.get("/announcements/:criteria", auth, searchAnnouncements);
-
-/**
- * @openapi
- * /api/queries/messages/public/{criteria}:
- *   get:
- *     tags: [Messages]
- *     summary: Search from public messages
- *     security:
- *       - cookieAuth: []
- *     parameters:
- *       - in: path
- *         name: criteria
- *         required: true
- *         schema:
- *           type: string
- *         description: Search criteria
- *         example: "Alice"
- *     responses:
- *       200:
- *         description: Array of public messages
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 type: object
- *                 properties:
- *                   id:
- *                     type: string
- *                     example: "1"
- *                   sender:
- *                     type: string
- *                     example: "alice"
- *                   content:
- *                     type: string
- *                     example: "Hello everyone!"
- *                   timestamp:
- *                     type: string
- *                     format: date-time
- *                     example: "2024-10-24T10:30:00.000Z"
- *                   status:
- *                     type: string
- *                     example: "OK"
- *       400:
- *         description: Missing required parameters
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 status: { type: string, example: "error" }
- *                 message: { type: string, example: "Missing criteria" }
- *       401:
- *         description: Unauthorized
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error: { type: string, example: "Unauthorized" }
- *       500:
- *         description: Server error
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 status: { type: string, example: "error" }
- *                 message: { type: string, example: "Server error" }
- */
-router.get("/messages/public/:criteria", auth, searchPublicMessages);
-
-/**
- * @openapi
- * /api/queries/messages/private/{peerId}/{criteria}:
- *   get:
- *     tags: [Messages]
- *     summary: Search private messages between two users
- *     security:
- *       - cookieAuth: []
- *     parameters:
- *       - in: path
+ *           enum: [citizens, citizens_status, announcements, messages_public, messages_private]
+ *         description: Which search strategy to apply.
+ *         example: "announcements"
+ *       - in: query
+ *         name: limit
+ *         required: false
+ *         schema: { type: integer, minimum: 1, maximum: 100, default: 10 }
+ *       - in: query
+ *         name: cursor
+ *         required: false
+ *         schema: { type: string }
+ *         description: Keyset cursor like "<ISO timestamp>|<id>" for time-ordered collections.
+ *       - in: query
+ *         name: username
+ *         required: false
+ *         schema: { type: string }
+ *         description: (type=citizens) partial username
+ *       - in: query
+ *         name: status
+ *         required: false
+ *         schema: { type: string }
+ *         description: (type=citizens_status) user status (e.g., OK, EMERGENCY)
+ *       - in: query
+ *         name: content
+ *         required: false
+ *         schema: { type: string }
+ *         description: (announcements/messages_public/messages_private) search text; if only stop-words, returns empty.
+ *       - in: query
  *         name: peerId
- *         required: true
- *         schema:
- *           type: string
- *         description: User ID of the other person in the conversation
- *         example: "5"
- *       - in: path
- *         name: criteria
- *         required: true
- *         schema:
- *           type: string
- *         description: Search criteria
- *         example: "Alice"
+ *         required: false
+ *         schema: { type: string }
+ *         description: (type=messages_private) peer user id
  *     responses:
  *       200:
- *         description: Conversation messages between two users
+ *         description: Search result
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 messages:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       id:
- *                         type: string
- *                         example: "1"
- *                       sender:
- *                         type: string
- *                         example: "alice"
- *                       content:
- *                         type: string
- *                         example: "Hi Bob!"
- *                       timestamp:
- *                         type: string
- *                         format: date-time
- *                         example: "2024-10-24T10:30:00.000Z"
- *                       status:
- *                         type: string
- *                         example: "OK"
- *                       isOwn:
- *                         type: boolean
- *                         description: True if the authenticated user sent this message
- *                         example: true
+ *               oneOf:
+ *                 # ---------- citizens ----------
+ *                 - type: object
+ *                   properties:
+ *                     type:
+ *                       type: string
+ *                       enum: [citizens]
+ *                     count:
+ *                       type: integer
+ *                       example: 2
+ *                     results:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           u:
+ *                             type: object
+ *                             properties:
+ *                               id:     { type: string, example: "68db1cc4050ba3718fab04c3" }
+ *                               name:   { type: string, example: "alice" }
+ *                               status: { type: string, nullable: true, example: "EMERGENCY" }
+ *                           availability:
+ *                             type: string
+ *                             enum: [online, offline]
+ *                             example: online
+ *                 # ---------- citizens_status ----------
+ *                 - type: object
+ *                   properties:
+ *                     type:
+ *                       type: string
+ *                       enum: [citizens_status]
+ *                     count:
+ *                       type: integer
+ *                       example: 1
+ *                     results:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           u:
+ *                             type: object
+ *                             properties:
+ *                               id:     { type: string, example: "68db1cc4050ba3718fab04c3" }
+ *                               name:   { type: string, example: "tester18" }
+ *                               status: { type: string, nullable: true, example: "OK" }
+ *                           availability:
+ *                             type: string
+ *                             enum: [online, offline]
+ *                             example: online
+ *                 # ---------- announcements ----------
+ *                 - type: object
+ *                   properties:
+ *                     type:
+ *                       type: string
+ *                       enum: [announcements]
+ *                     count:
+ *                       type: integer
+ *                       example: 37
+ *                     results:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:        { type: string, example: "65376c9f2a1c1a0f9e7b1f23" }
+ *                           sender:    { type: string, nullable: true, example: "admin" }
+ *                           content:   { type: string, example: "System maintenance scheduled for tonight" }
+ *                           timestamp: { type: string, format: date-time, example: "2024-10-24T10:30:00.000Z" }
+ *                           status:    { type: string, example: "OK" }
+ *                     nextCursor:
+ *                       type: string
+ *                       nullable: true
+ *                       example: "2024-10-24T10:25:00.000Z|65376c9f2a1c1a0f9e7b1f24"
+ *                 # ---------- messages_public ----------
+ *                 - type: object
+ *                   properties:
+ *                     type:
+ *                       type: string
+ *                       enum: [messages_public]
+ *                     count:
+ *                       type: integer
+ *                       example: 23
+ *                     results:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:        { type: string, example: "68db1cc4050ba3718fab04c3" }
+ *                           sender:    { type: string, example: "alice" }
+ *                           content:   { type: string, example: "Road is blocked near the library." }
+ *                           timestamp: { type: string, format: date-time, example: "2025-11-01T07:12:45.000Z" }
+ *                           status:    { type: string, example: "EMERGENCY" }
+ *                           isOwn:     { type: boolean, example: false }
+ *                     nextCursor:
+ *                       type: string
+ *                       nullable: true
+ *                       example: "2025-11-01T07:12:45.000Z|68db1cc4050ba3718fab04c3"
+ *                 # ---------- messages_private ----------
+ *                 - type: object
+ *                   properties:
+ *                     type:
+ *                       type: string
+ *                       enum: [messages_private]
+ *                     mode:
+ *                       type: string
+ *                       enum: [messages, status_history]
+ *                       example: messages
+ *                     count:
+ *                       type: integer
+ *                       example: 10
+ *                     results:
+ *                       type: array
+ *                       items:
+ *                         oneOf:
+ *                           - type: object
+ *                             properties:
+ *                               id:        { type: string, example: "68db1cc4050..." }
+ *                               sender:    { type: string, nullable: true, example: "alice" }
+ *                               content:   { type: string, example: "Meet at 5pm." }
+ *                               timestamp: { type: string, format: date-time, example: "2025-11-01T07:12:45.000Z" }
+ *                               status:    { type: string, nullable: true, example: "OK" }
+ *                               isOwn:     { type: boolean, example: false }
+ *                           - type: object
+ *                             properties:
+ *                               id:        { type: string, example: "68db1cc4050..." }
+ *                               status:    { type: string, example: "EMERGENCY" }
+ *                               changedAt: { type: string, format: date-time, example: "2025-11-01T07:12:45.000Z" }
+ *                     nextCursor:
+ *                       type: string
+ *                       nullable: true
+ *               discriminator:
+ *                 propertyName: type
+ *                 mapping:
+ *                   citizens: "#/paths/~1api~1queries/get/responses/200/content/application~1json/schema/oneOf/0"
+ *                   citizens_status: "#/paths/~1api~1queries/get/responses/200/content/application~1json/schema/oneOf/1"
+ *                   announcements: "#/paths/~1api~1queries/get/responses/200/content/application~1json/schema/oneOf/2"
+ *                   messages_public: "#/paths/~1api~1queries/get/responses/200/content/application~1json/schema/oneOf/3"
+ *                   messages_private: "#/paths/~1api~1queries/get/responses/200/content/application~1json/schema/oneOf/4"
  *       400:
- *         description: Missing required parameters
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 status: { type: string, example: "error" }
- *                 message: { type: string, example: "Missing userId or peerId or criteria" }
+ *         description: Missing/invalid parameters
  *       401:
  *         description: Unauthorized
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error: { type: string, example: "Unauthorized" }
  *       500:
  *         description: Server error
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 status: { type: string, example: "error" }
- *                 message: { type: string, example: "Server error" }
  */
-router.get("/messages/private/:peerId/:criteria", auth, searchPrivateMessages);
-
-/**
- * @openapi
- * /api/queries/status/{peerId}/{criteria}:
- *   get:
- *     tags: [Messages]
- *     summary: Search status change of another user
- *     security:
- *       - cookieAuth: []
- *     parameters:
- *       - in: path
- *         name: peerId
- *         required: true
- *         schema:
- *           type: string
- *         description: User ID of the other person in the conversation
- *         example: "5"
- *       - in: path
- *         name: criteria
- *         required: true
- *         schema:
- *           type: string
- *         description: Search criteria
- *         example: "Alice"
- *     responses:
- *       200:
- *         description: Array of status change
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 messages:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       id:
- *                         type: string
- *                         example: "1"
- *                       timestamp:
- *                         type: string
- *                         format: date-time
- *                         example: "2024-10-24T10:30:00.000Z"
- *                       status:
- *                         type: string
- *                         example: "OK"
- *       400:
- *         description: Missing required parameters
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 status: { type: string, example: "error" }
- *                 message: { type: string, example: "Missing userId or peerId or criteria" }
- *       401:
- *         description: Unauthorized
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error: { type: string, example: "Unauthorized" }
- *       500:
- *         description: Server error
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 status: { type: string, example: "error" }
- *                 message: { type: string, example: "Server error" }
- */
-router.get("/status/:peerId/:criteria", auth, searchStatusChange);
+router.get("/", auth, search);
 
 export default router;

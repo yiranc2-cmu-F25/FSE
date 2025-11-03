@@ -9,7 +9,7 @@ const options = {
   definition: {
     openapi: "3.0.0",
     info: { title: "FSE-SA2 API", version: "1.0.0", description: "REST endpoints for the ESN app" },
-    servers: [{ url: process.env.SWAGGER_SERVER_URL || "http://localhost:3000" }],
+    servers: [{ url: "/" }],
     components: {
       securitySchemes: {
         cookieAuth: { type: "apiKey", in: "cookie", name: "jwt_token" },
@@ -35,9 +35,9 @@ const options = {
   ],
 };
 
-console.log("[swagger] scanning:", options.apis);
+//console.log("[swagger] scanning:", options.apis);
 
 const swaggerSpec = swaggerJsdoc(options);
-console.log("[swagger] paths:", swaggerSpec.paths ? Object.keys(swaggerSpec.paths).length : 0);
+//console.log("[swagger] paths:", swaggerSpec.paths ? Object.keys(swaggerSpec.paths).length : 0);
 
 export default swaggerSpec;
