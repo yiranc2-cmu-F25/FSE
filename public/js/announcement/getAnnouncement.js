@@ -12,9 +12,15 @@ function formatAnnouncementDate(timestamp) {
   const date = new Date(timestamp);
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const announcementDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const announcementDate = new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate(),
+  );
 
-  const diffDays = Math.floor((today - announcementDate) / (1000 * 60 * 60 * 24));
+  const diffDays = Math.floor(
+    (today - announcementDate) / (1000 * 60 * 60 * 24),
+  );
 
   let dateStr;
   if (diffDays === 0) {
@@ -36,21 +42,24 @@ function formatAnnouncementDate(timestamp) {
 function getDaySuffix(day) {
   if (day > 3 && day < 21) return "th";
   switch (day % 10) {
-    case 1: return "st";
-    case 2: return "nd";
-    case 3: return "rd";
-    default: return "th";
+    case 1:
+      return "st";
+    case 2:
+      return "nd";
+    case 3:
+      return "rd";
+    default:
+      return "th";
   }
 }
 
 function getStatusBadgeClass(status) {
-
   if (status.toUpperCase() === "HELP") {
     return "bg-yellow-400 text-white";
-  }else if(status.toUpperCase() === "EMERGENCY"){
+  } else if (status.toUpperCase() === "EMERGENCY") {
     return "bg-red-400 text-white";
-  }else if(status.toUpperCase() === "OK"){
-    return "bg-green-400 text-white"; 
+  } else if (status.toUpperCase() === "OK") {
+    return "bg-green-400 text-white";
   }
   return "bg-gray-400 text-white";
 }
@@ -64,16 +73,15 @@ function createAnnouncementElement(announcement) {
 
   article.innerHTML = `
     <!-- left: time-->
-    <div class="flex flex-col items-start pt-1 min-w-[64px]">
+    <div class="flex flex-col items-start pt-1 min-w-[100px] max-w-[100px] pr-6 border-r border-gray-200">
       <span class="font-poppins text-sm font-medium text-gray-500">${date}</span>
       <span class="font-poppins mt-1 text-sm font-medium text-gray-500">${time}</span>
     </div>
 
-    <!-- line -->
-    <div class="h-auto w-px bg-gray-200"></div>
+    
 
     <!-- content -->
-    <div class="flex-grow">
+    <div class="w-[400px] flex flex-col">
       <div class="mb-1 flex items-center gap-2">
         <span class="font-poppins font-bold text-black">${escapeHtml(announcement.sender)}</span>
         <span class="font-poppins rounded-md px-2 py-0.5 text-xs font-semibold ${statusClass}">
@@ -109,7 +117,6 @@ function renderAnnouncements(announcements) {
   const sorted = [...announcements].sort((a, b) => {
     return new Date(b.timestamp) - new Date(a.timestamp);
   });
-
 
   // Render latest announcement
   sorted.forEach((announcement) => {
@@ -148,4 +155,3 @@ document.addEventListener("DOMContentLoaded", () => {
 socket.on("connect", () => {
   fetchAnnouncements();
 });
-
