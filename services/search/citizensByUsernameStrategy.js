@@ -4,7 +4,7 @@ export const citizensByUsernameStrategy = {
   async execute({ req }) {
     try {
         const q = (req.query.username ?? '').trim();
-        if (!q) return { error: 'Missing query param: username' };
+        if (!q) return { code: 400, error: 'Missing query param: username' };
 
         const limit = Math.min(Number(req.query.limit ?? 50), 200);
         const offset = Math.max(Number(req.query.offset ?? 0), 0);
@@ -26,9 +26,9 @@ export const citizensByUsernameStrategy = {
             merged.slice(offset, offset + limit) :
             merged.slice(offset);
 
-        return { count, results };
+        return { code: 200, count, results };
     } catch (err) {
-        return { status: "error", message: "Server error" };
+        return { code: 500, status: "error", message: "Server error" };
     }
   }
 };
