@@ -1,5 +1,6 @@
 import { iAnnouncementDao } from "./iAnnouncementDao.js";
 import {buildSubstringRegex} from "../utils/search/search.js";
+import { searchByModel } from "../services/search/searchCommon.js";
 
 export class AnnouncementDao extends iAnnouncementDao {
     constructor({ AnnouncementModel }) {

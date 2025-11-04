@@ -37,5 +37,5 @@ export async function searchByModel({
 
   const count = await Model.countDocuments({ ...baseFilter, content: { $regex: regex } });
 
-  return { count, items: pageItems, nextCursor };
+  return { code: 200, count, items: pageItems, nextCursor };
 }

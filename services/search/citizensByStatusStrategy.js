@@ -4,7 +4,7 @@ export const citizensByStatusStrategy = {
   async execute({ req }) {
     try {
         const raw = String(req.query.status ?? req.params.status ?? '').trim();
-        if (!raw) return { error: 'Missing param: status' };
+        if (!raw) return { code: 400, error: 'Missing param: status' };
 
         const limit = Math.min(Number(req.query.limit ?? 50), 200);
         const offset = Math.max(Number(req.query.offset ?? 0), 0);
@@ -27,9 +27,9 @@ export const citizensByStatusStrategy = {
             merged.slice(offset, offset + limit) :
             merged.slice(offset);
 
-        return { count, results };
+        return { code: 200, count, results };
     } catch (err) {
-        return { status: 'error', message: 'Server error' };
+        return { code: 500, status: 'error', message: 'Server error' };
     }
   }
 };
