@@ -25,7 +25,7 @@ export async function search(req, res) {
     if (result.code !== 200){
       return res.status(result.code).json(result);
     }
-    return res.json(result);
+    return res.status(200).json(result);
   } catch (err) {
     return res.status(500).json({ status: "error", message: "Server error" });
   }
