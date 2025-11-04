@@ -1,4 +1,4 @@
-import { initializeSearch, normalizeQuery, hideFooter, processData } from "../utils/searchInit.js";
+import { initializeSearch, normalizeQuery, hideFooter, processData, showNoResultsMessage } from "../utils/searchInit.js";
 
 let lastQuery = "";
 let lastCursor = null;
@@ -7,6 +7,8 @@ async function searchAnnouncements(query) {
   const trimmed = normalizeQuery(query);
   if (!trimmed) {
     hideFooter();
+    showNoResultsMessage();
+    return;
   }
 
   const endpoint = `/api/queries?type=announcements&content=${encodeURIComponent(trimmed)}&limit=10`;
