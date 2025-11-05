@@ -3,13 +3,23 @@ import { loadInfo } from "/js/utils/loadUserInfo.js";
 const $ = (selector) => document.querySelector(selector);
 let ui = {};
 
-
 function pickSender(user) {
-  return user?.id || user?._id || user?.userId || user?.email || user?.username || null;
+  return (
+    user?.id ||
+    user?._id ||
+    user?.userId ||
+    user?.email ||
+    user?.username ||
+    null
+  );
 }
 
-function addClasses(el, ...cls) { el.classList.add(...cls); }
-function removeClasses(el, ...cls) { el.classList.remove(...cls); }
+function addClasses(el, ...cls) {
+  el.classList.add(...cls);
+}
+function removeClasses(el, ...cls) {
+  el.classList.remove(...cls);
+}
 
 function initUI() {
   ui = {
@@ -19,15 +29,15 @@ function initUI() {
     textarea: $("#announcement-input"),
     sendBtn: $("#send-btn"),
   };
-  return Object.values(ui).every(el => el !== null);
+  return Object.values(ui).every((el) => el !== null);
 }
 
 function expandCompose() {
   ui.composeCard.setAttribute("data-state", "expanded");
   ui.createBtn?.setAttribute("aria-expanded", "true");
   ui.composeCard.classList.remove("hidden", "pointer-events-none");
-  removeClasses(ui.composeCard, "max-h-0","opacity-0","scale-95");
-  addClasses(ui.composeCard, "max-h-[320px]","opacity-100","scale-100");
+  removeClasses(ui.composeCard, "max-h-0", "opacity-0", "scale-95");
+  addClasses(ui.composeCard, "max-h-[320px]", "opacity-100", "scale-100");
   ui.createBtn.classList.add("hidden");
   setTimeout(() => ui.textarea?.focus(), 30);
 }
@@ -36,19 +46,20 @@ function collapseCompose() {
   ui.composeCard.setAttribute("data-state", "collapsed");
   ui.createBtn?.setAttribute("aria-expanded", "false");
   addClasses(ui.composeCard, "pointer-events-none");
-  addClasses(ui.composeCard, "max-h-0","opacity-0","scale-95");
-  removeClasses(ui.composeCard, "max-h-[320px]","opacity-100","scale-100");
+  addClasses(ui.composeCard, "max-h-0", "opacity-0", "scale-95");
+  removeClasses(ui.composeCard, "max-h-[320px]", "opacity-100", "scale-100");
   ui.form.reset();
   ui.sendBtn.disabled = true;
   ui.createBtn.classList.remove("hidden");
-  setTimeout(() => ui.composeCard.classList.add("hidden"), 200);
+  ui.composeCard.classList.add("hidden");
 }
 
 function toggleComposeCard() {
   const isCollapsed =
     ui.composeCard.classList.contains("hidden") ||
     ui.composeCard.getAttribute("data-state") === "collapsed";
-  if (isCollapsed) expandCompose(); else collapseCompose();
+  if (isCollapsed) expandCompose();
+  else collapseCompose();
 }
 
 function updateSendButton() {
@@ -78,7 +89,6 @@ async function handleSubmit(e) {
       return;
     }
 
-
     const status = user.status;
     console.log("[postAnnouncement] User status:", status);
 
@@ -101,7 +111,9 @@ async function handleSubmit(e) {
     if (!response.ok) {
       const errorText = await response.text();
       console.error("[postAnnouncement] Error response:", errorText);
-      throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+      throw new Error(
+        `HTTP error! status: ${response.status}, message: ${errorText}`,
+      );
     }
 
     const result = await response.json();
@@ -116,7 +128,6 @@ async function handleSubmit(e) {
     alert(`Failed to post announcement: ${error.message}`);
   }
 }
-
 
 function initEventListeners() {
   console.log("[postAnnouncement] Initializing...");
@@ -143,7 +154,10 @@ function initEventListeners() {
   });
 
   ui.sendBtn?.addEventListener("click", (e) => {
-    console.log("[postAnnouncement] Send button clicked, disabled:", ui.sendBtn.disabled);
+    console.log(
+      "[postAnnouncement] Send button clicked, disabled:",
+      ui.sendBtn.disabled,
+    );
     if (!ui.sendBtn.disabled && ui.form) {
       e.preventDefault();
       handleSubmit(e);
@@ -168,12 +182,14 @@ function initEventListeners() {
 
     const target = e.target;
 
-  const clickedInsideCompose = ui.composeCard.contains(target);
-  const clickedCreateBtn = ui.createBtn.contains(target);
-  const clickedBackBtn = target.closest('#back-button') !== null;
+    const clickedInsideCompose = ui.composeCard.contains(target);
+    const clickedCreateBtn = ui.createBtn.contains(target);
+    const clickedBackBtn = target.closest("#back-button") !== null;
 
     if (!clickedInsideCompose && !clickedCreateBtn && !clickedBackBtn) {
-      console.log("[postAnnouncement] Clicked outside compose card, collapsing...");
+      console.log(
+        "[postAnnouncement] Clicked outside compose card, collapsing...",
+      );
       collapseCompose();
     }
   });
@@ -187,5 +203,3 @@ if (document.readyState === "loading") {
 } else {
   setTimeout(initEventListeners, 0);
 }
-
-
