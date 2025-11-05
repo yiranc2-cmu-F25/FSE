@@ -158,6 +158,22 @@ export function showNoResultsMessage() {
   }
 }
 
+export function hideLoadMoreButton() {
+  const loadMoreButton = document.querySelector("#load-button");
+  if (loadMoreButton) {
+    loadMoreButton.classList.remove("flex");
+    loadMoreButton.classList.add("hidden");
+  }
+}
+
+export function showLoadMoreButton() {
+  const loadMoreButton = document.querySelector("#load-button");
+  if (loadMoreButton) {
+    loadMoreButton.classList.remove("hidden");
+    loadMoreButton.classList.add("flex");
+  }
+}
+
 export function normalizeQuery(raw) {
   return raw?.trim() ?? "";
 }
@@ -184,6 +200,11 @@ export function processData(data) {
       end: Math.min(data.count, RESULT_BEGIN_INDEX + listLength - 1),
       total: data.count || 0,
     });
+    if (data.count === RESULT_BEGIN_INDEX + listLength - 1) {
+      hideLoadMoreButton();
+    } else {
+      showLoadMoreButton();
+    }
   }
 }
 

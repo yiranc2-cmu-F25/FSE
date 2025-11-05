@@ -99,92 +99,36 @@ function closeConfirmModal() {
   ui.modal.classList.remove("flex");
 }
 
-// Click backdrop to close (optional)
-ui.modal?.addEventListener("click", (e) => {
-  if (e.target === ui.modal) closeConfirmModal();
-});
-ui.modalCancel?.addEventListener("click", closeConfirmModal);
+function setupClickHandlers() {
+  // Click backdrop to close (optional)
+  ui.modal?.addEventListener("click", (e) => {
+    if (e.target === ui.modal) closeConfirmModal();
+  });
+  ui.modalCancel?.addEventListener("click", closeConfirmModal);
 
-// When user clicks "Create Account" in the modal
-ui.modalSubmit?.addEventListener("click", onConfirmCreate);
-ui.modalCancel?.addEventListener("click", closeConfirmModal);
-ui.modal?.addEventListener("click", (e) => {
-  if (e.target === ui.modal) closeConfirmModal();
-});
-///
-// ui.modalSubmit?.addEventListener("click", onConfirmCreate);
-// ui.modalCancel?.addEventListener("click", closeConfirmModal);
-// ui.modal?.addEventListener("click", (e) => {
-//   if (e.target === ui.modal) closeConfirmModal();
-// });
-
-// async function onConfirmCreate() {
-//   // Pull username/password from the original join form
-//   const uname = ui.username.value.trim();
-//   const pwd = ui.password.value;
-
-//   ui.modalSubmit.setAttribute("disabled", "true");
-//   ui.modalErr.classList.add("hidden");
-//   try {
-//     const { res, data } = await postJSON(API.register, {
-//       username: uname,
-//       password: pwd,
-//     });
-
-//     if (res.ok && data?.ok) {
-//       // Registration success -> immediately log out and return to HOME
-//       closeConfirmModal();
-//       return;
-//     }
-
-//     // Registration failed -> show modal error
-//     ui.modalErr.textContent =
-//       data?.message || "Registration failed. Please try again.";
-//     ui.modalErr.classList.remove("hidden");
-//   } catch (err) {
-//     ui.modalErr.textContent = "Network error. Please try again.";
-//     ui.modalErr.classList.remove("hidden");
-//   } finally {
-//     ui.modalSubmit.removeAttribute("disabled");
-//   }
-// }
+  // When user clicks "Create Account" in the modal
+  ui.modalSubmit?.addEventListener("click", onConfirmCreate);
+  ui.modalCancel?.addEventListener("click", closeConfirmModal);
+  ui.modal?.addEventListener("click", (e) => {
+    if (e.target === ui.modal) closeConfirmModal();
+  });
+}
 
 // ----- Main submit flow (click Join) -----------------------------------------
 async function onConfirmCreate(e) {
   e?.preventDefault?.();
-
-  const uname = ui.username.value.trim();
-  const pwd = ui.password.value;
-
-  ui.modalSubmit.setAttribute("disabled", "true");
-  ui.modalErr.classList.add("hidden");
+  const { uname, pwd } = readCredentials();
+  disableModalSubmit();
+  hideModalError();
 
   try {
-    const { res, data } = await postJSON(API.register, {
-      username: uname,
-      password: pwd,
-    });
-
-    // Treat any 2xx as success unless backend explicitly says ok === false
-    const success = res.ok && data?.ok !== false;
-
-    if (success) {
-      // Clean up and log out (required by TA), then go HOME
-      sessionStorage.removeItem("pendingUser");
-      closeConfirmModal();
-      window.location.href = NEXT_ROUTE_AFTER_REGISTER_VALIDATION;
-      return;
-    }
-
-    // Registration failed -> show message from server
-    ui.modalErr.textContent =
-      data?.message || "Registration failed. Please try again.";
-    ui.modalErr.classList.remove("hidden");
-  } catch (err) {
-    ui.modalErr.textContent = "Network error. Please try again.";
-    ui.modalErr.classList.remove("hidden");
+    const { res, data } = await postJSON(API.register, { username: uname, password: pwd });
+    if (isRegistrationSuccess(res, data)) return finalizeRegistration();
+    showModalError(data?.message || "Registration failed. Please try again.");
+  } catch (_err) {
+    showModalError("Network error. Please try again.");
   } finally {
-    ui.modalSubmit.removeAttribute("disabled");
+    enableModalSubmit();
   }
 }
 
@@ -193,64 +137,100 @@ async function handleSubmit(e) {
   const { ok, uname, pwd } = clientValidate();
   if (!ok) return;
 
-  ui.btn.setAttribute("disabled", "true");
+  disableSubmitButton();
   try {
-    const { res: r1, data: d1 } = await postJSON(API.usernameStatus, {
-      username: uname,
-    });
-
-    if (!r1.ok) {
-      showError("username", d1?.message || "Unable to validate username.");
-      return;
-    }
-
-    if (d1.status === "reserved") {
-      showError("username", d1.message || "This username is not allowed.");
-      return;
-    }
-
-    if (d1.status === "available") {
-      // Store a tiny hint (optional) and open the confirm modal
-      sessionStorage.setItem(
-        "pendingUser",
-        JSON.stringify({ u: uname, ts: Date.now() }),
-      );
-      openConfirmModal(uname);
-      return;
-    }
-
-    if (d1.status === "exists") {
-      // Attempt login (no username error on wrong password)
-      const { res: r3, data: d3 } = await postJSON(API.login, {
-        username: uname,
-        password: pwd,
-      });
-      if (r3.ok && d3?.ok) {
-        window.location.href = NEXT_ROUTE_AFTER_LOGIN_VALIDATION;
-        return;
-      }
-      showError("password", d3?.message || "Incorrect password.");
-      return;
-    }
-
+    const { res, data } = await requestUsernameStatus(uname);
+    if (!res.ok) return showError("username", data?.message || "Unable to validate username.");
+    if (data.status === "reserved") return showError("username", data.message || "This username is not allowed.");
+    if (data.status === "available") return handleAvailableUsername(uname);
+    if (data.status === "exists") return handleExistingUsername(uname, pwd);
     showError("username", "Unexpected server response. Please try again.");
   } catch (err) {
     console.log("Network or unknown error", err);
     showError("username", "Network error. Please check your connection.");
   } finally {
-    ui.btn.removeAttribute("disabled");
+    enableSubmitButton();
   }
 }
 
+function readCredentials() {
+  return {
+    uname: ui.username.value.trim(),
+    pwd: ui.password.value,
+  };
+}
+
+function disableModalSubmit() {
+  ui.modalSubmit.setAttribute("disabled", "true");
+}
+
+function hideModalError() {
+  ui.modalErr.classList.add("hidden");
+}
+
+function isRegistrationSuccess(res, data) {
+  return res.ok && data?.ok !== false;
+}
+
+function finalizeRegistration() {
+  sessionStorage.removeItem("pendingUser");
+  closeConfirmModal();
+  window.location.href = NEXT_ROUTE_AFTER_REGISTER_VALIDATION;
+}
+
+function showModalError(message) {
+  ui.modalErr.textContent = message;
+  ui.modalErr.classList.remove("hidden");
+}
+
+function enableModalSubmit() {
+  ui.modalSubmit.removeAttribute("disabled");
+}
+
+function disableSubmitButton() {
+  ui.btn.setAttribute("disabled", "true");
+}
+
+async function requestUsernameStatus(uname) {
+  return postJSON(API.usernameStatus, { username: uname });
+}
+
+function handleAvailableUsername(uname) {
+  sessionStorage.setItem("pendingUser", JSON.stringify({ u: uname, ts: Date.now() }));
+  openConfirmModal(uname);
+}
+
+async function handleExistingUsername(uname, pwd) {
+  const { res, data } = await postJSON(API.login, { username: uname, password: pwd });
+  if (res.ok && data?.ok) {
+    window.location.href = NEXT_ROUTE_AFTER_LOGIN_VALIDATION;
+    return;
+  }
+  showError("password", data?.message || "Incorrect password.");
+}
+
+function enableSubmitButton() {
+  ui.btn.removeAttribute("disabled");
+}
+
 // ----- Wire up events --------------------------------------------------------
-[ui.username, ui.password].forEach((inp) => {
-  inp.addEventListener("input", () => {
-    if (inp === ui.username) clearError("username");
-    else clearError("password");
+function setupInputHandlers() {
+  [ui.username, ui.password].forEach((inp) => {
+    inp.addEventListener("input", () => {
+      if (inp === ui.username) clearError("username");
+      else clearError("password");
+    });
+    inp.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") ui.btn.click();
+    });
   });
-  inp.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") ui.btn.click();
-  });
+
+  ui.btn.addEventListener("click", handleSubmit);
+}
+
+// ----- Bootstrap -------------------------------------------------------------
+document.addEventListener("DOMContentLoaded", () => {
+  setupClickHandlers();
+  setupInputHandlers();
 });
 
-ui.btn.addEventListener("click", handleSubmit);

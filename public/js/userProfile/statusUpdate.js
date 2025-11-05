@@ -3,32 +3,38 @@
 import {loadInfo} from "../utils/loadUserInfo.js";
 import { getInitialsSafe,getAvatarColor } from "../utils/avatars.js";
 import { getSocket } from "../utils/socket.js";
-const sock = getSocket();
-if (sock && !sock.connected) {
-  try {
-    sock.connect();
-    sock.on?.("connect", () => console.log("[status] socket connected", sock.id));
-    sock.on?.("connect_error", (e) => console.warn("[status] connect_error", e?.message || e));
-  } catch (e) {
-    console.error("[status] connect() failed", e);
+
+function connectSocket() {
+  const sock = getSocket();
+  if (sock && !sock.connected) {
+    try {
+      sock.connect();
+      sock.on?.("connect", () => console.log("[status] socket connected", sock.id));
+      sock.on?.("connect_error", (e) => console.warn("[status] connect_error", e?.message || e));
+    } catch (e) {
+      console.error("[status] connect() failed", e);
+    }
   }
 }
-document.addEventListener("DOMContentLoaded", async () => {
-  try {
-    const user = await loadInfo();
-    const name = (user.username || "").trim();
 
-    const displayInput = document.querySelector('input[name="displayName"]');
-    const avatarInit = document.getElementById("avatar-initials");
-    const avatarColor = document.getElementById("avatar");
+function renderInfo() {
+  document.addEventListener("DOMContentLoaded", async () => {
+    try {
+      const user = await loadInfo();
+      const name = (user.username || "").trim();
 
-    if (avatarColor) avatarColor.style.backgroundColor = getAvatarColor(name);;
-    if (avatarInit) avatarInit.textContent = getInitialsSafe(name);
-    if (displayInput) displayInput.value = name || "Guest";
-  } catch (err) {
-    console.error("Failed to load user info:", err);
-  }
-});
+      const displayInput = document.querySelector('input[name="displayName"]');
+      const avatarInit = document.getElementById("avatar-initials");
+      const avatarColor = document.getElementById("avatar");
+
+      if (avatarColor) avatarColor.style.backgroundColor = getAvatarColor(name);;
+      if (avatarInit) avatarInit.textContent = getInitialsSafe(name);
+      if (displayInput) displayInput.value = name || "Guest";
+    } catch (err) {
+      console.error("Failed to load user info:", err);
+    }
+  });
+}
 
 const root = document.querySelector("#esn-status");
 if (!root) throw new Error("Missing #esn-status");
@@ -36,15 +42,6 @@ if (!root) throw new Error("Missing #esn-status");
 let currentStatus = (root.dataset.default || "UNDEFINED").toUpperCase();
 
 const tabs = [...root.querySelectorAll(".status-tab")];
-
-// interactions
-tabs.forEach((btn) => {
-  btn.addEventListener("click", () => {
-    currentStatus = (btn.dataset.status || "UNDEFINED").toUpperCase();
-    console.log("new status", currentStatus);
-    // TODO: on click, change the styling of the selected tab
-  });
-});
 
 // helper: remove active class from all tabs
 function clearActive() {
@@ -60,42 +57,46 @@ function setActive(status) {
   if (selected) selected.classList.add("active");
 }
 
-// attach click handlers
-tabs.forEach((btn) => {
-  btn.addEventListener("click", () => {
-    currentStatus = (btn.dataset.status || "UNDEFINED").toUpperCase();
-    console.log("new status", currentStatus);
-    setActive(currentStatus);
-    // TODO: later send currentStatus to backend here
+function attachClickHandlers() {
+  // attach click handlers
+  tabs.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      currentStatus = (btn.dataset.status || "UNDEFINED").toUpperCase();
+      console.log("new status", currentStatus);
+      setActive(currentStatus);
+    });
   });
-});
+}
 
-
-
-document.addEventListener('DOMContentLoaded', () => {
-  const form = document.getElementById('status-form');
-  form?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    // TODO: save logic here in future
-    try{
-      const user = await loadInfo();
-      const pathStatus = await fetch('/api/authentications/statuses/new', {
-        method: 'PATCH',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          userId : user.id,
-          newStatus: currentStatus }),
-      });
-      if (!pathStatus.ok) throw new Error(`HTTP ${pathStatus.status}`);
-      const data = await pathStatus.json();
-      openModal();
-    }catch(err){
-      console.error('Failed to update status:', err);
-      alert('Failed to update status. Please try again later.');
-    }
+async function fetchPathStatus(userId, newStatus) {
+  const pathStatus = await fetch('/api/authentications/statuses/new', {
+    method: 'PATCH',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ 
+      userId : userId,
+      newStatus: newStatus }),
   });
-});
+  if (!pathStatus.ok) throw new Error(`HTTP ${pathStatus.status}`);
+  return pathStatus.json();
+}
+
+function attachSubmitHandler() {
+  document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('status-form');
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      try{
+        const user = await loadInfo();
+        await fetchPathStatus(user.id, currentStatus);
+        openModal();
+      }catch(err){
+        console.error('Failed to update status:', err);
+        alert('Failed to update status. Please try again later.');
+      }
+    });
+  });
+}
 
 // initialize default selection
 setActive(currentStatus);
@@ -116,13 +117,22 @@ function closeModal() {
   modal.setAttribute("aria-hidden", "true");
 }
 
-if (modal && modalClose) {
-  modalClose.addEventListener("click", () => {
-    closeModal();
-    window.location.href = "/members";
-  });
+function closeModalHandler() {
+  if (modal && modalClose) {
+    modalClose.addEventListener("click", () => {
+      closeModal();
+      window.location.href = "/members";
+    });
 
-  modal.addEventListener("click", (e) => {
-    if (e.target === modal) closeModal();
-  });
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) closeModal();
+    });
+  }
 }
+
+// kick off
+connectSocket();
+renderInfo();
+attachClickHandlers();
+attachSubmitHandler();
+closeModalHandler();
