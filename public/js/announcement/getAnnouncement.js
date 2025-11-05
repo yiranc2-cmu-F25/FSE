@@ -70,7 +70,7 @@ function createAnnouncementElement(announcement) {
 
   const article = document.createElement("article");
   article.className = "flex gap-4";
-
+  // LHS must have fixed width to align properly
   article.innerHTML = `
     <!-- left: time-->
     <div class="flex flex-col items-start pt-1 min-w-[100px] max-w-[100px] pr-6 border-r border-gray-200">
