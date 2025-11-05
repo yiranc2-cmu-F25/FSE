@@ -79,80 +79,23 @@ async function initPrivateMessageSocket() {
     });
 }
 
+// ---------- send message ----------
 async function sendPrivateMessage(text) {
   try {
-    const content = (text || "").trim();
-    if (!content) return;
-    if (!peerId) {
-      console.warn("[dm] missing peerId on page");
-      return;
-    }
-
-    ui.input.value = "";
-    ui.input.rows = 1;
-    ui.sendBtn.disabled = true;
-
-    const meRes = await fetch("/api/authentications/accounts", { credentials: "include" });
-    if (!meRes.ok) throw new Error(`whoami failed: ${meRes.status}`);
-    const me = await meRes.json();
-
+    const content = sanitizeOutgoingText(text);
+    if (!content || !ensurePeer()) return;
+    prepareInputForSend();
+    const me = await fetchMe();
     const now = new Date();
-    const payload = {
-      sender: me.id,
-      receiver: peerId,
-      content,
-      status: String(me.status || "undefined").toLowerCase(),
-      timestamp: now,
-    };
-
-    const postRes = await fetch("/api/messages/private", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify(payload),
-    });
-    if (!postRes.ok) throw new Error(`send DM failed: ${postRes.status}`);
-
-    hideEmptyState();
-    const node = renderMessage({
-      name:      meName || me.username,
-      text:      payload.content,
-      status:    payload.status,
-      timestamp: now,
-      isOwn:     true,
-    });
-    ui.messageList.appendChild(node);
-
+    await postPrivateMessage(me, content, now);
+    appendOwnMessage(me, content, now);
     await scrollListToBottom();
-
   } catch (e) {
     console.error("[dm] Failed to send message:", e);
   } finally {
     ui.sendBtn.disabled = !ui.input.value;
   }
 }
-
-
-ui.form?.addEventListener("submit", (e) => {
-    console.log("[dm.send] submit", { value: ui.input?.value });
-    e.preventDefault();
-    sendPrivateMessage(ui.input.value);
-});
-let isImeActive = false;
-ui.input?.addEventListener("compositionstart", () => { isImeActive = true; });
-ui.input?.addEventListener("compositionend", () => { setTimeout(() => { isImeActive = false; }); });
-ui.input?.addEventListener("keydown", (e) => {
-    if (isImeActive || e.key === "Process" || e.keyCode === 229) return;
-    if (e.key === "Enter" && !e.shiftKey) {
-        console.log("[dm.send] enter-to-send", { value: ui.input?.value });
-        e.preventDefault();
-        sendPrivateMessage(ui.input.value);
-    }
-});
-ui.input?.addEventListener("input", () => {
-    console.debug("[dm.send] input len", ui.input?.value?.length ?? 0);
-    ui.sendBtn.disabled = !ui.input.value;
-});
 
 // ---------- load history ----------
 async function fetchPrivateMessages() {
@@ -161,60 +104,131 @@ async function fetchPrivateMessages() {
     return;
   }
   try {
-    const url = `/api/messages/private/${encodeURIComponent(peerId)}`;
-    console.log("[dm.fetch] GET", url);
-
-    const res = await fetch(url, { credentials: "include" });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-    const payload = await res.json();
-    const messages = Array.isArray(payload) ? payload : (payload.messages || []);
-    console.log("[dm.fetch] count =", messages.length);
-
-    if (messages.length === 0) {
-      showEmptyState();
-      return;
-    }
+    const messages = await fetchPrivateMessagePayload(peerId);
+    if (!messages.length) return showEmptyState();
     hideEmptyState();
-
-    msgList.innerHTML = "";
-
-    messages.forEach((m, i) => {
-      const own = typeof m.isOwn === "boolean"
-        ? m.isOwn
-        : String(m.senderId) === String(meId);
-
-      const displayName = own ? (meName || "Me") : (peerName || m.sender || "Peer");
-
-      const node = renderMessage({
-        name:      String(displayName ?? ""),
-        text:      String(m.content ?? ""),
-        status:    m.status ?? "UNDEFINED",
-        timestamp: m.timestamp ?? m.createdAt ?? Date.now(),
-        isOwn:     own,
-      });
-
-      if (!(node instanceof Node)) {
-        console.error("[dm.fetch] renderMessage returned non-Node at", i, node);
-        return;
-      }
-      msgList.appendChild(node);
-    });
-
-    await new Promise(r => requestAnimationFrame(r));
-    const last = msgList.lastElementChild;
-    if (last) last.scrollIntoView({ block: "end" });
-    msgList.scrollTop = msgList.scrollHeight;
-
-    console.log("[dm.fetch] scrolled", {
-      top: msgList.scrollTop, height: msgList.scrollHeight
-    });
-
+    clearMessageList();
+    messages.forEach((message, index) => appendFetchedMessage(message, index));
+    await moveListToBottom();
+    logScrollState();
   } catch (e) {
     console.error("[dm.fetch] failed:", e);
   }
 }
 
+function sanitizeOutgoingText(text) {
+  return (text || "").trim();
+}
+
+function ensurePeer() {
+  if (peerId) return true;
+  console.warn("[dm] missing peerId on page");
+  return false;
+}
+
+function prepareInputForSend() {
+  ui.input.value = "";
+  ui.input.rows = 1;
+  ui.sendBtn.disabled = true;
+}
+
+async function fetchMe() {
+  const res = await fetch("/api/authentications/accounts", { credentials: "include" });
+  if (!res.ok) throw new Error(`whoami failed: ${res.status}`);
+  return res.json();
+}
+
+async function postPrivateMessage(me, content, timestamp) {
+  const payload = buildPrivateMessagePayload(me, content, timestamp);
+  const postRes = await fetch("/api/messages/private", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(payload),
+  });
+  if (!postRes.ok) throw new Error(`send DM failed: ${postRes.status}`);
+}
+
+function buildPrivateMessagePayload(me, content, timestamp) {
+  return {
+    sender: me.id,
+    receiver: peerId,
+    content,
+    status: String(me.status || "undefined").toLowerCase(),
+    timestamp,
+  };
+}
+
+function appendOwnMessage(me, content, timestamp) {
+  hideEmptyState();
+  const node = renderMessage({
+    name: meName || me.username,
+    text: content,
+    status: String(me.status || "undefined").toLowerCase(),
+    timestamp,
+    isOwn: true,
+  });
+  ui.messageList.appendChild(node);
+}
+
+async function fetchPrivateMessagePayload(peer) {
+  const url = `/api/messages/private/${encodeURIComponent(peer)}`;
+  console.log("[dm.fetch] GET", url);
+  const res = await fetch(url, { credentials: "include" });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const payload = await res.json();
+  const messages = Array.isArray(payload) ? payload : payload.messages || [];
+  console.log("[dm.fetch] count =", messages.length);
+  return messages;
+}
+
+function clearMessageList() {
+  msgList.innerHTML = "";
+}
+
+function appendFetchedMessage(message, index) {
+  const node = renderFetchedMessage(message);
+  if (!(node instanceof Node)) {
+    console.error("[dm.fetch] renderMessage returned non-Node at", index, node);
+    return;
+  }
+  msgList.appendChild(node);
+}
+
+function renderFetchedMessage(message) {
+  const own = determineOwnership(message);
+  return renderMessage({
+    name: determineDisplayName(message, own),
+    text: String(message.content ?? ""),
+    status: message.status ?? "UNDEFINED",
+    timestamp: message.timestamp ?? message.createdAt ?? Date.now(),
+    isOwn: own,
+  });
+}
+
+function determineOwnership(message) {
+  return typeof message.isOwn === "boolean"
+    ? message.isOwn
+    : String(message.senderId) === String(meId);
+}
+
+function determineDisplayName(message, own) {
+  return own ? meName || "Me" : peerName || message.sender || "Peer";
+}
+
+async function moveListToBottom() {
+  await new Promise((resolve) => requestAnimationFrame(resolve));
+  const last = msgList.lastElementChild;
+  if (last) last.scrollIntoView({ block: "end" });
+  msgList.scrollTop = msgList.scrollHeight;
+}
+
+function logScrollState() {
+  console.log("[dm.fetch] scrolled", {
+    top: msgList.scrollTop,
+    height: msgList.scrollHeight,
+  });
+}
 
 // ---------- get username and status ----------
 
@@ -254,26 +268,57 @@ async function fillPeerHeader() {
     chipEl.className = `font-poppins inline-flex items-center rounded-md px-1.5 py-0.5 text-xs font-semibold ring-1 ${chip.classes}`;
 }
 
-// on leaving page, mark all messages as read
-window.addEventListener("beforeunload", () => {
-  if (!peerId) return;
+function setupInputHandlers() {
+  ui.form?.addEventListener("submit", (e) => {
+      console.log("[dm.send] submit", { value: ui.input?.value });
+      e.preventDefault();
+      sendPrivateMessage(ui.input.value);
+  });
+  let isImeActive = false;
+  ui.input?.addEventListener("compositionstart", () => { isImeActive = true; });
+  ui.input?.addEventListener("compositionend", () => { setTimeout(() => { isImeActive = false; }); });
+  ui.input?.addEventListener("keydown", (e) => {
+      if (isImeActive || e.key === "Process" || e.keyCode === 229) return;
+      if (e.key === "Enter" && !e.shiftKey) {
+          console.log("[dm.send] enter-to-send", { value: ui.input?.value });
+          e.preventDefault();
+          sendPrivateMessage(ui.input.value);
+      }
+  });
+  ui.input?.addEventListener("input", () => {
+      console.debug("[dm.send] input len", ui.input?.value?.length ?? 0);
+      ui.sendBtn.disabled = !ui.input.value;
+  });
+}
 
-  const url = `/api/messages/private/read`;
-  console.log("[dm] marking messages as read:", url);
-  const body = JSON.stringify({ peerId });
+function setupMarkReadOnUnload() {
+  // on leaving page, mark all messages as read
+  window.addEventListener("beforeunload", () => {
+    if (!peerId) return;
 
-  const data = new Blob([body], { type: "application/json" });
-  navigator.sendBeacon(url, data);
-});
+    const url = `/api/messages/private/read`;
+    console.log("[dm] marking messages as read:", url);
+    const body = JSON.stringify({ peerId });
+
+    const data = new Blob([body], { type: "application/json" });
+    navigator.sendBeacon(url, data);
+  });
+}
 
 // ---------- bootstrap ----------
-document.addEventListener("DOMContentLoaded", async () => {
-    try {
-        await fillPeerHeader();
-        await loadNames();
-        await fetchPrivateMessages();
-        await initPrivateMessageSocket();
-    } catch (err) {
-        console.error("[dm] bootstrap socket failed:", err);
-    }
-});
+function bootstrap() {
+  document.addEventListener("DOMContentLoaded", async () => {
+      try {
+          setupInputHandlers();
+          setupMarkReadOnUnload();
+          await fillPeerHeader();
+          await loadNames();
+          await fetchPrivateMessages();
+          await initPrivateMessageSocket();
+      } catch (err) {
+          console.error("[dm] bootstrap socket failed:", err);
+      }
+  });
+}
+
+bootstrap();

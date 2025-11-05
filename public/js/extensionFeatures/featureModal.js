@@ -2,105 +2,129 @@ import {loadInfo} from "../utils/loadUserInfo.js";
 import { getInitialsSafe,getAvatarColor } from "../utils/avatars.js";
 import { statusUpdate } from "../utils/statusPageUpdate.js";
 
-document.addEventListener("DOMContentLoaded", async () => {
-  try {
-    const user = await loadInfo();
-    console.log("Loaded user info:", user);
-    const name = (user.username || "").trim();
+const $ = (s) => document.querySelector(s);
 
-    const displayInput = document.querySelector('input[name="displayName"]');
-    const avatarInit = document.getElementById("avatar-initials");
-    const avatarColor = document.getElementById("avatar");
-    const statusText = document.getElementById("status-text");
-    statusUpdate(user.status);
+const ui = {
+  displayInput: $('input[name="displayName"]'),
+  avatarInit: $("#avatar-initials"),
+  avatarColor: $("#avatar"),
+  statusText: $("#status-text"),
+  openBtn: $("#open-profile-modal"),
+  modal: $("#feature-modal"),
+  overlay: $("#feature-modal-overlay"),
+  closeBtn: $("#feature-modal-close"),
+  logoutBtn: $("#feature-logout"),
+  statusButton: $("#status-button"),
+  speedTestButton: $("#speed-test-button"),
+  announcementButton: $("#post-public-announcement-button"),
+};
+const body = document.body;
+ui.body = body;
 
-    if (statusText) statusText.textContent = user.status ?? "UNDEFINED";
-    if (avatarColor) avatarColor.style.backgroundColor = getAvatarColor(name);;
-    if (avatarInit) avatarInit.textContent = getInitialsSafe(name);
-    if (displayInput) displayInput.value = name || "Guest";
-  } catch (err) {
-    console.error("Failed to load user info:", err);
-  }
-});
+function setupUserInfo() {
+  document.addEventListener("DOMContentLoaded", async () => {
+    try {
+      const user = await loadInfo();
+      console.log("Loaded user info:", user);
+      const name = (user.username || "").trim();
 
+      statusUpdate(user.status);
 
+      if (ui.statusText) ui.statusText.textContent = user.status ?? "UNDEFINED";
+      if (ui.avatarColor) ui.avatarColor.style.backgroundColor = getAvatarColor(name);;
+      if (ui.avatarInit) ui.avatarInit.textContent = getInitialsSafe(name);
+      if (ui.displayInput) ui.displayInput.value = name || "Guest";
+    } catch (err) {
+      console.error("Failed to load user info:", err);
+    }
+  });
+}
 
-document.addEventListener("DOMContentLoaded", () => {
-  const body = document.body;
-  const openBtn = document.getElementById("open-profile-modal"); // kebab button
-  const modal = document.getElementById("feature-modal");
-  const overlay = document.getElementById("feature-modal-overlay");
-  const closeBtn = document.getElementById("feature-modal-close");
+let lastActive = null;
 
-  if (!modal) return;
+function openModal() {
+  lastActive = document.activeElement;
+  ui.modal.classList.remove("hidden");
+  ui.body.classList.add("overflow-hidden");
+  ui.closeBtn?.focus();
+}
 
-  let lastActive = null;
+function closeModal() {
+  ui.modal.classList.add("hidden");
+  ui.body.classList.remove("overflow-hidden");
+  lastActive?.focus?.();
+}
 
-  function openModal() {
-    lastActive = document.activeElement;
-    modal.classList.remove("hidden");
-    body.classList.add("overflow-hidden");
-    closeBtn?.focus();
-  }
+function setupOpenSidebar() {
+  ui.openBtn?.addEventListener("click", openModal);
+  ui.closeBtn?.addEventListener("click", closeModal);
+  ui.overlay?.addEventListener("click", closeModal);
+}
 
-  function closeModal() {
-    modal.classList.add("hidden");
-    body.classList.remove("overflow-hidden");
-    lastActive?.focus?.();
-  }
-
-  openBtn?.addEventListener("click", openModal);
-  closeBtn?.addEventListener("click", closeModal);
-  overlay?.addEventListener("click", closeModal);
-
+function setupCloseOnEscape() {
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && !modal.classList.contains("hidden")) closeModal();
+    if (e.key === "Escape" && !ui.modal.classList.contains("hidden")) closeModal();
+  });
+}
+
+async function fetchLogout() {
+  const res = await fetch("/api/authentications/logout", {
+    method: "POST",
+    credentials: "include",
+    headers: { Accept: "application/json" },
   });
 
-  const logoutBtn = document.getElementById("feature-logout");
+  if (res.ok || res.status === 401 || res.status === 403) {
+    window.location.replace("/");
+    return;
+  }
+  const data = await res.json().catch(() => ({}));
+  alert(data?.message || "Server error logging out. Please try again.");
+}
 
-  logoutBtn?.addEventListener("click", async () => {
-    const originalText = logoutBtn.textContent;
-    logoutBtn.disabled = true;
-    logoutBtn.textContent = "Logging out…";
+function setupLogout() {
+  ui.logoutBtn?.addEventListener("click", async () => {
+    const originalText = ui.logoutBtn.textContent;
+    ui.logoutBtn.disabled = true;
+    ui.logoutBtn.textContent = "Logging out…";
 
     try {
-      const res = await fetch("/api/authentications/logout", {
-        method: "POST",
-        credentials: "include",
-        headers: { Accept: "application/json" },
-      });
-
-      if (res.ok || res.status === 401 || res.status === 403) {
-        window.location.replace("/");
-        return;
-      }
-      const data = await res.json().catch(() => ({}));
-      alert(data?.message || "Server error logging out. Please try again.");
+      await fetchLogout();
     } catch (err) {
       console.error("Logout failed:", err);
       alert("Network error. Please try again.");
     } finally {
-      logoutBtn.disabled = false;
-      logoutBtn.textContent = originalText;
+      ui.logoutBtn.disabled = false;
+      ui.logoutBtn.textContent = originalText;
     }
   });
-});
+}
+
+function bootSidebar() {
+  document.addEventListener("DOMContentLoaded", () => {
+    setupOpenSidebar();
+    setupCloseOnEscape();
+    setupLogout();
+  });
+}
 
 
-//click esn status link to go to status page
-document.addEventListener("DOMContentLoaded", () => {
-  const statusButton = document.getElementById("status-button");
-  statusButton?.addEventListener("click", () => {
-    window.location.href = "/status";
-  });
-  const speedTestButton = document.getElementById("speed-test-button");
-  speedTestButton?.addEventListener("click", () => {
-    window.location.href = "/speed-test";
-  });
+function setupSidebarSelection() {
+  //click esn status link to go to status page
+  document.addEventListener("DOMContentLoaded", () => {
+    ui.statusButton?.addEventListener("click", () => {
+      window.location.href = "/status";
+    });
+    ui.speedTestButton?.addEventListener("click", () => {
+      window.location.href = "/speed-test";
+    });
 
-  const announcementButton = document.getElementById("post-public-announcement-button");
-  announcementButton?.addEventListener("click", () => {
-    window.location.href = "/postPublicAnnouncements";
+    ui.announcementButton?.addEventListener("click", () => {
+      window.location.href = "/postPublicAnnouncements";
+    });
   });
-});
+}
+
+setupUserInfo();
+bootSidebar();
+setupSidebarSelection();

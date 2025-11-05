@@ -1,38 +1,49 @@
 import User from "./User.js";
 
 export async function getOnlineOfflineMembers(app) {
-  // Fetch user basics from DB
-  const docs = await User.getAllUsers();
-  //console.log("[lists] raw first doc keys:", docs?.[0] && Object.keys(docs[0]));
-  // const docs = await app.locals.userDao.getAllUsers();
+  const docs = await fetchAllUsers();
+  const members = mapMembers(docs);
+  const onlineSet = buildOnlineMemberSet(app);
+  const partitions = partitionMembersByStatus(members, onlineSet);
+  sortPartitionByName(partitions);
+  return partitions;
+}
 
-  const all = docs
-    .map(d => ({
-      id: String(d._id ?? d.id ?? d.userId),
-      name: d.username,
-      status: d.sharedstatus ?? "UNDEFINED",
+async function fetchAllUsers() {
+  return User.getAllUsers();
+}
+
+function mapMembers(docs) {
+  return (docs || [])
+    .map((d) => ({
+      id: String(d?._id ?? d?.id ?? d?.userId),
+      name: d?.username,
+      status: d?.sharedstatus ?? "UNDEFINED",
     }))
-    .filter(u => !!u.id);
+    .filter((u) => !!u.id);
+}
 
-  // Get currently online usernames from socketInstance
+function buildOnlineMemberSet(app) {
   const onlineNames = app.get("socketInstance")?.getOnline?.() ?? [];
-  const onlineSet = new Set(onlineNames.map(n => (n || "").toLowerCase()));
+  return new Set(onlineNames.map((n) => (n || "").toLowerCase()));
+}
 
-  // Partition into online/offline arrays
-  const onlineUsers = [];
-  const offlineUsers = [];
-  for (const u of all) {
-    (onlineSet.has((u.name || "").toLowerCase())
-      ? onlineUsers
-      : offlineUsers
-    ).push(u);
+function partitionMembersByStatus(members, onlineSet) {
+  const buckets = { onlineUsers: [], offlineUsers: [] };
+  for (const member of members) {
+    const target =
+      onlineSet.has((member?.name || "").toLowerCase()) ? "onlineUsers" : "offlineUsers";
+    buckets[target].push(member);
   }
+  return buckets;
+}
 
-  // Sort by name
-  const byName = (a, b) =>
-    (a.name || "").toLowerCase().localeCompare((b.name || "").toLowerCase());
-  onlineUsers.sort(byName);
-  offlineUsers.sort(byName);
+function sortPartitionByName(partitions) {
+  const byName = (a, b) => normalizeName(a.name).localeCompare(normalizeName(b.name));
+  partitions.onlineUsers.sort(byName);
+  partitions.offlineUsers.sort(byName);
+}
 
-  return { onlineUsers, offlineUsers };
+function normalizeName(name) {
+  return (name || "").toLowerCase();
 }
