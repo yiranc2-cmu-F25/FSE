@@ -13,7 +13,7 @@ import { UserDao } from "../daos/UserDao.js";
 import UserDac from "../dacs/userDac.js";
 
 describe("POST /announcements", () => {
-    let mongod, conn, AnnouncementModel, UserModel;
+    let mongod, conn, AnnouncementModel, UserModel, mockSocket;
 
     beforeAll(async () => {
         mongod = await MongoMemoryServer.create();
@@ -81,7 +81,7 @@ describe("POST /announcements", () => {
     });
 
     test("should retrieve all announcements", async () => {
-        
+
         const agent = request.agent(app);
 
         const registerRes = await agent
