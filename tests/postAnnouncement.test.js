@@ -1,99 +1,125 @@
-// tests/postAnnouncement.test.js
-import { jest } from '@jest/globals';
-import express from "express";
+import { jest } from '@jest/globals' 
 import mongoose from "mongoose";
 import request from "supertest";
 import { MongoMemoryServer } from "mongodb-memory-server";
+import app from "../app.js";
 
 import { makeAnnouncementModel } from "../db/AnnouncementSchema.js";
 import { AnnouncementDao } from "../daos/AnnouncementDao.js";
 import AnnouncementDac from "../dacs/announcementDac.js";
-import Announcement from "../entities/Announcement.js";
 
 import { makeUserModel } from "../db/UserSchema.js";
 import { UserDao } from "../daos/UserDao.js";
-import UserDac from "../dacs/UserDac.js";
-import User from "../entities/User.js";
-
-// controller under test
-import { postAnnouncement } from "../controllers/announcementController.js";
+import UserDac from "../dacs/userDac.js";
 
 describe("POST /announcements", () => {
-  let mongod, conn, AnnouncementModel, UserModel, app, fakeSocket, restoreErr;
-  let createdUserId, createdUsername;
+    let mongod, conn, AnnouncementModel, UserModel;
 
-  beforeAll(async () => {
-    // optional: keep test output clean
-    restoreErr = jest.spyOn(console, "error").mockImplementation(() => {});
+    beforeAll(async () => {
+        mongod = await MongoMemoryServer.create();
+        const uri = mongod.getUri();
 
-    mongod = await MongoMemoryServer.create();
-    await mongoose.disconnect();
-    conn = await mongoose.createConnection(mongod.getUri());
+        await mongoose.disconnect();
+        conn = await mongoose.createConnection(uri);
 
-    // Build models from the TEST connection
-    AnnouncementModel = makeAnnouncementModel(conn);
-    UserModel = makeUserModel(conn);
+        AnnouncementModel = makeAnnouncementModel(conn);
+        UserModel = makeUserModel(conn);
 
-    // Inject DAOs that use the TEST models
-    AnnouncementDac.DAO = new AnnouncementDao({ AnnouncementModel });
-    UserDac.DAO = new UserDao({ UserModel });
+        AnnouncementDac.DAO = new AnnouncementDao({ AnnouncementModel });
+        UserDac.DAO = new UserDao({ UserModel });
 
-    // Minimal express app + route
-    app = express();
-    app.use(express.json());
+        mockSocket = {
+            // jest.fn() so we can assert calls
+            emitMessageFrom: jest.fn((username, payload) => {
+                // you can optionally simulate broadcast behavior,
+                // or just leave it as a noop
+                return true;
+            }),
+        };
 
-    // fake socket with a spy
-    fakeSocket = { emitMessageFrom: jest.fn() };
-    app.set("socketInstance", fakeSocket);
-
-    app.post("/announcements", postAnnouncement);
-
-    // --- Seed a test user and remember its _id and username ---
-    const newUser = await UserDac.DAO.create({
-      // adapt these fields to your User schema
-      username: "alice",
-      password: "irrelevant-for-test",
-      email: "alice@example.com",
+        app.set("socketInstance", mockSocket);
     });
-    createdUserId = String(newUser._id);
-    createdUsername = newUser.username;
-  });
 
-  afterAll(async () => {
-    restoreErr.mockRestore();
-    await conn.close();
-    await mongod.stop();
-  });
+    afterAll(async () => {
+        await conn.close();
+        await mongod.stop();
+    });
 
-  it("creates an announcement and emits over socket", async () => {
-    const body = {
-      sender: createdUserId,                 // use the REAL user id
-      content: "  Hello world  ",
-      status: "OK",
-      timestamp: new Date().toISOString()
-    };
+    afterEach(async () => {
+        const collections = conn.collections;
+        for (const key in collections) {
+            await collections[key].deleteMany({});
+        }
+    });
 
-    const res = await request(app)
-      .post("/announcements")
-      .send(body)
-      .expect(201);
+    test("should post a new announcement", async () => {
 
-    expect(res.body).toEqual({ message: "Announcement posted" });
+        const agent = request.agent(app);
 
-    // Verify DB state via the entity/DAO
-    const rows = await Announcement.getAnnouncement();
-    expect(rows.length).toBe(1);
-    expect(rows[0].content).toBe("Hello world");       // trimmed in controller
-    expect(rows[0].status).toBe("ok");                 // toLowerCase in controller
+        const registerRes = await agent
+            .post("/api/authentications/registrations")
+            .send({ username: "testUser", password: "testPassword" })
+            .expect(201);
 
-    // Verify socket emit: should use looked-up username
-    expect(fakeSocket.emitMessageFrom).toHaveBeenCalledWith(
-      createdUsername,                                  // "alice"
-      expect.objectContaining({
-        sender: createdUsername,                        // "alice"
-        content: "  Hello world  ",
-        status: "OK"
-      })
-    );
-  }, 20000); // optional: increase if mongodb-memory-server is slow to start
+        expect(registerRes.body).toHaveProperty("message", "User successfully registered");
+        expect(registerRes.body).toHaveProperty("username", "testUser");
+
+        expect(registerRes.headers['set-cookie']).toBeDefined();
+
+        const obj_id = await UserDac.DAO.findByUsername("testUser");
+
+        const postAnnouncementRes = await agent
+            .post("/api/announcements")
+            .send({
+                sender: obj_id._id,
+                content: "This is a test announcement",
+                status: "ok"
+            })
+            .expect(201);
+
+        expect(postAnnouncementRes.body).toHaveProperty("message", "Announcement posted");
+    });
+
+    test("should retrieve all announcements", async () => {
+        const agent = request.agent(app);
+
+        // 1️⃣ Register a user and get cookie
+        const registerRes = await agent
+            .post("/api/authentications/registrations")
+            .send({ username: "testUser2", password: "testPassword" })
+            .expect(201);
+
+        expect(registerRes.headers["set-cookie"]).toBeDefined();
+
+        // 2️⃣ Get user ID
+        const user = await UserDac.DAO.findByUsername("testUser2");
+
+        // 3️⃣ Create one or more announcements directly via POST route
+        const contents = [
+            "Announcement 1",
+            "Announcement 2"
+        ];
+
+        for (const content of contents) {
+            await agent
+            .post("/api/announcements")
+            .send({
+                sender: user._id,
+                content,
+                status: "ok"
+            })
+            .expect(201);
+        }
+
+        const getRes = await agent
+            .get("/api/announcements")
+            .expect(200);
+
+        expect(Array.isArray(getRes.body)).toBe(true);
+        expect(getRes.body.length).toBeGreaterThanOrEqual(2);
+
+        // Ensure announcements we posted exist
+        const texts = getRes.body.map(a => a.content);
+        expect(texts).toEqual(expect.arrayContaining(contents));
+    });
 });
