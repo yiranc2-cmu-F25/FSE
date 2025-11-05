@@ -70,28 +70,32 @@ function createAnnouncementElement(announcement) {
 
   const article = document.createElement("article");
   article.className = "flex gap-4";
-
+  // LHS must have fixed width to align properly
   article.innerHTML = `
-    <!-- left: time-->
-    <div class="flex flex-col items-start pt-1 min-w-[100px] max-w-[100px] pr-6 border-r border-gray-200">
-      <span class="font-poppins text-sm font-medium text-gray-500">${date}</span>
-      <span class="font-poppins mt-1 text-sm font-medium text-gray-500">${time}</span>
+<div class="flex gap-4 py-4">
+  <!-- Time column -->
+  <div class="flex w-24 flex-col text-left">
+    <span class="text-sm font-medium text-gray-500">${date}</span>
+    <span class="text-sm font-medium text-gray-500">${time}</span>
+  </div>
+
+  <!-- Divider -->
+  <div class="w-px bg-gray-200"></div>
+
+  <!-- Content -->
+  <div class="flex-1">
+    <div class="mb-1 flex items-center gap-2">
+      <span class="font-bold text-black">${escapeHtml(announcement.sender)}</span>
+      <span class="rounded-md px-2 py-0.5 text-xs font-semibold ${statusClass}">
+        ${escapeHtml(announcement.status.toUpperCase())}
+      </span>
     </div>
 
-    
-
-    <!-- content -->
-    <div class="w-[400px] flex flex-col">
-      <div class="mb-1 flex items-center gap-2">
-        <span class="font-poppins font-bold text-black">${escapeHtml(announcement.sender)}</span>
-        <span class="font-poppins rounded-md px-2 py-0.5 text-xs font-semibold ${statusClass}">
-          ${escapeHtml(announcement.status.toUpperCase())}
-        </span>
-      </div>
-      <p class="font-poppins text-sm leading-relaxed text-gray-500">
-        ${escapeHtml(announcement.content)}
-      </p>
-    </div>
+    <p class="text-sm text-gray-500 whitespace-pre-wrap break-all">
+      ${escapeHtml(announcement.content)}
+    </p>
+  </div>
+</div>
   `;
 
   return article;

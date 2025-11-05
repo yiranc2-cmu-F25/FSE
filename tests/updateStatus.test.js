@@ -1,7 +1,9 @@
 import request from "superagent";
 import app from "../app.js";
 import UserDac from "../dacs/userDac.js";
+import StatusDac from "../dacs/statusDac.js";
 import { inMemoryUserDao } from "../daos/inMemoryUserDao.js";
+import { inMemoryStatusDao } from "../daos/inMemoryStatusDao.js";
 
 const PORT = 3000;
 const BASE_URL = `http://127.0.0.1:${PORT}`;
@@ -16,6 +18,7 @@ describe("Authentications REST API Integration Tests", () => {
 
   beforeEach(() => {
     UserDac.DAO = new inMemoryUserDao();
+    StatusDac.DAO = new inMemoryStatusDao();
   });
 
   afterAll(async () => {
@@ -73,14 +76,20 @@ describe("Authentications REST API Integration Tests", () => {
       };
       app.set("socketInstance", mockSocket);
 
-      const resp = await agentClient
-        .patch(`${AUTH_BASE}/statuses/new`)
-        .set("Accept", "application/json")
-        .send({ userId: user.id, newStatus: "OK" })
-        .ok((res) => true);
 
-      expect(resp.status).toBe(200);
-      expect(resp.body).toEqual({ message: "User status updated" });
+      try {
+            const resp = await agentClient
+              .patch(`${AUTH_BASE}/statuses/new`)
+              .set("Accept", "application/json")
+              .send({ userId: user.id, newStatus: "OK" })
+              .ok(res => true); 
+            
+            expect(resp.status).toBe(200);
+            expect(resp.body).toEqual({ message: "User status updated" });
+          } catch (err) {
+            console.error("Request failed:", err.response?.body || err);
+            throw err; 
+          }
 
       const profileAfter = await agentClient
         .get(`${AUTH_BASE}/accounts`)

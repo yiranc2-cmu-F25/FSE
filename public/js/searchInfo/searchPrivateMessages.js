@@ -1,4 +1,4 @@
-import { initializeSearch, normalizeQuery, hideFooter, processData, showFooter} from "../utils/searchInit.js";
+import { initializeSearch, normalizeQuery, hideFooter, processData, showFooter, showNoResultsMessage, hideLoadMoreButton, showLoadMoreButton } from "../utils/searchInit.js";
 
 let lastQuery = "";
 let lastCursor = null;
@@ -10,11 +10,6 @@ function displayStatusChangeSection() {
     statusChangeSection.classList.remove("hidden");
     statusChangeSection.classList.add("flex");
   }
-  const loadMoreButton = document.querySelector("#load-button");
-  if (loadMoreButton) {
-    loadMoreButton.classList.remove("flex");
-    loadMoreButton.classList.add("hidden");
-  }
 }
 
 function hideStatusChangeSection() {
@@ -23,22 +18,14 @@ function hideStatusChangeSection() {
     statusChangeSection.classList.remove("flex");
     statusChangeSection.classList.add("hidden");
   }
-  const loadMoreButton = document.querySelector("#load-button");
-  if (loadMoreButton) {
-    loadMoreButton.classList.remove("hidden");
-    loadMoreButton.classList.add("flex");
-  }
 }
 
 async function searchPrivateMessages(query) {
   const trimmed = normalizeQuery(query);
   if (!trimmed) {
     hideFooter();
-  }
-  if (trimmed.toLowerCase() === "status") {
-    displayStatusChangeSection();
-  } else {
-    hideStatusChangeSection();
+    showNoResultsMessage();
+    return;
   }
 
   const endpoint = `/api/queries?type=messages_private
@@ -61,7 +48,12 @@ async function searchPrivateMessages(query) {
     if (trimmed.toLowerCase() === "status") {
       const listLength = document.querySelector("#search-result-list").children.length;
       showFooter({ start: 0, end: 0, total: listLength });
+      displayStatusChangeSection();
+      hideLoadMoreButton();
+    } else {
+      hideStatusChangeSection();
     }
+
   } catch (error) {
     console.error("Error during search:", error);
   }
