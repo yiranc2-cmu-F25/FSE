@@ -81,9 +81,9 @@ describe("POST /announcements", () => {
     });
 
     test("should retrieve all announcements", async () => {
+        
         const agent = request.agent(app);
 
-        // 1️⃣ Register a user and get cookie
         const registerRes = await agent
             .post("/api/authentications/registrations")
             .send({ username: "testUser2", password: "testPassword" })
@@ -91,10 +91,8 @@ describe("POST /announcements", () => {
 
         expect(registerRes.headers["set-cookie"]).toBeDefined();
 
-        // 2️⃣ Get user ID
         const user = await UserDac.DAO.findByUsername("testUser2");
 
-        // 3️⃣ Create one or more announcements directly via POST route
         const contents = [
             "Announcement 1",
             "Announcement 2"
