@@ -22,8 +22,10 @@ export async function search(req, res) {
 
     const params = { req, user: req.user };
     const result = await strat.execute(params);
-
-    return res.json(result);
+    if (result.code !== 200){
+      return res.status(result.code).json(result);
+    }
+    return res.status(200).json(result);
   } catch (err) {
     return res.status(500).json({ status: "error", message: "Server error" });
   }

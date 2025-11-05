@@ -28,9 +28,9 @@ export const publicMessagesStrategy = {
         isOwn: ((m.sender?.username ?? m.sender ?? "").toLowerCase() === me),
       }));
 
-      return { count, results, nextCursor };
+      return { code: 200, count, results, nextCursor };
     } catch (err) {
-      return { status: "error", message: "Server error" };
+      return { code: 500, status: "error", message: "Server error" };
     }
   }
 };

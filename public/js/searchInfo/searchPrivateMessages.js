@@ -1,4 +1,4 @@
-import { initializeSearch, normalizeQuery, hideFooter, processData } from "../utils/searchInit.js";
+import { initializeSearch, normalizeQuery, hideFooter, processData, showFooter} from "../utils/searchInit.js";
 
 let lastQuery = "";
 let lastCursor = null;
@@ -10,6 +10,11 @@ function displayStatusChangeSection() {
     statusChangeSection.classList.remove("hidden");
     statusChangeSection.classList.add("flex");
   }
+  const loadMoreButton = document.querySelector("#load-button");
+  if (loadMoreButton) {
+    loadMoreButton.classList.remove("flex");
+    loadMoreButton.classList.add("hidden");
+  }
 }
 
 function hideStatusChangeSection() {
@@ -17,6 +22,11 @@ function hideStatusChangeSection() {
   if (statusChangeSection) {
     statusChangeSection.classList.remove("flex");
     statusChangeSection.classList.add("hidden");
+  }
+  const loadMoreButton = document.querySelector("#load-button");
+  if (loadMoreButton) {
+    loadMoreButton.classList.remove("hidden");
+    loadMoreButton.classList.add("flex");
   }
 }
 
@@ -48,6 +58,10 @@ async function searchPrivateMessages(query) {
     console.log("[Search results] ", data);
     console.log("status", res.status);
     processData(data);
+    if (trimmed.toLowerCase() === "status") {
+      const listLength = document.querySelector("#search-result-list").children.length;
+      showFooter({ start: 0, end: 0, total: listLength });
+    }
   } catch (error) {
     console.error("Error during search:", error);
   }

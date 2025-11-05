@@ -125,7 +125,7 @@ export function showFooter({start, end, total}) {
   document.querySelector("#search-result-start").textContent = start;
   document.querySelector("#search-result-end").textContent = end;
   document.querySelector("#search-result-count").textContent = total;
-  if (total === 0) {
+  if (total === 0 || (start === 0 && end === 0)) {
     document.querySelector("#search-result-interval")?.classList.add("hidden");
   } else {
     document.querySelector("#search-result-interval")?.classList.remove("hidden");

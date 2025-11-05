@@ -19,7 +19,7 @@ export const privateMessagesStrategy = {
       changedAt: it.timestamp,
     }));
 
-    return { mode: "status_history", count: total, results, nextCursor };
+    return { code: 200, mode: "status_history", count: total, results, nextCursor };
   },
 
   async execute({ req }) {
@@ -27,11 +27,11 @@ export const privateMessagesStrategy = {
       const senderId = String(req.userId || "").trim();
       const peerId   = String(req.query.peerId || "").trim();
 
-      if (!senderId) return { error: "Unauthorized" };
-      if (!peerId)   return { error: "Missing query param: peerId" };
+      if (!senderId) return { code: 401, error: "Unauthorized" };
+      if (!peerId)   return { code: 400, error: "Missing query param: peerId" };
 
       if (!mongoose.Types.ObjectId.isValid(senderId) || !mongoose.Types.ObjectId.isValid(peerId)) {
-        return { error: "Invalid user id(s)" };
+        return { code: 401, error: "Invalid user id(s)" };
       }
 
       const parsed = parseQuery(req, { qKey: "content" });
@@ -63,10 +63,10 @@ export const privateMessagesStrategy = {
         isOwn: ((m.sender?.username ?? m.sender ?? "").toLowerCase() === senderName),
       }));
 
-      return { mode: "messages", count, results, nextCursor };
+      return { code: 200, mode: "messages", count, results, nextCursor };
     } catch (err) {
         console.error("[searchPrivate] error:", err);
-        return { status: "error", message: "Server error" };
+        return { code: 500, status: "error", message: "Server error" };
     }
   }
 };

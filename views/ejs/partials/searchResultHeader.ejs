@@ -3,18 +3,13 @@
     id="items-per-page"
     class="rounded-md border-[1px] border-[#9c9c9c] bg-white p-2 text-xs text-[#9C9C9C]"
   >
-    <label for="items-per-page"></label>
-    <select id="items-per-page" name="items-per-page">
-      <!-- <option value="5">5 results</option> -->
-      <% if (searchMode === "set") { %>
-      <option value="10" selected>10 results</option>
-      <% } %>
-      <!-- <option value="20">20 results</option> -->
-       <% if (searchMode === "all") { %>
-      <option value="0">all results</option>
-      <% } %>
-      
-    </select>
+    <!-- <label for="items-per-page"></label> -->
+    <% if (searchMode === "set") { %>
+      <p>10 results per load</p>
+    <% } %>
+    <% if (searchMode === "all") { %>
+      <p>all results</p>
+    <% } %>
   </div>
   <div class="flex gap-1">
     <!-- <div

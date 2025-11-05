@@ -12,9 +12,15 @@ function formatAnnouncementDate(timestamp) {
   const date = new Date(timestamp);
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const announcementDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const announcementDate = new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate(),
+  );
 
-  const diffDays = Math.floor((today - announcementDate) / (1000 * 60 * 60 * 24));
+  const diffDays = Math.floor(
+    (today - announcementDate) / (1000 * 60 * 60 * 24),
+  );
 
   let dateStr;
   if (diffDays === 0) {
@@ -36,21 +42,24 @@ function formatAnnouncementDate(timestamp) {
 function getDaySuffix(day) {
   if (day > 3 && day < 21) return "th";
   switch (day % 10) {
-    case 1: return "st";
-    case 2: return "nd";
-    case 3: return "rd";
-    default: return "th";
+    case 1:
+      return "st";
+    case 2:
+      return "nd";
+    case 3:
+      return "rd";
+    default:
+      return "th";
   }
 }
 
 function getStatusBadgeClass(status) {
-
   if (status.toUpperCase() === "HELP") {
     return "bg-yellow-400 text-white";
-  }else if(status.toUpperCase() === "EMERGENCY"){
+  } else if (status.toUpperCase() === "EMERGENCY") {
     return "bg-red-400 text-white";
-  }else if(status.toUpperCase() === "OK"){
-    return "bg-green-400 text-white"; 
+  } else if (status.toUpperCase() === "OK") {
+    return "bg-green-400 text-white";
   }
   return "bg-gray-400 text-white";
 }
@@ -113,7 +122,6 @@ function renderAnnouncements(announcements) {
     return new Date(b.timestamp) - new Date(a.timestamp);
   });
 
-
   // Render latest announcement
   sorted.forEach((announcement) => {
     const element = createAnnouncementElement(announcement);
@@ -151,4 +159,3 @@ document.addEventListener("DOMContentLoaded", () => {
 socket.on("connect", () => {
   fetchAnnouncements();
 });
-
