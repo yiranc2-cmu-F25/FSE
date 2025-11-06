@@ -14,11 +14,11 @@ describe("search controller", () => {
     await search(req, res);
 
     expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({ error: "Unsupported type: nope" });
+    expect(res.json).toHaveBeenCalledWith({ code: 400, error: "Unsupported type: nope" });
   });
 
   test("propagates non-200 strategy result code and body", async () => {
-    const req = { query: { type: "announcements" } };
+    const req = { query: { type: "announcements" }, user: undefined };
     const res = { status: jest.fn().mockReturnThis(), json: jest.fn() };
 
     jest
@@ -27,13 +27,16 @@ describe("search controller", () => {
 
     await search(req, res);
 
-    expect(announcementsStrategy.execute).toHaveBeenCalled();
+    expect(announcementsStrategy.execute).toHaveBeenCalledWith({
+      req,
+      user: undefined,
+    });
     expect(res.status).toHaveBeenCalledWith(404);
     expect(res.json).toHaveBeenCalledWith({ code: 404, message: "not found" });
   });
 
   test("returns 200 and body when strategy returns code 200", async () => {
-    const req = { query: { type: "announcements" } };
+    const req = { query: { type: "announcements" }, user: undefined };
     const res = { status: jest.fn().mockReturnThis(), json: jest.fn() };
 
     const payload = {
@@ -46,13 +49,16 @@ describe("search controller", () => {
 
     await search(req, res);
 
-    expect(announcementsStrategy.execute).toHaveBeenCalled();
+    expect(announcementsStrategy.execute).toHaveBeenCalledWith({
+      req,
+      user: undefined,
+    });
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith(payload);
   });
 
   test("returns 500 when strategy throws an error", async () => {
-    const req = { query: { type: "announcements" } };
+    const req = { query: { type: "announcements" }, user: undefined };
     const res = { status: jest.fn().mockReturnThis(), json: jest.fn() };
 
     jest.spyOn(announcementsStrategy, "execute").mockImplementation(() => {
