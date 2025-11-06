@@ -6,6 +6,16 @@ let searchContext = "";
 let searchPeerId = "";
 let begin = 1;
 
+async function fetchList(endpoint) {
+  const res = await fetch(endpoint, { credentials: "include" });
+  if (!res.ok) {
+    throw new Error(`Search request failed with status ${res.status}`);
+  }
+
+  const data = await res.json();
+  return data;
+}
+
 async function searchCommon(query) {
   const trimmed = normalizeQuery(query);
   if (!trimmed) {
@@ -22,12 +32,8 @@ async function searchCommon(query) {
   ].join("");
 
   try {
-    const res = await fetch(endpoint, { credentials: "include" });
-    if (!res.ok) {
-      throw new Error(`Search request failed with status ${res.status}`);
-    }
-
-    const data = await res.json();
+    const data = await fetchList(endpoint);
+    console.log("[DEBUG] data: ", data);
     lastQuery = trimmed;
     lastCursors.length = 0;
     lastCursors.push(data.nextCursor || null);
@@ -50,18 +56,12 @@ async function moreCommon() {
     `/api/queries?type=${encodeURIComponent(searchContext)}`,
     `&content=${encodeURIComponent(trimmed)}`,
     `&limit=10`,
-    `&cursor=${encodeURIComponent(lastCursors.at(-1))}`,
-    `&peerId=${encodeURIComponent(searchPeerId)}`
+    `&peerId=${encodeURIComponent(searchPeerId)}`,
+    `&cursor=${encodeURIComponent(lastCursors.at(-1))}`
   ].join("");
 
   try {
-    const res = await fetch(endpoint, { credentials: "include" });
-    if (!res.ok) {
-      throw new Error(`Search request failed with status ${res.status}`);
-    }
-
-    const data = await res.json();
-    lastQuery = trimmed;
+    const data = await fetchList(endpoint);
     lastCursors.push(data.nextCursor || null);
     begin += 10;
     processData(data, begin);
@@ -84,18 +84,12 @@ async function lessCommon() {
     `/api/queries?type=${encodeURIComponent(searchContext)}`,
     `&content=${encodeURIComponent(trimmed)}`,
     `&limit=10`,
-    `&cursor=${encodeURIComponent(cursor)}`,
-    `&peerId=${encodeURIComponent(searchPeerId)}`
+    `&peerId=${encodeURIComponent(searchPeerId)}`,
+    `&cursor=${encodeURIComponent(cursor)}`
   ].join("");
 
   try {
-    const res = await fetch(endpoint, { credentials: "include" });
-    if (!res.ok) {
-      throw new Error(`Search request failed with status ${res.status}`);
-    }
-
-    const data = await res.json();
-    lastQuery = trimmed;
+    const data = await fetchList(endpoint);
     lastCursors.length -= 1;
     begin -= 10;
     processData(data, begin);
