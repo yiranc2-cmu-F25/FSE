@@ -1,8 +1,9 @@
 import Announcement from "../../entities/Announcement.js";
 import { parseQuery } from "../../utils/search/parseQuery.js";
 import { mapSearchResults } from "./resultMappers.js";
+import { SearchStrategy } from "./SearchStrategy.js";
 
-export const announcementsStrategy = {
+export class AnnouncementsStrategy extends SearchStrategy {
   async execute({ req }) {
     try {
       const parsed = parseQuery(req, { qKey: "content" });
@@ -31,4 +32,6 @@ export const announcementsStrategy = {
       return { code: 500, status: "error", message: "Server error" };
     }
   }
-};
+}
+
+export const announcementsStrategy = new AnnouncementsStrategy();

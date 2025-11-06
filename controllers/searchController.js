@@ -3,6 +3,7 @@ import { citizensByStatusStrategy }   from "../services/search/citizensByStatusS
 import { announcementsStrategy }      from "../services/search/announcementsStrategy.js";
 import { publicMessagesStrategy }     from "../services/search/publicMessagesStrategy.js";
 import { privateMessagesStrategy }    from "../services/search/privateMessagesStrategy.js";
+import { SearchStrategy }             from "../services/search/SearchStrategy.js";
 
 const STRATEGIES = {
   citizens:          citizensByUsernameStrategy,
@@ -18,6 +19,10 @@ export async function search(req, res) {
     const strat = STRATEGIES[type];
     if (!strat) {
       return res.status(400).json({ error: `Unsupported type: ${type}` });
+    }
+
+    if (!(strat instanceof SearchStrategy)) {
+      return res.status(500).json({ status: "error", message: "Invalid strategy implementation" });
     }
 
     const params = { req, user: req.user };

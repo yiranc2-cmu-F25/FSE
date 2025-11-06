@@ -19,7 +19,13 @@ import AnnouncementDac from "./dacs/announcementDac.js";
 
 async function connectToMongo() {
   // 1. Connect to MongoDB
-  await mongoose.connect(process.env.MONGO_URI, {
+  const mongoUri = process.env.MONGO_URI;
+  if (!mongoUri) {
+    throw new Error(
+      "MONGO_URI environment variable is not set. Please create a .env file with MONGO_URI=mongodb://localhost:27017 (or your MongoDB connection string)"
+    );
+  }
+  await mongoose.connect(mongoUri, {
     dbName: process.env.MONGO_DB || "myDatabase",
   });
 }

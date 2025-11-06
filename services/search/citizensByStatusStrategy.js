@@ -1,6 +1,7 @@
 import { getOnlineOfflineMembers } from "../../entities/MemberList.js";
+import { SearchStrategy } from "./SearchStrategy.js";
 
-export const citizensByStatusStrategy = {
+export class CitizensByStatusStrategy extends SearchStrategy {
   async execute({ req }) {
     try {
         const raw = String(req.query.status ?? req.params.status ?? '').trim();
@@ -32,4 +33,6 @@ export const citizensByStatusStrategy = {
         return { code: 500, status: 'error', message: 'Server error' };
     }
   }
-};
+}
+
+export const citizensByStatusStrategy = new CitizensByStatusStrategy();
