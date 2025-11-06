@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Announcements</title>
     <%- include('../partials/head') %>
+    <script>window.__CURRENT_USER__ = "<%= username %>";</script>
     <script type="module" src="/js/announcement/getAnnouncement.js"></script>
     <script type="module" src="/js/announcement/postAnnouncement.js"></script>
     <script type="module" src="/js/searchInfo/searchAnnouncement.js"></script>
