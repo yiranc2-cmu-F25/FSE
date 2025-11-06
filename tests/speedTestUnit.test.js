@@ -491,7 +491,7 @@ describe("Speed Test API status codes", () => {
           if (name === "speed-test-id") return speedTestId;
           return null;
         },
-        body: { payload: 12345678901234567890 }, // Number, not string
+        body: { payload: 12345 }, // Number, not string
       };
       const res = {
         status(code) {
