@@ -1,6 +1,5 @@
-
-function cleanToken(t = "") {
-  return t.toLowerCase().replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, "");
+export function cleanToken(t = "") {
+  return t.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, "");
 }
 
 export function splitTokensForStopwords(raw = "") {
@@ -12,8 +11,9 @@ export function escapeRegExp(s = "") {
 }
 
 export function buildSubstringRegex(terms = [], phrase = "") {
-  const parts = (terms.length > 0 ? terms : [phrase.toLowerCase()])
-    .map(escapeRegExp);
+  const parts = (terms.length > 0 ? terms : [phrase.toLowerCase()]).map(
+    escapeRegExp,
+  );
   return new RegExp(parts.join("|"), "i");
 }
 
@@ -24,7 +24,7 @@ export const STOP_WORDS = new Set(
    neither,no,nor,not,of,off,often,on,only,or,other,our,own,rather,said,say,says,she,should,since,so,
    some,than,that,the,their,them,then,there,these,they,this,tis,to,too,twas,us,wants,was,we,were,what,
    when,where,which,while,who,whom,why,will,with,would,yet,you,your`
-    .split(',')
-    .map(s => s.trim().toLowerCase())
-    .filter(Boolean)
+    .split(",")
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean),
 );

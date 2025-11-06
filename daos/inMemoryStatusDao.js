@@ -18,7 +18,9 @@ export class inMemoryStatusDao extends iStatusDao {
     }
 
     async getHistory({ userId, limit = 10, cursor }) {
-        let filtered = this.statusChanges.filter(sc => sc.user === userId);
+        // Normalize IDs to strings for comparison (handles both string and number IDs)
+        const userIdStr = String(userId);
+        let filtered = this.statusChanges.filter(sc => String(sc.user) === userIdStr);
         filtered.sort((a, b) => b.timestamp - a.timestamp || b.id.localeCompare(a.id));
 
         if (cursor) {
@@ -43,6 +45,12 @@ export class inMemoryStatusDao extends iStatusDao {
 
         const total = filtered.length;
 
-        return { total, items: pageItems, nextCursor };
+        // Map items to include _id for consistency with real DAO
+        const items = pageItems.map(item => ({
+            ...item,
+            _id: item.id || item._id,
+        }));
+
+        return { total, items, nextCursor };
     }
 }
