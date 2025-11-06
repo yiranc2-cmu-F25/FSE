@@ -12,29 +12,26 @@
     <% } %>
   </div>
   <div class="flex gap-1">
-    <!-- <div
+    <div
       id="previous-button"
-      class="flex gap-1 rounded-md border-[1px] border-[#9c9c9c] bg-white p-2 text-xs text-[#9C9C9C]"
+      class="hidden gap-1 rounded-md border-[1px] border-[#9c9c9c] bg-white p-2 text-xs text-[#9C9C9C]"
     >
       <img
-        src="images/search-info/keyboard_arrow_left.svg"
+        src="/images/search-info/keyboard_arrow_left.svg"
         alt="Previous-button"
       />
 
       <p>Previous</p>
-    </div> -->
-    <% if (searchMode === "set") { %>
+    </div>
     <div
-      id="load-button"
-      class="flex gap-1 rounded-md border-[1px] border-[#9c9c9c] bg-white p-2 text-xs text-[#9C9C9C]"
+      id="next-button"
+      class="hidden gap-1 rounded-md border-[1px] border-[#9c9c9c] bg-white p-2 text-xs text-[#9C9C9C]"
     >
-      <p>Load more results</p>
+      <p>Next</p>
       <img
         src="/images/search-info/keyboard_arrow_right.svg"
         alt="Next-button"
-        class="h-4 w-4 fill-blue-700"
       />
     </div>
-    <% } %>
   </div>
 </section>
