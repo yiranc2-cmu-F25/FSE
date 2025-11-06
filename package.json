@@ -13,6 +13,7 @@
     "prestart": "npm run build",
     "test": "cross-env NODE_OPTIONS=\"--experimental-vm-modules --no-warnings\" jest --detectOpenHandles --coverage",
     "test:integration:chat-privately": "npm test tests/privateChat.test.js",
+    "test:integration:search-information": "npm test tests/searchInformation.test.js",
     "test:integration:update-status": "npm test tests/updateStatus.test.js",
     "test:unit:join-community": "npm test tests/joinCommunity.test.js"
   },
