@@ -15,8 +15,8 @@ export function pushCursorClause(andConds, cursor, opts = {}) {
   if (!parsed) return false;
 
   const clause = buildCursorClause(parsed, opts);
-  // const normalized = Array.isArray(clause) ? { $or: clause } : clause;
-  const normalized = { $or: clause };
+  const normalized = Array.isArray(clause) ? { $or: clause } : clause;
+  //const normalized = { $or: clause };
 
   andConds.push(normalized);
   return true;
