@@ -7,10 +7,7 @@ export function parseCursor(cursor) {
 }
 
 export function buildCursorClause({ ts, idStr }) {
-  return [
-    { timestamp: { $lt: ts } },
-    { timestamp: ts, _id: { $lt: idStr } },
-  ];
+  return [{ timestamp: { $lt: ts } }, { timestamp: ts, _id: { $lt: idStr } }];
 }
 
 export function pushCursorClause(andConds, cursor, opts = {}) {
@@ -18,7 +15,8 @@ export function pushCursorClause(andConds, cursor, opts = {}) {
   if (!parsed) return false;
 
   const clause = buildCursorClause(parsed, opts);
-  const normalized = Array.isArray(clause) ? { $or: clause } : clause; 
+  const normalized = Array.isArray(clause) ? { $or: clause } : clause;
+  //const normalized = { $or: clause };
 
   andConds.push(normalized);
   return true;
