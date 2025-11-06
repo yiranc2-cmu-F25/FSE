@@ -5,6 +5,7 @@ import StatusDac from "../dacs/statusDac.js";
 import { inMemoryUserDao } from "../daos/inMemoryUserDao.js";
 import { inMemoryStatusDao } from "../daos/inMemoryStatusDao.js";
 import { SHARED_STATUS } from "../constants/sharedStatus.js";
+import { updateStatusById } from "../controllers/updateStatusController.js";
 
 const BASE_USER_PROPS = Object.freeze({
   username: "testuser",
@@ -377,6 +378,313 @@ describe("Status update and history integration", () => {
 
     const updated = await User.findByUsername(props.username);
     expect(updated.sharedstatus).toBe("emergency");
+  });
+});
+
+describe("updateStatusById API status codes", () => {
+  let mockApp;
+
+  beforeEach(() => {
+    // inject a fresh in-memory DAO for test isolation
+    userDac.DAO = new inMemoryUserDao();
+    StatusDac.DAO = new inMemoryStatusDao();
+    
+    // Create a mock app object with get and set methods
+    mockApp = {
+      _socketInstance: null,
+      get(key) {
+        if (key === "socketInstance") {
+          return this._socketInstance;
+        }
+        return null;
+      },
+      set(key, value) {
+        if (key === "socketInstance") {
+          this._socketInstance = value;
+        }
+      },
+    };
+  });
+
+  test("returns 200 when status update is successful", async () => {
+    // Create a user
+    const props = buildUserProps({ username: `statususer_${Date.now()}` });
+    const user = new User(props);
+    await user.create();
+    const found = await User.findByUsername(props.username);
+
+    // Mock socket instance
+    let broadcastCalled = false;
+    let broadcastArgs = null;
+    const mockSocket = {
+      broadcastNewStatus(userId, status) {
+        broadcastCalled = true;
+        broadcastArgs = { userId, status };
+      },
+    };
+    mockApp.set("socketInstance", mockSocket);
+
+    // Create mock request and response objects
+    let statusCode = null;
+    let jsonBody = null;
+    const req = {
+      body: { userId: found.id, newStatus: "ok" },
+      app: mockApp,
+    };
+    const res = {
+      status(code) {
+        statusCode = code;
+        return this;
+      },
+      json(body) {
+        jsonBody = body;
+        return this;
+      },
+    };
+
+    await updateStatusById(req, res);
+
+    expect(statusCode).toBe(200);
+    expect(jsonBody).toEqual({ message: "User status updated" });
+    expect(broadcastCalled).toBe(true);
+    expect(broadcastArgs).toEqual({ userId: found.id, status: "ok" });
+  });
+
+  test("returns 400 when userId is missing", async () => {
+    let statusCode = null;
+    let jsonBody = null;
+    const req = {
+      body: { newStatus: "ok" }, // Missing userId
+      app: mockApp,
+    };
+    const res = {
+      status(code) {
+        statusCode = code;
+        return this;
+      },
+      json(body) {
+        jsonBody = body;
+        return this;
+      },
+    };
+
+    await updateStatusById(req, res);
+
+    expect(statusCode).toBe(400);
+    expect(jsonBody).toEqual({ error: "Missing required fields" });
+  });
+
+  test("returns 400 when newStatus is missing", async () => {
+    let statusCode = null;
+    let jsonBody = null;
+    const req = {
+      body: { userId: "123" }, // Missing newStatus
+      app: mockApp,
+    };
+    const res = {
+      status(code) {
+        statusCode = code;
+        return this;
+      },
+      json(body) {
+        jsonBody = body;
+        return this;
+      },
+    };
+
+    await updateStatusById(req, res);
+
+    expect(statusCode).toBe(400);
+    expect(jsonBody).toEqual({ error: "Missing required fields" });
+  });
+
+  test("returns 400 when both userId and newStatus are missing", async () => {
+    let statusCode = null;
+    let jsonBody = null;
+    const req = {
+      body: {}, // Missing both
+      app: mockApp,
+    };
+    const res = {
+      status(code) {
+        statusCode = code;
+        return this;
+      },
+      json(body) {
+        jsonBody = body;
+        return this;
+      },
+    };
+
+    await updateStatusById(req, res);
+
+    expect(statusCode).toBe(400);
+    expect(jsonBody).toEqual({ error: "Missing required fields" });
+  });
+
+  test("returns 404 when user is not found", async () => {
+    const mockSocket = {
+      broadcastNewStatus() {},
+    };
+    mockApp.set("socketInstance", mockSocket);
+
+    let statusCode = null;
+    let jsonBody = null;
+    const req = {
+      body: { userId: "nonexistent_user_id", newStatus: "ok" },
+      app: mockApp,
+    };
+    const res = {
+      status(code) {
+        statusCode = code;
+        return this;
+      },
+      json(body) {
+        jsonBody = body;
+        return this;
+      },
+    };
+
+    await updateStatusById(req, res);
+
+    expect(statusCode).toBe(404);
+    expect(jsonBody).toEqual({ error: "User not found" });
+  });
+
+  test("returns 500 when socket instance is not found", async () => {
+    // Create a user
+    const props = buildUserProps({ username: `statususer_${Date.now()}` });
+    const user = new User(props);
+    await user.create();
+    const found = await User.findByUsername(props.username);
+
+    // Don't set socket instance
+    mockApp.set("socketInstance", null);
+
+    let statusCode = null;
+    let jsonBody = null;
+    const req = {
+      body: { userId: found.id, newStatus: "ok" },
+      app: mockApp,
+    };
+    const res = {
+      status(code) {
+        statusCode = code;
+        return this;
+      },
+      json(body) {
+        jsonBody = body;
+        return this;
+      },
+    };
+
+    await updateStatusById(req, res);
+
+    expect(statusCode).toBe(500);
+    expect(jsonBody).toEqual({
+      status: "error",
+      message: "Socket instance not found",
+    });
+  });
+
+  test("returns 500 when an error occurs during status update", async () => {
+    // Create a user
+    const props = buildUserProps({ username: `statususer_${Date.now()}` });
+    const user = new User(props);
+    await user.create();
+    const found = await User.findByUsername(props.username);
+
+    const mockSocket = {
+      broadcastNewStatus() {},
+    };
+    mockApp.set("socketInstance", mockSocket);
+
+    // Mock User.getUsernameById to throw an error
+    const originalGetUsernameById = User.getUsernameById;
+    User.getUsernameById = async () => {
+      throw new Error("Database error");
+    };
+
+    let statusCode = null;
+    let jsonBody = null;
+    const req = {
+      body: { userId: found.id, newStatus: "ok" },
+      app: mockApp,
+    };
+    const res = {
+      status(code) {
+        statusCode = code;
+        return this;
+      },
+      json(body) {
+        jsonBody = body;
+        return this;
+      },
+    };
+
+    await updateStatusById(req, res);
+
+    expect(statusCode).toBe(500);
+    expect(jsonBody).toEqual({
+      status: "error",
+      message: "Server error",
+    });
+
+    // Restore original method
+    User.getUsernameById = originalGetUsernameById;
+  });
+
+  test("successfully updates status and records history with socket broadcast", async () => {
+    // Create a user
+    const props = buildUserProps({ username: `statususer_${Date.now()}` });
+    const user = new User(props);
+    await user.create();
+    const found = await User.findByUsername(props.username);
+    expect(found.sharedstatus).toBe("undefined");
+
+    let broadcastCalled = false;
+    let broadcastArgs = null;
+    const mockSocket = {
+      broadcastNewStatus(userId, status) {
+        broadcastCalled = true;
+        broadcastArgs = { userId, status };
+      },
+    };
+    mockApp.set("socketInstance", mockSocket);
+
+    let statusCode = null;
+    let jsonBody = null;
+    const req = {
+      body: { userId: found.id, newStatus: "help" },
+      app: mockApp,
+    };
+    const res = {
+      status(code) {
+        statusCode = code;
+        return this;
+      },
+      json(body) {
+        jsonBody = body;
+        return this;
+      },
+    };
+
+    await updateStatusById(req, res);
+
+    // Verify status was updated
+    const updated = await User.findByUsername(props.username);
+    expect(updated.sharedstatus).toBe("help");
+
+    // Verify history was recorded
+    const history = await Status.getHistory({ userId: found.id });
+    expect(history.items.length).toBeGreaterThanOrEqual(1);
+    expect(history.items[0].status).toBe("help");
+
+    // Verify response
+    expect(statusCode).toBe(200);
+    expect(jsonBody).toEqual({ message: "User status updated" });
+    expect(broadcastCalled).toBe(true);
+    expect(broadcastArgs).toEqual({ userId: found.id, status: "help" });
   });
 });
 

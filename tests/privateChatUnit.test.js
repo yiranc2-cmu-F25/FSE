@@ -4,6 +4,12 @@ import User from "../entities/User.js";
 import userDac from "../dacs/userDac.js";
 import { inMemoryMsgDao } from "../daos/inMemoryMsgDao.js";
 import { inMemoryUserDao } from "../daos/inMemoryUserDao.js";
+import {
+  getPrivateMessages,
+  sendPrivateMessage,
+  markPrivateMessagesAsRead,
+  getUnreadMessages,
+} from "../controllers/privateChatController.js";
 
 const BASE_PRIVATE_MSG_PROPS = Object.freeze({
   sender: "1",
@@ -472,6 +478,755 @@ describe("Private Message read status", () => {
     const aliceUnread = await Msg.getUnreadMessages("alice");
     const aliceContents = aliceUnread.map((m) => m.content);
     expect(aliceContents).toContain("Bob message");
+  });
+});
+
+describe("Private Chat API status codes", () => {
+  let mockApp;
+
+  beforeEach(() => {
+    // inject a fresh in-memory DAO for test isolation
+    MsgDac.DAO = new inMemoryMsgDao();
+    userDac.DAO = new inMemoryUserDao();
+
+    // Create a mock app object with get and set methods
+    mockApp = {
+      _socketInstance: null,
+      get(key) {
+        if (key === "socketInstance") {
+          return this._socketInstance;
+        }
+        return null;
+      },
+      set(key, value) {
+        if (key === "socketInstance") {
+          this._socketInstance = value;
+        }
+      },
+    };
+  });
+
+  describe("getPrivateMessages", () => {
+    test("returns 200 when successfully retrieving private messages", async () => {
+      // Create two users
+      const user1Props = buildUserProps({ username: `user1_${Date.now()}` });
+      const user2Props = buildUserProps({ username: `user2_${Date.now()}` });
+      const user1 = new User(user1Props);
+      const user2 = new User(user2Props);
+      await user1.create();
+      await user2.create();
+      const found1 = await User.findByUsername(user1Props.username);
+      const found2 = await User.findByUsername(user2Props.username);
+
+      // Create a message
+      const msg = new Msg(
+        buildPrivateMsgProps({
+          sender: found1.id,
+          receiver: found2.id,
+          content: "Test message",
+        }),
+      );
+      await msg.create();
+
+      let statusCode = null;
+      let jsonBody = null;
+      const req = {
+        user: { id: found1.id },
+        params: { peerId: found2.id },
+        app: mockApp,
+      };
+      const res = {
+        status(code) {
+          statusCode = code;
+          return this;
+        },
+        json(body) {
+          jsonBody = body;
+          return this;
+        },
+      };
+
+      await getPrivateMessages(req, res);
+
+      expect(statusCode).toBe(200);
+      expect(jsonBody).toHaveProperty("messages");
+      expect(Array.isArray(jsonBody.messages)).toBe(true);
+    });
+
+    test("returns 400 when meId is missing", async () => {
+      let statusCode = null;
+      let jsonBody = null;
+      const req = {
+        user: null,
+        params: { peerId: "123" },
+        app: mockApp,
+      };
+      const res = {
+        status(code) {
+          statusCode = code;
+          return this;
+        },
+        json(body) {
+          jsonBody = body;
+          return this;
+        },
+      };
+
+      await getPrivateMessages(req, res);
+
+      expect(statusCode).toBe(400);
+      expect(jsonBody).toEqual({
+        status: "error",
+        message: "meId/peerId required",
+      });
+    });
+
+    test("returns 400 when peerId is missing", async () => {
+      let statusCode = null;
+      let jsonBody = null;
+      const req = {
+        user: { id: "123" },
+        params: {},
+        app: mockApp,
+      };
+      const res = {
+        status(code) {
+          statusCode = code;
+          return this;
+        },
+        json(body) {
+          jsonBody = body;
+          return this;
+        },
+      };
+
+      await getPrivateMessages(req, res);
+
+      expect(statusCode).toBe(400);
+      expect(jsonBody).toEqual({
+        status: "error",
+        message: "meId/peerId required",
+      });
+    });
+
+    test("returns 500 when an error occurs", async () => {
+      // Create users
+      const user1Props = buildUserProps({ username: `user1_${Date.now()}` });
+      const user1 = new User(user1Props);
+      await user1.create();
+      const found1 = await User.findByUsername(user1Props.username);
+
+      // Mock Msg.getPrivateMsg to throw an error
+      const originalGetPrivateMsg = Msg.getPrivateMsg;
+      Msg.getPrivateMsg = async () => {
+        throw new Error("Database error");
+      };
+
+      let statusCode = null;
+      let jsonBody = null;
+      const req = {
+        user: { id: found1.id },
+        params: { peerId: "123" },
+        app: mockApp,
+      };
+      const res = {
+        status(code) {
+          statusCode = code;
+          return this;
+        },
+        json(body) {
+          jsonBody = body;
+          return this;
+        },
+      };
+
+      await getPrivateMessages(req, res);
+
+      expect(statusCode).toBe(500);
+      expect(jsonBody).toEqual({
+        status: "error",
+        message: "Server error",
+      });
+
+      // Restore original method
+      Msg.getPrivateMsg = originalGetPrivateMsg;
+    });
+  });
+
+  describe("sendPrivateMessage", () => {
+    test("returns 201 when message is sent successfully", async () => {
+      // Create two users
+      const user1Props = buildUserProps({ username: `sender_${Date.now()}` });
+      const user2Props = buildUserProps({ username: `receiver_${Date.now()}` });
+      const user1 = new User(user1Props);
+      const user2 = new User(user2Props);
+      await user1.create();
+      await user2.create();
+      const found1 = await User.findByUsername(user1Props.username);
+      const found2 = await User.findByUsername(user2Props.username);
+
+      // Mock socket instance
+      let emitCalled = false;
+      let emitArgs = null;
+      const mockSocket = {
+        emitMessageFromAndTo(senderUsername, receiverUsername, data) {
+          emitCalled = true;
+          emitArgs = { senderUsername, receiverUsername, data };
+        },
+      };
+      mockApp.set("socketInstance", mockSocket);
+
+      let statusCode = null;
+      let jsonBody = null;
+      const req = {
+        user: { id: found1.id },
+        body: {
+          receiver: found2.id,
+          content: "Hello!",
+          timestamp: new Date().toISOString(),
+        },
+        app: mockApp,
+      };
+      const res = {
+        status(code) {
+          statusCode = code;
+          return this;
+        },
+        json(body) {
+          jsonBody = body;
+          return this;
+        },
+      };
+
+      await sendPrivateMessage(req, res);
+
+      expect(statusCode).toBe(201);
+      expect(jsonBody).toEqual({ message: "Message sent successfully" });
+      expect(emitCalled).toBe(true);
+    });
+
+    test("returns 400 when receiver is missing", async () => {
+      let statusCode = null;
+      let jsonBody = null;
+      const req = {
+        user: { id: "123" },
+        body: { content: "Hello!" },
+        app: mockApp,
+      };
+      const res = {
+        status(code) {
+          statusCode = code;
+          return this;
+        },
+        json(body) {
+          jsonBody = body;
+          return this;
+        },
+      };
+
+      await sendPrivateMessage(req, res);
+
+      expect(statusCode).toBe(400);
+      expect(jsonBody).toEqual({
+        status: "error",
+        message: "receiver/content required",
+      });
+    });
+
+    test("returns 400 when content is missing", async () => {
+      let statusCode = null;
+      let jsonBody = null;
+      const req = {
+        user: { id: "123" },
+        body: { receiver: "456" },
+        app: mockApp,
+      };
+      const res = {
+        status(code) {
+          statusCode = code;
+          return this;
+        },
+        json(body) {
+          jsonBody = body;
+          return this;
+        },
+      };
+
+      await sendPrivateMessage(req, res);
+
+      expect(statusCode).toBe(400);
+      expect(jsonBody).toEqual({
+        status: "error",
+        message: "receiver/content required",
+      });
+    });
+
+    test("returns 500 when sender is not found", async () => {
+      // Create receiver user only
+      const user2Props = buildUserProps({ username: `receiver_${Date.now()}` });
+      const user2 = new User(user2Props);
+      await user2.create();
+      const found2 = await User.findByUsername(user2Props.username);
+
+      const mockSocket = {
+        emitMessageFromAndTo() {},
+      };
+      mockApp.set("socketInstance", mockSocket);
+
+      // Mock User.getUsernameById to return null for sender
+      const originalGetUsernameById = User.getUsernameById;
+      User.getUsernameById = async (id) => {
+        if (id === found2.id) return "receiver";
+        return null; // Sender not found
+      };
+
+      let statusCode = null;
+      let jsonBody = null;
+      const req = {
+        user: { id: "nonexistent_sender" },
+        body: {
+          receiver: found2.id,
+          content: "Hello!",
+        },
+        app: mockApp,
+      };
+      const res = {
+        status(code) {
+          statusCode = code;
+          return this;
+        },
+        json(body) {
+          jsonBody = body;
+          return this;
+        },
+      };
+
+      await sendPrivateMessage(req, res);
+
+      expect(statusCode).toBe(500);
+      expect(jsonBody).toEqual({
+        status: "error",
+        message: "Sender or receiver not found",
+      });
+
+      // Restore original method
+      User.getUsernameById = originalGetUsernameById;
+    });
+
+    test("returns 500 when receiver is not found", async () => {
+      // Create sender user only
+      const user1Props = buildUserProps({ username: `sender_${Date.now()}` });
+      const user1 = new User(user1Props);
+      await user1.create();
+      const found1 = await User.findByUsername(user1Props.username);
+
+      const mockSocket = {
+        emitMessageFromAndTo() {},
+      };
+      mockApp.set("socketInstance", mockSocket);
+
+      // Mock User.getUsernameById to return null for receiver
+      const originalGetUsernameById = User.getUsernameById;
+      User.getUsernameById = async (id) => {
+        if (id === found1.id) return "sender";
+        return null; // Receiver not found
+      };
+
+      let statusCode = null;
+      let jsonBody = null;
+      const req = {
+        user: { id: found1.id },
+        body: {
+          receiver: "nonexistent_receiver",
+          content: "Hello!",
+        },
+        app: mockApp,
+      };
+      const res = {
+        status(code) {
+          statusCode = code;
+          return this;
+        },
+        json(body) {
+          jsonBody = body;
+          return this;
+        },
+      };
+
+      await sendPrivateMessage(req, res);
+
+      expect(statusCode).toBe(500);
+      expect(jsonBody).toEqual({
+        status: "error",
+        message: "Sender or receiver not found",
+      });
+
+      // Restore original method
+      User.getUsernameById = originalGetUsernameById;
+    });
+
+    test("returns 500 when socket instance is not found", async () => {
+      // Create two users
+      const user1Props = buildUserProps({ username: `sender_${Date.now()}` });
+      const user2Props = buildUserProps({ username: `receiver_${Date.now()}` });
+      const user1 = new User(user1Props);
+      const user2 = new User(user2Props);
+      await user1.create();
+      await user2.create();
+      const found1 = await User.findByUsername(user1Props.username);
+      const found2 = await User.findByUsername(user2Props.username);
+
+      // Don't set socket instance
+      mockApp.set("socketInstance", null);
+
+      let statusCode = null;
+      let jsonBody = null;
+      const req = {
+        user: { id: found1.id },
+        body: {
+          receiver: found2.id,
+          content: "Hello!",
+        },
+        app: mockApp,
+      };
+      const res = {
+        status(code) {
+          statusCode = code;
+          return this;
+        },
+        json(body) {
+          jsonBody = body;
+          return this;
+        },
+      };
+
+      await sendPrivateMessage(req, res);
+
+      expect(statusCode).toBe(500);
+      expect(jsonBody).toEqual({
+        status: "error",
+        message: "Socket instance not found",
+      });
+    });
+
+    test("returns 500 when an error occurs during message creation", async () => {
+      // Create two users
+      const user1Props = buildUserProps({ username: `sender_${Date.now()}` });
+      const user2Props = buildUserProps({ username: `receiver_${Date.now()}` });
+      const user1 = new User(user1Props);
+      const user2 = new User(user2Props);
+      await user1.create();
+      await user2.create();
+      const found1 = await User.findByUsername(user1Props.username);
+      const found2 = await User.findByUsername(user2Props.username);
+
+      const mockSocket = {
+        emitMessageFromAndTo() {},
+      };
+      mockApp.set("socketInstance", mockSocket);
+
+      // Mock Msg constructor or create to throw an error
+      const originalCreate = Msg.prototype.create;
+      Msg.prototype.create = async function () {
+        throw new Error("Database error");
+      };
+
+      let statusCode = null;
+      let jsonBody = null;
+      const req = {
+        user: { id: found1.id },
+        body: {
+          receiver: found2.id,
+          content: "Hello!",
+        },
+        app: mockApp,
+      };
+      const res = {
+        status(code) {
+          statusCode = code;
+          return this;
+        },
+        json(body) {
+          jsonBody = body;
+          return this;
+        },
+      };
+
+      await sendPrivateMessage(req, res);
+
+      expect(statusCode).toBe(500);
+      expect(jsonBody).toEqual({
+        status: "error",
+        message: "Server error",
+      });
+
+      // Restore original method
+      Msg.prototype.create = originalCreate;
+    });
+  });
+
+  describe("markPrivateMessagesAsRead", () => {
+    test("returns 200 when messages are marked as read successfully", async () => {
+      // Create two users
+      const user1Props = buildUserProps({ username: `user1_${Date.now()}` });
+      const user2Props = buildUserProps({ username: `user2_${Date.now()}` });
+      const user1 = new User(user1Props);
+      const user2 = new User(user2Props);
+      await user1.create();
+      await user2.create();
+      const found1 = await User.findByUsername(user1Props.username);
+      const found2 = await User.findByUsername(user2Props.username);
+
+      // Create a message
+      const msg = new Msg(
+        buildPrivateMsgProps({
+          sender: found1.id,
+          receiver: found2.id,
+          content: "Unread message",
+        }),
+      );
+      await msg.create();
+
+      let statusCode = null;
+      let jsonBody = null;
+      const req = {
+        user: { id: found2.id },
+        body: { peerId: found1.id },
+        app: mockApp,
+      };
+      const res = {
+        status(code) {
+          statusCode = code;
+          return this;
+        },
+        json(body) {
+          jsonBody = body;
+          return this;
+        },
+      };
+
+      await markPrivateMessagesAsRead(req, res);
+
+      expect(statusCode).toBe(200);
+      expect(jsonBody).toHaveProperty("message");
+      expect(jsonBody.message).toContain("messages marked as read");
+    });
+
+    test("returns 400 when meId is missing", async () => {
+      let statusCode = null;
+      let jsonBody = null;
+      const req = {
+        user: null,
+        body: { peerId: "123" },
+        app: mockApp,
+      };
+      const res = {
+        status(code) {
+          statusCode = code;
+          return this;
+        },
+        json(body) {
+          jsonBody = body;
+          return this;
+        },
+      };
+
+      await markPrivateMessagesAsRead(req, res);
+
+      expect(statusCode).toBe(400);
+      expect(jsonBody).toEqual({
+        status: "error",
+        message: "meId/peerId required",
+      });
+    });
+
+    test("returns 400 when peerId is missing", async () => {
+      let statusCode = null;
+      let jsonBody = null;
+      const req = {
+        user: { id: "123" },
+        body: {},
+        app: mockApp,
+      };
+      const res = {
+        status(code) {
+          statusCode = code;
+          return this;
+        },
+        json(body) {
+          jsonBody = body;
+          return this;
+        },
+      };
+
+      await markPrivateMessagesAsRead(req, res);
+
+      expect(statusCode).toBe(400);
+      expect(jsonBody).toEqual({
+        status: "error",
+        message: "meId/peerId required",
+      });
+    });
+
+    test("returns 500 when an error occurs", async () => {
+      // Create users
+      const user1Props = buildUserProps({ username: `user1_${Date.now()}` });
+      const user1 = new User(user1Props);
+      await user1.create();
+      const found1 = await User.findByUsername(user1Props.username);
+
+      // Mock Msg.markMessagesAsRead to throw an error
+      const originalMarkMessagesAsRead = Msg.markMessagesAsRead;
+      Msg.markMessagesAsRead = async () => {
+        throw new Error("Database error");
+      };
+
+      let statusCode = null;
+      let jsonBody = null;
+      const req = {
+        user: { id: found1.id },
+        body: { peerId: "123" },
+        app: mockApp,
+      };
+      const res = {
+        status(code) {
+          statusCode = code;
+          return this;
+        },
+        json(body) {
+          jsonBody = body;
+          return this;
+        },
+      };
+
+      await markPrivateMessagesAsRead(req, res);
+
+      expect(statusCode).toBe(500);
+      expect(jsonBody).toEqual({
+        status: "error",
+        message: "Server error",
+      });
+
+      // Restore original method
+      Msg.markMessagesAsRead = originalMarkMessagesAsRead;
+    });
+  });
+
+  describe("getUnreadMessages", () => {
+    test("returns 200 when successfully retrieving unread messages", async () => {
+      // Create two users
+      const user1Props = buildUserProps({ username: `user1_${Date.now()}` });
+      const user2Props = buildUserProps({ username: `user2_${Date.now()}` });
+      const user1 = new User(user1Props);
+      const user2 = new User(user2Props);
+      await user1.create();
+      await user2.create();
+      const found1 = await User.findByUsername(user1Props.username);
+      const found2 = await User.findByUsername(user2Props.username);
+
+      // Create an unread message
+      const msg = new Msg(
+        buildPrivateMsgProps({
+          sender: found1.id,
+          receiver: found2.id,
+          content: "Unread message",
+        }),
+      );
+      await msg.create();
+
+      let statusCode = null;
+      let jsonBody = null;
+      const req = {
+        user: { id: found2.id },
+        app: mockApp,
+      };
+      const res = {
+        status(code) {
+          statusCode = code;
+          return this;
+        },
+        json(body) {
+          jsonBody = body;
+          return this;
+        },
+      };
+
+      await getUnreadMessages(req, res);
+
+      expect(statusCode).toBe(200);
+      expect(jsonBody).toHaveProperty("messages");
+      expect(Array.isArray(jsonBody.messages)).toBe(true);
+      expect(jsonBody.messages.length).toBeGreaterThanOrEqual(1);
+    });
+
+    test("returns 400 when meId is missing", async () => {
+      let statusCode = null;
+      let jsonBody = null;
+      const req = {
+        user: null,
+        app: mockApp,
+      };
+      const res = {
+        status(code) {
+          statusCode = code;
+          return this;
+        },
+        json(body) {
+          jsonBody = body;
+          return this;
+        },
+      };
+
+      await getUnreadMessages(req, res);
+
+      expect(statusCode).toBe(400);
+      expect(jsonBody).toEqual({
+        status: "error",
+        message: "meId required",
+      });
+    });
+
+    test("returns 500 when an error occurs", async () => {
+      // Create user
+      const user1Props = buildUserProps({ username: `user1_${Date.now()}` });
+      const user1 = new User(user1Props);
+      await user1.create();
+      const found1 = await User.findByUsername(user1Props.username);
+
+      // Mock Msg.getUnreadMessages to throw an error
+      const originalGetUnreadMessages = Msg.getUnreadMessages;
+      Msg.getUnreadMessages = async () => {
+        throw new Error("Database error");
+      };
+
+      let statusCode = null;
+      let jsonBody = null;
+      const req = {
+        user: { id: found1.id },
+        app: mockApp,
+      };
+      const res = {
+        status(code) {
+          statusCode = code;
+          return this;
+        },
+        json(body) {
+          jsonBody = body;
+          return this;
+        },
+      };
+
+      await getUnreadMessages(req, res);
+
+      expect(statusCode).toBe(500);
+      expect(jsonBody).toEqual({
+        status: "error",
+        message: "Server error",
+      });
+
+      // Restore original method
+      Msg.getUnreadMessages = originalGetUnreadMessages;
+    });
   });
 });
 
