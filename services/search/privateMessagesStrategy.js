@@ -1,7 +1,8 @@
 import Msg from "../../entities/Msg.js";
 import Status from "../../entities/Status.js";
 import mongoose from "mongoose";
-import { parseQuery } from "../../utils/search/parseQuery.js"
+import { parseQuery } from "../../utils/search/parseQuery.js";
+import { mapSearchResults } from "./resultMappers.js";
 
 export const privateMessagesStrategy = {
   async tryStatus({ raw, peerId, limit, cursor }) {
@@ -57,15 +58,7 @@ export const privateMessagesStrategy = {
         cursor,
       });
 
-      const senderName = (req.username || "").toLowerCase();
-      const results = items.map(m => ({
-        id: String(m._id),
-        sender: m.sender?.username ?? m.sender ?? null,
-        content: m.content,
-        timestamp: m.timestamp,
-        status: m.status,
-        isOwn: ((m.sender?.username ?? m.sender ?? "").toLowerCase() === senderName),
-      }));
+      const results = mapSearchResults(items, req.username, true);
 
       return { code: 200, mode: "messages", count, results, nextCursor };
     } catch (err) {
