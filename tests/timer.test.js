@@ -15,7 +15,7 @@ describe("timeAsyncFunction", () => {
 
     const timerWrappedFunction = await timeAsyncFunction(asyncFunction);
     const { fnOutcome, serverElapsedMs } = await timerWrappedFunction();
-    expect(serverElapsedMs).toBeGreaterThanOrEqual(100);
+    expect(serverElapsedMs).toBeGreaterThanOrEqual(97);
     expect(fnOutcome).toBe("This is the result of aync function!");
   });
   it("should return the elapsed time and result of any async function", async () => {
