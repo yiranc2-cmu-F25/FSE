@@ -13,21 +13,15 @@ const STRATEGIES = {
   messages_private:  privateMessagesStrategy,
 };
 
+const searchContext = new SearchStrategy(STRATEGIES);
+
 export async function search(req, res) {
   try {
-    const type = String(req.query.type || "").trim();
-    const strat = STRATEGIES[type];
-    if (!strat) {
-      return res.status(400).json({ error: `Unsupported type: ${type}` });
-    }
-
-    if (!(strat instanceof SearchStrategy)) {
-      return res.status(500).json({ status: "error", message: "Invalid strategy implementation" });
-    }
-
+    const type = req.query.type || "";
     const params = { req, user: req.user };
-    const result = await strat.execute(params);
-    if (result.code !== 200){
+    const result = await searchContext.executeSearch(type, params);
+    
+    if (result.code !== 200) {
       return res.status(result.code).json(result);
     }
     return res.status(200).json(result);

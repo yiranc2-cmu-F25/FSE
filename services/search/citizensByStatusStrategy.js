@@ -1,6 +1,6 @@
 import { getOnlineOfflineMembers } from "../../entities/MemberList.js";
 import { SearchStrategy } from "./SearchStrategy.js";
-import { paginateResults } from "./searchCommon.js";
+import { paginateResults } from "../../utils/search/searchCommon.js";
 
 export class CitizensByStatusStrategy extends SearchStrategy {
   async execute({ req }) {
