@@ -12,7 +12,7 @@ import { makeUserModel } from "../db/UserSchema.js";
 import { UserDao } from "../daos/UserDao.js";
 import UserDac from "../dacs/userDac.js";
 
-describe("POST /announcements", () => {
+describe("Announcements Test", () => {
     let mongod, conn, AnnouncementModel, UserModel, mockSocket;
 
     beforeAll(async () => {
@@ -66,18 +66,26 @@ describe("POST /announcements", () => {
 
         expect(registerRes.headers['set-cookie']).toBeDefined();
 
-        const obj_id = await UserDac.DAO.findByUsername("testUser");
+        const user = await UserDac.DAO.findByUsername("testUser");
 
         const postAnnouncementRes = await agent
             .post("/api/announcements")
             .send({
-                sender: obj_id._id,
+                sender: user._id,
                 content: "This is a test announcement",
                 status: "ok"
             })
             .expect(201);
 
         expect(postAnnouncementRes.body).toHaveProperty("message", "Announcement posted");
+
+        const docs = await AnnouncementModel.find({}).lean();
+        expect(docs).toHaveLength(1);
+
+        const doc = docs[0];
+        expect(String(doc.sender)).toBe(String(user._id));
+        expect(doc.content).toBe("This is a test announcement");
+        expect(doc.status).toBe("ok");               // ensure it’s stored normalized
     });
 
     test("should retrieve all announcements", async () => {
@@ -93,21 +101,10 @@ describe("POST /announcements", () => {
 
         const user = await UserDac.DAO.findByUsername("testUser2");
 
-        const contents = [
-            "Announcement 1",
-            "Announcement 2"
-        ];
-
-        for (const content of contents) {
-            await agent
-            .post("/api/announcements")
-            .send({
-                sender: user._id,
-                content,
-                status: "ok"
-            })
-            .expect(201);
-        }
+        await AnnouncementModel.insertMany([
+            { sender: user._id, content: "Announcement 1", status: "ok", timestamp: new Date() },
+            { sender: user._id, content: "Announcement 2", status: "ok", timestamp: new Date() },
+        ]);
 
         const getRes = await agent
             .get("/api/announcements")
@@ -116,8 +113,8 @@ describe("POST /announcements", () => {
         expect(Array.isArray(getRes.body)).toBe(true);
         expect(getRes.body.length).toBeGreaterThanOrEqual(2);
 
-        // Ensure announcements we posted exist
-        const texts = getRes.body.map(a => a.content);
-        expect(texts).toEqual(expect.arrayContaining(contents));
+        const contents = getRes.body.map(a => a.content);
+        expect(contents).toEqual(expect.arrayContaining(["Announcement 1", "Announcement 2"]));
+
     });
 });
