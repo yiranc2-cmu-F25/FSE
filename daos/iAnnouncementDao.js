@@ -6,4 +6,8 @@ export class iAnnouncementDao {
     async getAnnouncement() {
         throw new Error("To be implemented!");
     }
+
+    async searchAnnouncement({ terms, phrase, limit, cursor }) {
+        throw new Error("To be implemented!");
+    }
 }

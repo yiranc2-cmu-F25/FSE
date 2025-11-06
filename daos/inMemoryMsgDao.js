@@ -1,4 +1,5 @@
 import { iMsgDao } from "./iMsgDao.js";
+import { applyCursorFilter, sortByTimestampDesc, applyPagination, populateSender } from "../utils/search/inMemorySearchHelpers.js";
 
 export class inMemoryMsgDao extends iMsgDao {
   constructor() {
@@ -33,7 +34,6 @@ export class inMemoryMsgDao extends iMsgDao {
   }
 
   async getPrivateMsg(sender, receiver) {
-    // Normalize IDs to strings for comparison (handles both string and number IDs)
     const senderId = String(sender);
     const receiverId = String(receiver);
 
@@ -42,7 +42,6 @@ export class inMemoryMsgDao extends iMsgDao {
     );
     console.log(`[inMemoryMsgDao] Total messages in DB: ${this.messages.length}`);
 
-    // Log all messages for debugging
     this.messages.forEach((m, idx) => {
       console.log(`[inMemoryMsgDao] Message ${idx}:`, {
         sender: m.sender,
@@ -92,5 +91,58 @@ export class inMemoryMsgDao extends iMsgDao {
     return this.messages.filter((m) => {
       return String(m.receiver) === receiverIdStr && !m.read;
     });
+  }
+
+  async searchPublicMsg({ terms = [], phrase = "", limit = 10, cursor } = {}) {
+    const { buildSubstringRegex } = await import("../utils/search/search.js");
+    
+    const regex = buildSubstringRegex(terms, phrase);
+    
+    let filtered = this.messages.filter(message => {
+      const isPublic = message.receiver === null || message.receiver === "public";
+      return isPublic && regex.test(message.content);
+    });
+    
+    filtered = applyCursorFilter(filtered, cursor);
+    
+    filtered = sortByTimestampDesc(filtered);
+    
+    const { pageItems, nextCursor, count } = applyPagination(filtered, limit);
+    
+    const populatedItems = await populateSender(pageItems, "[inMemoryMsgDao]");
+    
+    return { count, items: populatedItems, nextCursor };
+  }
+
+  async searchPrivateMsg({ terms, senderId, peerId, phrase, limit = 10, cursor }) {
+    const { buildSubstringRegex } = await import("../utils/search/search.js");
+    
+    const regex = buildSubstringRegex(terms, phrase);
+    
+    const senderIdStr = String(senderId);
+    const peerIdStr = String(peerId);
+    
+    let filtered = this.messages.filter(message => {
+      const msgSender = String(message.sender);
+      const msgReceiver = String(message.receiver);
+      
+      const isConversation = 
+        (msgSender === senderIdStr && msgReceiver === peerIdStr) ||
+        (msgSender === peerIdStr && msgReceiver === senderIdStr);
+      
+      const matchesContent = regex.test(message.content);
+      
+      return isConversation && matchesContent;
+    });
+    
+    filtered = applyCursorFilter(filtered, cursor);
+    
+    filtered = sortByTimestampDesc(filtered);
+    
+    const { pageItems, nextCursor, count } = applyPagination(filtered, limit);
+    
+    const populatedItems = await populateSender(pageItems, "[inMemoryMsgDao]");
+    
+    return { items: populatedItems, nextCursor, count };
   }
 }

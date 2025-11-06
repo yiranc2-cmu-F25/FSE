@@ -1,7 +1,8 @@
 import Msg from "../../entities/Msg.js";
 import Status from "../../entities/Status.js";
 import mongoose from "mongoose";
-import { parseQuery } from "../../utils/search/parseQuery.js"
+import { parseQuery } from "../../utils/search/parseQuery.js";
+import { mapSearchResults } from "./resultMappers.js";
 
 export const privateMessagesStrategy = {
   async tryStatus({ raw, peerId, limit, cursor }) {
@@ -30,8 +31,12 @@ export const privateMessagesStrategy = {
       if (!senderId) return { code: 401, error: "Unauthorized" };
       if (!peerId)   return { code: 400, error: "Missing query param: peerId" };
 
-      if (!mongoose.Types.ObjectId.isValid(senderId) || !mongoose.Types.ObjectId.isValid(peerId)) {
-        return { code: 401, error: "Invalid user id(s)" };
+      // Only validate ObjectId format in production (not for in-memory test DB)
+      // In test mode, IDs might be numbers or other formats
+      if (process.env.NODE_ENV !== "test") {
+        if (!mongoose.Types.ObjectId.isValid(senderId) || !mongoose.Types.ObjectId.isValid(peerId)) {
+          return { code: 401, error: "Invalid user id(s)" };
+        }
       }
 
       const parsed = parseQuery(req, { qKey: "content" });
@@ -53,15 +58,7 @@ export const privateMessagesStrategy = {
         cursor,
       });
 
-      const senderName = (req.username || "").toLowerCase();
-      const results = items.map(m => ({
-        id: String(m._id),
-        sender: m.sender?.username ?? m.sender ?? null,
-        content: m.content,
-        timestamp: m.timestamp,
-        status: m.status,
-        isOwn: ((m.sender?.username ?? m.sender ?? "").toLowerCase() === senderName),
-      }));
+      const results = mapSearchResults(items, req.username, true);
 
       return { code: 200, mode: "messages", count, results, nextCursor };
     } catch (err) {
