@@ -1,5 +1,6 @@
 import { getOnlineOfflineMembers } from "../../entities/MemberList.js";
 import { SearchStrategy } from "./SearchStrategy.js";
+import { paginateResults } from "./searchCommon.js";
 
 export class CitizensByStatusStrategy extends SearchStrategy {
   async execute({ req }) {
@@ -23,12 +24,7 @@ export class CitizensByStatusStrategy extends SearchStrategy {
         });
         const merged = [...on.map(u => toItem(u, 'online')), ...off.map(u => toItem(u, 'offline'))];
 
-        const count = merged.length;
-        const results = req.query.limit ? 
-            merged.slice(offset, offset + limit) :
-            merged.slice(offset);
-
-        return { code: 200, count, results };
+        return paginateResults(merged, limit, offset, !!req.query.limit);
     } catch (err) {
         return { code: 500, status: 'error', message: 'Server error' };
     }

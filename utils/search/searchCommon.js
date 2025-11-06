@@ -1,4 +1,13 @@
-import { parseCursor, buildCursorClause } from "../../utils/search/cursor.js";
+import { parseCursor, buildCursorClause } from "./cursor.js";
+
+export function paginateResults(merged, limit, offset, hasLimit) {
+  const count = merged.length;
+  const results = hasLimit ? 
+    merged.slice(offset, offset + limit) :
+    merged.slice(offset);
+  
+  return { code: 200, count, results };
+}
 
 export async function searchByModel({
   Model,

@@ -2,7 +2,7 @@ import Msg from "../../entities/Msg.js";
 import Status from "../../entities/Status.js";
 import mongoose from "mongoose";
 import { parseQuery } from "../../utils/search/parseQuery.js";
-import { mapSearchResults } from "./resultMappers.js";
+import { mapSearchResults } from "../../utils/search/resultMappers.js";
 import { SearchStrategy } from "./SearchStrategy.js";
 
 export class PrivateMessagesStrategy extends SearchStrategy {

@@ -1,6 +1,6 @@
 import Msg from "../../entities/Msg.js";
 import { parseQuery } from "../../utils/search/parseQuery.js";
-import { mapSearchResults } from "./resultMappers.js";
+import { mapSearchResults } from "../../utils/search/resultMappers.js";
 import { SearchStrategy } from "./SearchStrategy.js";
 
 export class PublicMessagesStrategy extends SearchStrategy {
