@@ -1,5 +1,6 @@
 import Msg from "../../entities/Msg.js";
-import { parseQuery } from "../../utils/search/parseQuery.js"
+import { parseQuery } from "../../utils/search/parseQuery.js";
+import { mapSearchResults } from "./resultMappers.js";
 
 export const publicMessagesStrategy = {
   async execute({ req }) {
@@ -18,15 +19,7 @@ export const publicMessagesStrategy = {
         cursor,
       });
 
-      const me = (req.username || "").toLowerCase();
-      const results = items.map(m => ({
-        id: String(m._id),
-        sender: m.sender?.username ?? m.sender ?? null,
-        content: m.content,
-        timestamp: m.timestamp,
-        status: m.status,
-        isOwn: ((m.sender?.username ?? m.sender ?? "").toLowerCase() === me),
-      }));
+      const results = mapSearchResults(items, req.username, true);
 
       return { code: 200, count, results, nextCursor };
     } catch (err) {

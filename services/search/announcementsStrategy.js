@@ -1,5 +1,6 @@
 import Announcement from "../../entities/Announcement.js";
 import { parseQuery } from "../../utils/search/parseQuery.js";
+import { mapSearchResults } from "./resultMappers.js";
 
 export const announcementsStrategy = {
   async execute({ req }) {
@@ -12,20 +13,18 @@ export const announcementsStrategy = {
         typeof req.query.cursor === "string" ? req.query.cursor : "";
 
       const { raw, nonStop } = parsed;
-      const { count, items, nextCursor } =
-        await Announcement.searchAnnouncement({
-          terms: nonStop,
-          phrase: raw,
-          limit,
-          cursor,
-        });
-      const results = items.map((m) => ({
-        id: String(m._id),
-        sender: m.sender?.username ?? m.sender ?? null,
-        content: m.content,
-        timestamp: m.timestamp,
-        status: m.status,
-      }));
+      // console.log("checkpoint 2:",raw, nonStop);
+      const { count, items, nextCursor } = await Announcement.searchAnnouncement({
+        terms: nonStop,
+        phrase: raw,
+        limit,
+        cursor,
+      });
+      // console.log("checkpoint 3:");
+      // console.log(count);
+      // console.log(items);
+      // console.log(nextCursor);
+      const results = mapSearchResults(items, "", false);
 
       return { code: 200, count, results, nextCursor };
     } catch (err) {
