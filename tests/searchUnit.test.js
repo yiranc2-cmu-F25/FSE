@@ -49,11 +49,10 @@ describe("Search utility functions", () => {
       });
     });
 
-    test("converts tokens to lowercase", () => {
-      const tokens = splitTokensForStopwords("HELLO World Test");
-      tokens.forEach((token) => {
-        expect(token).toBe(token.toLowerCase());
-      });
+    test("parseQuery lowercases tokens and filters stop-words", () => {
+      const mockReq = { query: { content: "HELLO World Test" } };
+      const result = parseQuery(mockReq, { qKey: "content" });
+      expect(result.nonStop).toEqual(["hello", "world", "test"]);
     });
 
     test("filters out empty tokens", () => {
