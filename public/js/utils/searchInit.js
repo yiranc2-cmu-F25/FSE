@@ -2,6 +2,7 @@ import { renderSearchItem } from "../utils/renderSearchItem.js";
 
 let searchHandler = async () => {};
 let moreHandler = async () => {};
+let lessHandler = async () => {};
 let initialized = false;
 
 export const RESULT_BEGIN_INDEX = 1;
@@ -12,7 +13,8 @@ const ui = {
   search_screen: $("#search-screen"),
   search_input: $("#search-prompt"),
   clear_search_input: $("#clear-search-input"),
-  load_button: $("#load-button"),
+  next_button: $("#next-button"),
+  previous_button: $("#previous-button"),
   search_result_scroll: $("#search-result-scroll"),
 };
 
@@ -37,6 +39,10 @@ function setMoreHandler(handler) {
   moreHandler = typeof handler === "function" ? handler : () => {};
 }
 
+function setLessHandler(handler) {
+  lessHandler = typeof handler === "function" ? handler : () => {};
+}
+
 function setupSearchScreenButton() {
   ui.search_screen_button?.addEventListener("click", () => {
     openModal();
@@ -53,6 +59,15 @@ function setupSearchScreenButton() {
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && !ui.search_screen?.classList.contains("hidden")) {
       closeModal();
+    }
+  });
+}
+
+function clearSearchResults() {
+  ["#online-search-result-list", "#offline-search-result-list", "#search-result-list"].forEach((selector) => {
+    const list = document.querySelector(selector);
+    if (list) {
+      list.innerHTML = "";
     }
   });
 }
@@ -83,12 +98,7 @@ function setupSearchInput() {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       const value = ui.search_input?.value ?? "";
-      ["#online-search-result-list", "#offline-search-result-list", "#search-result-list"].forEach((selector) => {
-        const list = document.querySelector(selector);
-        if (list) {
-          list.innerHTML = "";
-        }
-      });
+      clearSearchResults();
       Promise.resolve(searchHandler(value)).catch((err) => {
         console.error("Search handler failed:", err);
       });
@@ -97,14 +107,23 @@ function setupSearchInput() {
 }
 
 function setupMore() {
-  ui.load_button?.addEventListener("click", () => {
-    Promise.resolve(moreHandler())
-    .then(() =>{
-      ui.search_result_scroll.scrollTop = ui.search_result_scroll.scrollHeight;
-    })
-    .catch((err) => {
-      console.error("More handler failed:", err);
-    });
+  attachPaginatedHandler(ui.next_button, moreHandler, "More handler failed:");
+}
+
+function setupLess() {
+  attachPaginatedHandler(ui.previous_button, lessHandler, "Less handler failed:");
+}
+
+function attachPaginatedHandler(button, handler, errorLabel) {
+  button?.addEventListener("click", () => {
+    if (button.disabled) return;
+    button.disabled = true;
+    clearSearchResults();
+    Promise.resolve(handler())
+      .catch((err) => console.error(errorLabel, err))
+      .finally(() => {
+        button.disabled = false;
+      });
   });
 }
 
@@ -158,19 +177,35 @@ export function showNoResultsMessage() {
   }
 }
 
-export function hideLoadMoreButton() {
-  const loadMoreButton = document.querySelector("#load-button");
-  if (loadMoreButton) {
-    loadMoreButton.classList.remove("flex");
-    loadMoreButton.classList.add("hidden");
+export function hideNextButton() {
+  const nextButton = document.querySelector("#next-button");
+  if (nextButton) {
+    nextButton.classList.remove("flex");
+    nextButton.classList.add("hidden");
   }
 }
 
-export function showLoadMoreButton() {
-  const loadMoreButton = document.querySelector("#load-button");
-  if (loadMoreButton) {
-    loadMoreButton.classList.remove("hidden");
-    loadMoreButton.classList.add("flex");
+export function showNextButton() {
+  const nextButton = document.querySelector("#next-button");
+  if (nextButton) {
+    nextButton.classList.remove("hidden");
+    nextButton.classList.add("flex");
+  }
+}
+
+export function hidePreviousButton() {
+  const prevButton = document.querySelector("#previous-button");
+  if (prevButton) {
+    prevButton.classList.remove("flex");
+    prevButton.classList.add("hidden");
+  }
+}
+
+export function showPreviousButton() {
+  const prevButton = document.querySelector("#previous-button");
+  if (prevButton) {
+    prevButton.classList.remove("hidden");
+    prevButton.classList.add("flex");
   }
 }
 
@@ -178,7 +213,7 @@ export function normalizeQuery(raw) {
   return raw?.trim() ?? "";
 }
 
-export function processData(data) {
+export function processData(data, begin) {
   if (!data.count || data.count === 0) {
     showNoResultsMessage();
     hideFooter();
@@ -195,15 +230,19 @@ export function processData(data) {
       document.querySelector("#search-result-list").appendChild(itemNode);
     });
     const listLength = document.querySelector("#search-result-list").children.length;
-    showFooter({
-      start: RESULT_BEGIN_INDEX,
-      end: Math.min(data.count, RESULT_BEGIN_INDEX + listLength - 1),
+    const interval = {
+      start: begin,
+      end: begin + listLength - 1,
       total: data.count || 0,
-    });
-    if (data.count === RESULT_BEGIN_INDEX + listLength - 1) {
-      hideLoadMoreButton();
-    } else {
-      showLoadMoreButton();
+    };
+    showFooter(interval);
+    showPreviousButton();
+    showNextButton();
+    if (interval.start == 1) {
+      hidePreviousButton();
+    }
+    if (interval.end == interval.total) {
+      hideNextButton();
     }
   }
 }
@@ -215,12 +254,15 @@ export function initializeSearch(options = {}) {
   if (options.onMore) {
     setMoreHandler(options.onMore);
   }
+  if (options.onLess) {
+    setLessHandler(options.onLess);
+  }
   if (initialized) {
     return;
   }
   setupSearchScreenButton();
   setupSearchInput();
   setupMore();
+  setupLess();
   initialized = true;
 }
-

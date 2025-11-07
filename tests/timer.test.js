@@ -1,7 +1,5 @@
 import { timeAsyncFunction } from "./../utils/speedTest/timer.js";
 
-// The async timer wrapper should return 1. async function elapsed time and 2. async func result
-
 describe("timeAsyncFunction", () => {
   it("should return the elapsed time and result of an async function", async () => {
     const asyncFunction = async () => {
