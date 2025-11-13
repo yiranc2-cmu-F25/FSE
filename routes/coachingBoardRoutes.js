@@ -258,7 +258,7 @@ router.post("/:bid/comments", auth, (req, res) => {
  *   get:
  *     tags: [Coaching Boards]
  *     summary: Get a specific coaching board
- *     description: Retrieves details of a specific coaching board by its ID
+ *     description: Retrieves details of a specific coaching board by its ID. Optionally filter by comment ID (cid) and/or reply ID (rid) to get specific comment or reply details.
  *     security:
  *       - cookieAuth: []
  *     parameters:
@@ -269,9 +269,23 @@ router.post("/:bid/comments", auth, (req, res) => {
  *           type: string
  *         description: Board ID
  *         example: "68db1cc4050ba3718fab04c3"
+ *       - in: query
+ *         name: cid
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: Optional comment ID to filter for a specific comment
+ *         example: "68db1cc4050ba3718fab04c4"
+ *       - in: query
+ *         name: rid
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: Optional reply ID to filter for a specific reply (requires cid to be specified)
+ *         example: "68db1cc4050ba3718fab04c5"
  *     responses:
  *       200:
- *         description: Coaching board details
+ *         description: Coaching board details. If cid is provided, returns board with only the specified comment. If both cid and rid are provided, returns board with only the specified comment and reply.
  *         content:
  *           application/json:
  *             schema:
@@ -311,7 +325,7 @@ router.post("/:bid/comments", auth, (req, res) => {
  *                   type: array
  *                   items:
  *                     type: object
- *                   description: List of comments on this board
+ *                   description: List of comments on this board (filtered by cid/rid if provided)
  *       401:
  *         description: Unauthorized
  *         content:
@@ -321,7 +335,7 @@ router.post("/:bid/comments", auth, (req, res) => {
  *               properties:
  *                 error: { type: string, example: "Unauthorized" }
  *       404:
- *         description: Board not found
+ *         description: Board, comment, or reply not found
  *         content:
  *           application/json:
  *             schema:
@@ -341,6 +355,7 @@ router.post("/:bid/comments", auth, (req, res) => {
  */
 router.get("/:bid", auth, (req, res) => {
   // TODO: Implement controller logic for getting a specific board
+  // Optional query params: cid (comment ID) and rid (reply ID) to filter specific comment/reply
 });
 
 /**
