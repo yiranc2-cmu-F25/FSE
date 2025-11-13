@@ -12,6 +12,7 @@ import speedTestRoutes from "./routes/speedTestRoutes.js";
 import userInfoRoutes from "./routes/userInfoRoutes.js";
 import announcementRoutes from "./routes/announcementRoutes.js";
 import searchRoutes from "./routes/searchRoutes.js";
+import coachingBoardRoutes from "./routes/coachingBoardRoutes.js";
 import swaggerUi from "swagger-ui-express";
 import swaggerSpec from "./config/swagger/swaggerConfig.js";
 import { blockWhenSpeedTest } from "./middleware/blockWhenSpeedTest.js";
@@ -66,6 +67,7 @@ function setupRoutes() {
   app.use("/speed-test", speedTestRoutes); // Speed Test Routes
   app.use("/api/announcements", announcementRoutes); // announcement Routes
   app.use("/api/queries", searchRoutes); // search Routes
+  app.use("/api/coaching-boards", coachingBoardRoutes); // coaching board Routes
 
   app.use("/", pageRoutes); // All routes for separate pages e.g. public chat wall
 }
