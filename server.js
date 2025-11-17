@@ -16,6 +16,9 @@ import statusDac from "./dacs/statusDac.js";
 import { makeAnnouncementModel } from "./db/AnnouncementSchema.js";
 import { AnnouncementDao } from "./daos/AnnouncementDao.js";
 import AnnouncementDac from "./dacs/announcementDac.js";
+import { makeHelpCenterModel } from "./db/HelpCenterSchema.js";
+import { HelpCenterDao } from "./daos/HelpCenterDao.js";
+import HelpCenterDac from "./dacs/HelpCenterDac.js";
 
 async function connectToMongo() {
   // 1. Connect to MongoDB
@@ -36,12 +39,14 @@ function setupModels() {
   const MessageModel = makeMsgModel(mongoose.connection);
   const AnnouncementModel = makeAnnouncementModel(mongoose.connection);
   const StatusModel = makeStatusModel(mongoose.connection);
+  const HelpCenterModel = makeHelpCenterModel(mongoose.connection);
 
   // 2. Inject models into DAOs for persistence operations
   userDac.DAO = new UserDao({ UserModel });
   msgDac.DAO = new MsgDao({ MessageModel });
   AnnouncementDac.DAO = new AnnouncementDao({ AnnouncementModel });
   statusDac.DAO = new StatusDao({ StatusModel, UserModel});
+  HelpCenterDac.DAO = new HelpCenterDao({ HelpCenterModel });
 }
 
 function setupSocket() {
