@@ -7,72 +7,86 @@ const JOIN_PATH = "joinCommunity/";
 const PUB_CHAT_PATH = "publicChat/";
 
 function setupJoinCommunityRoutes() {
-    router.get("/", (req, res) => {
-        res.render(JOIN_PATH + "splashPage");
-    });
+  router.get("/", (req, res) => {
+    res.render(JOIN_PATH + "splashPage");
+  });
 
-    router.get("/communities", (req, res) => {
-        res.render(JOIN_PATH + "joinCommunity");
-    });
+  router.get("/communities", (req, res) => {
+    res.render(JOIN_PATH + "joinCommunity");
+  });
 
-    router.get("/confirmations", (req, res) => {
-        res.render(JOIN_PATH + "confirmRegistration");
-    });
+  router.get("/confirmations", (req, res) => {
+    res.render(JOIN_PATH + "confirmRegistration");
+  });
 
-    router.get("/acknowledgements", (req, res) => {
-        res.render(JOIN_PATH + "acknowledgement");
-    });
+  router.get("/acknowledgements", (req, res) => {
+    res.render(JOIN_PATH + "acknowledgement");
+  });
 }
 
 function setupPublicChatRoutes() {
-    router.get("/chats", authView, (req, res) => {
-        res.render(PUB_CHAT_PATH + "publicChat", {
-            username: req.username || "",
-            searchMode: "set",
-        });
+  router.get("/chats", authView, (req, res) => {
+    res.render(PUB_CHAT_PATH + "publicChat", {
+      username: req.username || "",
+      searchMode: "set",
     });
+  });
 }
 
 function setupLoginRoutes() {
-    router.get("/members", authView, (req, res) => {
-        res.render("memberList/membersLanding", {
-            username: req.username || "",
-            searchMode: "all",
-            searchMembers: true,
-        });
+  router.get("/members", authView, (req, res) => {
+    res.render("memberList/membersLanding", {
+      username: req.username || "",
+      searchMode: "all",
+      searchMembers: true,
     });
+  });
 }
 
 function setupUpdateStatusRoutes() {
-    router.get("/status", authView, (req, res) => {
-        res.render("memberProfile/profileUpdate", { username: req.username || "" });
-    });
+  router.get("/status", authView, (req, res) => {
+    res.render("memberProfile/profileUpdate", { username: req.username || "" });
+  });
 }
 
 function setupPrivateChatRoutes() {
-    router.get("/chats/private/:peerId", authView, (req, res) => {
-        const meId   = req.userId;
-        //console.log("MeId is: ",meId);
-        const peerId = String(req.params.peerId);
+  router.get("/chats/private/:peerId", authView, (req, res) => {
+    const meId = req.userId;
+    //console.log("MeId is: ",meId);
+    const peerId = String(req.params.peerId);
 
-        if (meId === peerId) return res.redirect("/members");
+    if (meId === peerId) return res.redirect("/members");
 
-        return res.render("privateChat/privateChat", {
-            username: req.username,
-            currentUserId: meId,
-            peerId,
-            searchMode: "set",
-        });
+    return res.render("privateChat/privateChat", {
+      username: req.username,
+      currentUserId: meId,
+      peerId,
+      searchMode: "set",
     });
+  });
 }
 
 function setupAnnouncementRoutes() {
-    router.get("/postPublicAnnouncements", authView, (req, res) => {
-        res.render("announcement/publicAnnouncement", {
-            username: req.username || "",
-            searchMode: "set",
-        });
+  router.get("/postPublicAnnouncements", authView, (req, res) => {
+    res.render("announcement/publicAnnouncement", {
+      username: req.username || "",
+      searchMode: "set",
     });
+  });
+}
+function setupMyTasksRoutes() {
+  router.get("/my-tasks", authView, (req, res) => {
+    res.render("helpTasks/myHelpCenter.ejs", {
+      username: req.username || "",
+    });
+  });
+}
+function setupESNTaskCenterRoutes() {
+  router.get("/esn-help-center", authView, (req, res) => {
+    res.render("helpTasks/ESNHelpCenter.ejs", {
+      username: req.username || "",
+    });
+  });
 }
 
 setupJoinCommunityRoutes();
@@ -81,5 +95,7 @@ setupLoginRoutes();
 setupUpdateStatusRoutes();
 setupPrivateChatRoutes();
 setupAnnouncementRoutes();
+setupMyTasksRoutes();
+setupESNTaskCenterRoutes();
 
 export default router;
