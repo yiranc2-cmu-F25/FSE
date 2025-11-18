@@ -109,6 +109,7 @@ function setupESNHelpCenterRoutes() {
       hero: helpCenterConfig.hero,
       highlightedTasks,
       username: req.username || "",
+      tasks: allTasks,
       // you can also pass req.user, users etc if needed
     });
   });

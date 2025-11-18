@@ -3,7 +3,7 @@
     {
       "id": "remove-fallen-trees",
       "title": "Remove fallen trees blocking Pine Avenue",
-      "category": "Remove Debris",
+      "category": "RemoveDebris",
       "categoryType": "debris",
       "statusLabel": "Critical",
       "statusLevel": "critical",
@@ -13,10 +13,10 @@
       "href": "/tasks/remove-fallen-trees",
       "location": "Pine Avenue",
       "icon": {
-        "src": "/images/icons/tasks/landslide.svg",
+        "src": "/images/help-tasks/icons/task_category/debrisRemoval_cleanUp.svg",
         "alt": "Debris removal icon"
       },
-      "bgImageUrl": "/images/backgrounds/task-debris.png"
+      "bgImageUrl": "/images/help-tasks/icons/task_category/task_category_bg/debrisRemovalBG.svg"
     },
     {
       "id": "feed-dogs",
@@ -31,10 +31,10 @@
       "href": "/tasks/feed-dogs",
       "location": "Market Street",
       "icon": {
-        "src": "/images/icons/tasks/paw.svg",
+        "src": "/images/help-tasks/icons/task_category/animalCare.svg",
         "alt": "Animal care icon"
       },
-      "bgImageUrl": "/images/backgrounds/task-animal.png"
+      "bgImageUrl": "images/help-tasks/icons/task_category/task_category_bg/animalCareBG.svg"
     },
     {
       "id": "temp-repair-substation",
@@ -49,9 +49,28 @@
       "href": "/tasks/temp-repair-substation",
       "location": "North Substation",
       "icon": {
-        "src": "/images/icons/tasks/tools.svg",
+        "src": "/images/help-tasks/icons/task_category/tempRepair.svg",
         "alt": "Temporary repair icon"
-      }
+      },
+      "bgImageUrl": "images/help-tasks/icons/task_category/task_category_bg/tempRepairBG.svg"
+    },
+    {
+      "id": "other-category-task",
+      "title": "other category task example",
+      "category": "Other Category",
+      "categoryType": "other-category",
+      "statusLabel": "Standard",
+      "statusLevel": "standard",
+      "joinedCount": 2,
+      "capacity": 8,
+      "ctaLabel": "Join Now",
+      "href": "/tasks/other-category-task",
+      "location": "South Substation",
+      "icon": {
+        "src": "/images/help-tasks/icons/task_category/otherCategory.svg",
+        "alt": "Other category icon"
+      },
+      "bgImageUrl": "images/help-tasks/icons/task_category/task_category_bg/otherCategoryBG.svg"
     }
   ],
   "hero": {
@@ -65,7 +84,7 @@
         "href": "/my-tasks",
         "label": "View Joined Tasks",
         "activeCount": 3,
-        "badgeIcon": "/images/icons/clock-outline.svg",
+        "badgeIcon": "/images/help-tasks/icons/task_category/task_join_status/timer_joined_task.svg",
         "badgeAriaLabel": "Number of joined tasks"
       }
     },

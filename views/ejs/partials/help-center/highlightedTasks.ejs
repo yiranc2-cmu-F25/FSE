@@ -2,7 +2,7 @@
 highlightsection; const tasks = Array.isArray(highlightedtasks) ?
 highlightedtasks : []; %>
 
-<section class="mt-10">
+<section class="mt-4">
   <div class="flex items-center justify-between">
     <h2 class="text-lg font-semibold tracking-tight text-stone-900">
       <%= section.title %>
@@ -20,23 +20,23 @@ highlightedtasks : []; %>
   <% if (tasks.length === 0) { %>
   <p>All tasks are fully joined. Nice work everyone!</p>
   <% } else { %>
-  <div class="-mx-6 mt-4 overflow-x-auto pb-3">
+  <div class="-mx-6 mt-2 overflow-x-auto pb-3">
     <div class="flex gap-4 px-6">
       <% tasks.forEach(function(task) { %>
       <article
-        class="min-w-[260px] max-w-xs flex-1 rounded-3xl bg-gradient-to-br from-stone-50 to-stone-100 p-4 shadow-sm"
+        class="min-w-[260px] max-w-xs flex-1 rounded-3xl bg-gradient-to-br from-stone-50 to-stone-100 bg-cover p-4 shadow-sm"
+        style="<% if (task.bgImageUrl) { %>background-image: url('<%= task.bgImageUrl %>');<% } %>"
       >
         <!-- Top row: icon + title -->
-        <div class="flex items-start gap-3">
+        <div class="flex items-center gap-3">
           <div
-            class="flex h-12 w-12 items-center justify-center rounded-2xl bg-cover bg-center"
-            style="<% if (task.bgImageUrl) { %>background-image: url('<%= task.bgImageUrl %>');<% } %>"
+            class="flex h-16 w-20 items-center justify-center rounded-2xl bg-cover bg-center"
           >
             <% if (task.icon && task.icon.src) { %>
             <img
               src="<%= task.icon.src %>"
               alt="<%= task.icon.alt || '' %>"
-              class="h-6 w-6"
+              class="h-12 w-12 pb-2"
             />
             <% } else { %>
             <!-- textual fallback for icon -->
@@ -59,12 +59,23 @@ highlightedtasks : []; %>
         </div>
 
         <!-- Meta row: joined + urgency -->
-        <div class="mt-4 flex items-center justify-between text-[11px]">
+        <div class="mt-2 flex items-center justify-between text-[11px]">
           <div class="flex items-center gap-2 text-stone-600">
             <span
-              class="inline-flex h-4 w-4 items-center justify-center rounded-full border border-stone-300"
+              class="inline-flex h-4 w-4 items-center justify-center"
               aria-hidden="true"
             >
+              <% if (task.joinedCount === task.capacity) { %>
+              <img
+                src="/images/help-tasks/icons/task_category/task_join_status/task_join_filled.svg"
+                alt="task_joined_filled"
+              />
+              <% } else { %>
+              <img
+                src="/images/help-tasks/icons/task_category/task_join_status/task_join_unfilled.svg"
+                alt="task_joined_unfilled"
+              />
+              <% } %>
               <!-- placeholder circle icon -->
             </span>
             <span>
@@ -85,7 +96,7 @@ highlightedtasks : []; %>
         <!-- CTA -->
         <button
           type="button"
-          class="mt-4 inline-flex w-full items-center justify-center rounded-2xl bg-stone-900/5 px-4 py-2.5 text-sm font-semibold text-amber-800 shadow-sm transition hover:bg-amber-700 hover:text-white"
+          class="hover:bg-brand-primary mt-2 inline-flex w-full items-center justify-center rounded-2xl bg-stone-900/5 px-4 py-2.5 text-sm font-semibold text-amber-800 shadow-sm transition duration-75 hover:text-white"
         >
           <%= task.ctaLabel %>
         </button>
