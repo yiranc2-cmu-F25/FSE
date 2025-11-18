@@ -1,6 +1,7 @@
 import { showSubscriptionModal, shouldShowSubscriptionModal, showUnsubscriptionModal, shouldShowUnsubscriptionModal } from "./subscriptionModal.js";
 import { getSocket } from "../utils/socket.js";
 import { autoResizeTextarea, setupAutoResizeTextarea } from "../utils/autoResizeTextarea.js";
+import { updateLikeButtonUI } from "../utils/likeButton.js";
 
 function badge(text) {
 	const li = document.createElement("li");
@@ -492,20 +493,22 @@ function render(board) {
 	setupCommentEventListenersFn = setupCommentEventListeners;
 	setupReplyEventListenersFn = setupReplyEventListeners;
 
-	function updateLikeButtonUI(likes, currentUserId, likeCountSpan, btn, svg) {
-		const newCount = likes.length;
-		const isLiked = likes.some(likeId => String(likeId) === currentUserId);
-		
-		likeCountSpan.textContent = newCount;
-		if (isLiked) {
-			btn.classList.remove("text-gray-600", "hover:text-red-600");
-			btn.classList.add("text-red-600");
-			svg.setAttribute("fill", "currentColor");
-		} else {
-			btn.classList.remove("text-red-600");
-			btn.classList.add("text-gray-600", "hover:text-red-600");
-			svg.setAttribute("fill", "none");
-		}
+	function setupDeleteHandler(deleteUrl, selector, confirmMessage, errorMessage) {
+		showDeleteModal(confirmMessage, async () => {
+			const res = await fetch(deleteUrl, {
+				method: "DELETE",
+				credentials: "include"
+			});
+			if (res.ok) {
+				const element = document.querySelector(selector);
+				if (element) {
+					element.remove();
+				}
+			} else {
+				const err = await res.json().catch(() => ({}));
+				alert(err?.message || errorMessage);
+			}
+		});
 	}
 
 	function setupCommentEventListeners() {
@@ -551,21 +554,12 @@ function render(board) {
 		document.querySelectorAll(".comment-delete-btn").forEach(btn => {
 			btn.addEventListener("click", () => {
 				const commentId = btn.dataset.commentId;
-				showDeleteModal("Are you sure you want to delete this comment? All replies to this comment will also be deleted.", async () => {
-					const res = await fetch(`/api/coaching-boards/${boardId}/comments/${commentId}`, {
-						method: "DELETE",
-						credentials: "include"
-					});
-					if (res.ok) {
-						const commentElement = document.querySelector(`[data-comment-id="${commentId}"]`);
-						if (commentElement) {
-							commentElement.remove();
-						}
-					} else {
-						const err = await res.json().catch(() => ({}));
-						alert(err?.message || "Failed to delete comment");
-					}
-				});
+				setupDeleteHandler(
+					`/api/coaching-boards/${boardId}/comments/${commentId}`,
+					`[data-comment-id="${commentId}"]`,
+					"Are you sure you want to delete this comment? All replies to this comment will also be deleted.",
+					"Failed to delete comment"
+				);
 			});
 		});
 	}
@@ -627,21 +621,12 @@ function render(board) {
 			btn.addEventListener("click", () => {
 				const replyCommentId = btn.dataset.commentId;
 				const replyId = btn.dataset.replyId;
-				showDeleteModal("Are you sure you want to delete this reply? All replies to this reply will also be deleted.", async () => {
-					const res = await fetch(`/api/coaching-boards/${boardId}/comments/${replyCommentId}/replies/${replyId}`, {
-						method: "DELETE",
-						credentials: "include"
-					});
-					if (res.ok) {
-						const replyElement = document.querySelector(`[data-reply-id="${replyId}"]`);
-						if (replyElement) {
-							replyElement.remove();
-						}
-					} else {
-						const err = await res.json().catch(() => ({}));
-						alert(err?.message || "Failed to delete reply");
-					}
-				});
+				setupDeleteHandler(
+					`/api/coaching-boards/${boardId}/comments/${replyCommentId}/replies/${replyId}`,
+					`[data-reply-id="${replyId}"]`,
+					"Are you sure you want to delete this reply? All replies to this reply will also be deleted.",
+					"Failed to delete reply"
+				);
 			});
 		});
 	}

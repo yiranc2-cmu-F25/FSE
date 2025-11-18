@@ -23,6 +23,28 @@ async function getPresetsWithArrays() {
 	};
 }
 
+async function validateAndGetPresets(req, res, fieldName, bodyField) {
+	const value = req.body[bodyField];
+	const validation = validateNonEmptyString(value, fieldName);
+	if (!validation.valid) {
+		res.status(400).json({ status: "error", message: validation.message });
+		return null;
+	}
+	
+	const { presets, categories, skills } = await getPresetsWithArrays();
+	return {
+		trimmed: validation.trimmed,
+		presets,
+		categories,
+		skills
+	};
+}
+
+async function updateAndReturnPresets(res, categories, skills) {
+	const updated = await CategorySkillPresetDac.updatePresets({ categories, skills });
+	return res.status(200).json(formatPresetsResponse(updated));
+}
+
 export async function getPresets(req, res) {
 	try {
 		const presets = await CategorySkillPresetDac.getPresets();
@@ -41,8 +63,7 @@ export async function updatePresets(req, res) {
 			return res.status(400).json({ status: "error", message: "Categories and skills must be arrays" });
 		}
 		
-		const updated = await CategorySkillPresetDac.updatePresets({ categories, skills });
-		return res.status(200).json(formatPresetsResponse(updated));
+		return await updateAndReturnPresets(res, categories, skills);
 	} catch (err) {
 		console.error("updatePresets error", err);
 		return res.status(500).json({ status: "error", message: "Server error" });
@@ -64,12 +85,7 @@ export async function addCategory(req, res) {
 			return res.status(409).json({ status: "error", message: "Category already exists" });
 		}
 		
-		const updated = await CategorySkillPresetDac.updatePresets({
-			categories: [...categories, trimmedCategory],
-			skills: presets.skills || []
-		});
-		
-		return res.status(200).json(formatPresetsResponse(updated));
+		return await updateAndReturnPresets(res, [...categories, trimmedCategory], presets.skills || []);
 	} catch (err) {
 		console.error("addCategory error", err);
 		return res.status(500).json({ status: "error", message: "Server error" });
@@ -91,12 +107,7 @@ export async function deleteCategory(req, res) {
 			return res.status(404).json({ status: "error", message: "Category not found" });
 		}
 		
-		const updated = await CategorySkillPresetDac.updatePresets({
-			categories: categories.filter(c => c !== trimmedCategory),
-			skills: presets.skills || []
-		});
-		
-		return res.status(200).json(formatPresetsResponse(updated));
+		return await updateAndReturnPresets(res, categories.filter(c => c !== trimmedCategory), presets.skills || []);
 	} catch (err) {
 		console.error("deleteCategory error", err);
 		return res.status(500).json({ status: "error", message: "Server error" });
@@ -105,25 +116,15 @@ export async function deleteCategory(req, res) {
 
 export async function addSkill(req, res) {
 	try {
-		const { skill } = req.body;
-		const validation = validateNonEmptyString(skill, "Skill");
-		if (!validation.valid) {
-			return res.status(400).json({ status: "error", message: validation.message });
-		}
-		const trimmedSkill = validation.trimmed;
-		
-		const { presets, skills } = await getPresetsWithArrays();
+		const data = await validateAndGetPresets(req, res, "Skill", "skill");
+		if (!data) return;
+		const { trimmed: trimmedSkill, presets, skills } = data;
 		
 		if (skills.includes(trimmedSkill)) {
 			return res.status(409).json({ status: "error", message: "Skill already exists" });
 		}
 		
-		const updated = await CategorySkillPresetDac.updatePresets({
-			categories: presets.categories || [],
-			skills: [...skills, trimmedSkill]
-		});
-		
-		return res.status(200).json(formatPresetsResponse(updated));
+		return await updateAndReturnPresets(res, presets.categories || [], [...skills, trimmedSkill]);
 	} catch (err) {
 		console.error("addSkill error", err);
 		return res.status(500).json({ status: "error", message: "Server error" });
@@ -132,25 +133,15 @@ export async function addSkill(req, res) {
 
 export async function deleteSkill(req, res) {
 	try {
-		const { skill } = req.body;
-		const validation = validateNonEmptyString(skill, "Skill");
-		if (!validation.valid) {
-			return res.status(400).json({ status: "error", message: validation.message });
-		}
-		const trimmedSkill = validation.trimmed;
-		
-		const { presets, skills } = await getPresetsWithArrays();
+		const data = await validateAndGetPresets(req, res, "Skill", "skill");
+		if (!data) return;
+		const { trimmed: trimmedSkill, presets, skills } = data;
 		
 		if (!skills.includes(trimmedSkill)) {
 			return res.status(404).json({ status: "error", message: "Skill not found" });
 		}
 		
-		const updated = await CategorySkillPresetDac.updatePresets({
-			categories: presets.categories || [],
-			skills: skills.filter(s => s !== trimmedSkill)
-		});
-		
-		return res.status(200).json(formatPresetsResponse(updated));
+		return await updateAndReturnPresets(res, presets.categories || [], skills.filter(s => s !== trimmedSkill));
 	} catch (err) {
 		console.error("deleteSkill error", err);
 		return res.status(500).json({ status: "error", message: "Server error" });

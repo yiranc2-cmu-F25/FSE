@@ -1,6 +1,8 @@
 import { getSocket } from "../utils/socket.js";
-import { el, setupModalEventListeners, openModal } from "../utils/domHelpers.js";
+import { el } from "../utils/domHelpers.js";
+import { setupModalEventListeners, openModal } from "../utils/modalHelpers.js";
 import { fetchCategorySkillPresets } from "../utils/presets.js";
+import { createSkillTag } from "../utils/skillTags.js";
 
 let CATEGORY_PRESET = [];
 let SKILL_PRESET = [];
@@ -122,16 +124,10 @@ function renderSkillTags() {
 	const list = document.getElementById("skillsTagList");
 	list.innerHTML = "";
 	selectedSkills.forEach(s => {
-		const tag = el("span", { className: "inline-flex items-center gap-2 rounded-full bg-stone-100 px-3 py-1 text-xs font-medium text-stone-800" });
-		const text = el("span", { text: s });
-		const remove = el("button", { type: "button", className: "rounded-full bg-stone-200 px-1 text-stone-700" });
-		remove.innerHTML = "&times;";
-		remove.addEventListener("click", () => {
-			selectedSkills = selectedSkills.filter(x => x !== s);
+		const tag = createSkillTag(s, (skill) => {
+			selectedSkills = selectedSkills.filter(x => x !== skill);
 			renderSkillTags();
 		});
-		tag.appendChild(text);
-		tag.appendChild(remove);
 		list.appendChild(tag);
 	});
 }

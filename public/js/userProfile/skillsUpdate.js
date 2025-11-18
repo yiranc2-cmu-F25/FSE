@@ -2,6 +2,7 @@ import { loadInfo } from "../utils/loadUserInfo.js";
 import { getInitialsSafe, getAvatarColor } from "../utils/avatars.js";
 import { el } from "../utils/domHelpers.js";
 import { fetchCategorySkillPresets } from "../utils/presets.js";
+import { createSkillTag } from "../utils/skillTags.js";
 
 let SKILL_PRESET = [];
 let selectedSkills = [];
@@ -91,22 +92,13 @@ function renderSkillTags() {
     if (noSkillsMsg) noSkillsMsg.classList.add("hidden");
     
     selectedSkills.forEach((s) => {
-      const tag = el("span", {
-        className:
-          "inline-flex items-center gap-2 rounded-full bg-stone-100 px-3 py-1 text-sm font-medium text-stone-800",
-      });
-      const text = el("span", { text: s });
-      const remove = el("button", {
-        type: "button",
-        className: "rounded-full bg-stone-200 hover:bg-stone-300 px-1.5 text-stone-700 transition",
-      });
-      remove.innerHTML = "&times;";
-      remove.addEventListener("click", () => {
-        selectedSkills = selectedSkills.filter((x) => x !== s);
+      const tag = createSkillTag(s, (skill) => {
+        selectedSkills = selectedSkills.filter((x) => x !== skill);
         renderSkillTags();
+      }, {
+        tagClassName: "inline-flex items-center gap-2 rounded-full bg-stone-100 px-3 py-1 text-sm font-medium text-stone-800",
+        removeClassName: "rounded-full bg-stone-200 hover:bg-stone-300 px-1.5 text-stone-700 transition"
       });
-      tag.appendChild(text);
-      tag.appendChild(remove);
       list.appendChild(tag);
     });
   }

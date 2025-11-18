@@ -1,4 +1,4 @@
-import { setupModalEventListeners } from "../utils/domHelpers.js";
+import { setupModalEventListeners } from "../utils/modalHelpers.js";
 
 function getDontShowKey(userId) {
 	if (!userId) return null;
