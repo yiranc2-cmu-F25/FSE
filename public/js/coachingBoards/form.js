@@ -616,9 +616,7 @@ function setupActions(isEditMode = false, boardId = null) {
 	exitConfirmBtn?.addEventListener("click", async () => {
 		if (!isEditMode) {
 			const payload = readForm();
-			try {
-				await saveDraft(payload);
-			} catch {}
+			await saveDraft(payload);
 		}
 		window.location.href = isEditMode && boardId ? `/boards/${boardId}` : "/boards";
 	});

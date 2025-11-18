@@ -913,7 +913,6 @@ function setupShareButton(boardId) {
 			updateCharCount();
 			
 			if (isReply && storedTargetId) {
-				console.log("[REPLY INSERT] 开始处理新reply插入");
 				const isReplyToReply = storedTargetId.startsWith("reply:");
 				const targetReplyId = isReplyToReply ? storedTargetId.replace("reply:", "") : null;
 				
@@ -922,18 +921,15 @@ function setupShareButton(boardId) {
 					const targetReplyElement = document.querySelector(`[data-reply-id="${targetReplyId}"]`);
 					if (targetReplyElement) {
 						commentElement = targetReplyElement.closest('[data-comment-id]');
-						console.log("[REPLY INSERT] 通过DOM找到comment element:", commentElement ? "找到" : "未找到");
 					}
 				}
 				
 				const boardRes = await fetch(`/api/coaching-boards/${boardId}`, { credentials: "include" });
 				if (!boardRes.ok) {
-					console.log("[REPLY INSERT] 获取board失败");
 					return;
 				}
 				
 				const updatedBoard = await boardRes.json();
-				console.log("[REPLY INSERT] 获取到updatedBoard");
 				
 				let targetComment = null;
 				if (isReplyToReply) {
@@ -971,27 +967,14 @@ function setupShareButton(boardId) {
 					targetComment = (updatedBoard.comments || []).find(c => String(c.id || c._id) === storedTargetId);
 				}
 				
-				console.log("[REPLY INSERT] targetComment:", targetComment ? "找到" : "未找到", "renderRepliesFn:", !!renderRepliesFn, "setupReplyEventListenersFn:", !!setupReplyEventListenersFn);
 				if (!targetComment || !renderRepliesFn || !setupReplyEventListenersFn) return;
 				
 				const now = Date.now();
-				console.log("[REPLY INSERT] 当前时间:", now, "currentUserId:", currentUserId);
-				console.log("[REPLY INSERT] targetComment.replies数量:", (targetComment.replies || []).length);
 				
 				(targetComment.replies || []).forEach((r, index) => {
 					const replyTime = new Date(r.timestamp).getTime();
 					const timeDiff = Math.abs(replyTime - now);
 					const authorMatch = String(r.author) === currentUserId;
-					console.log(`[REPLY INSERT] Reply ${index + 1}:`, {
-						id: r.id || r._id,
-						author: r.author,
-						authorMatch,
-						timestamp: r.timestamp,
-						replyTime,
-						timeDiff,
-						timeMatch: timeDiff < 10000,
-						allMatch: authorMatch && timeDiff < 10000
-					});
 				});
 				
 				let newReply = (targetComment.replies || []).find(r => {
@@ -999,51 +982,38 @@ function setupShareButton(boardId) {
 					return String(r.author) === currentUserId && timeDiff < 10000;
 				});
 				
-				console.log("[REPLY INSERT] newReply:", newReply ? `找到 ID:${newReply.id || newReply._id}` : "未找到");
 				if (!newReply) {
-					console.log("[REPLY INSERT] 尝试扩大时间窗口到30秒...");
 					newReply = (targetComment.replies || []).find(r => {
 						const timeDiff = Math.abs(new Date(r.timestamp).getTime() - now);
 						return String(r.author) === currentUserId && timeDiff < 30000;
 					});
-					if (newReply) {
-						console.log("[REPLY INSERT] 扩大时间窗口后找到:", newReply.id || newReply._id);
-					} else {
-						console.log("[REPLY INSERT] 扩大时间窗口后仍未找到，尝试只匹配author...");
+					if (!newReply) {
 						const userReplies = (targetComment.replies || []).filter(r => String(r.author) === currentUserId);
 						if (userReplies.length > 0) {
 							userReplies.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 							newReply = userReplies[0];
-							console.log("[REPLY INSERT] 通过author匹配找到最新reply:", newReply.id || newReply._id);
 						} else {
-							console.log("[REPLY INSERT] 完全找不到新reply");
 							return;
 						}
 					}
 				}
-				try {
-					const authorNameRes = await fetch(`/api/users/${newReply.author}`, { credentials: "include" });
-					if (authorNameRes.ok) {
-						const authorData = await authorNameRes.json();
-						newReply.authorName = authorData.username || "Unknown";
-					}
-				} catch {}
-				
+				const authorNameRes = await fetch(`/api/users/${newReply.author}`, { credentials: "include" });
+				if (authorNameRes.ok) {
+					const authorData = await authorNameRes.json();
+					newReply.authorName = authorData.username || "Unknown";
+				}
+
 				if (!commentElement) {
 					commentElement = document.querySelector(`[data-comment-id="${targetComment.id}"]`);
 				}
-				console.log("[REPLY INSERT] commentElement:", commentElement ? "找到" : "未找到");
 				if (!commentElement) return;
 				
 				const actionsDiv = commentElement.querySelector(".mt-2.flex.items-center.gap-3");
 				if (!actionsDiv) {
-					console.log("[REPLY INSERT] actionsDiv未找到");
 					return;
 				}
 				
 				let repliesContainer = commentElement.querySelector(`[data-replies-container="${targetComment.id}"]`);
-				const existingRepliesCount = repliesContainer ? repliesContainer.children.length : 0;
-				console.log("[REPLY INSERT] repliesContainer:", repliesContainer ? "找到" : "未找到", "现有replies数量:", existingRepliesCount);
 				
 				if (!repliesContainer) {
 					const repliesDiv = document.createElement("div");
@@ -1051,36 +1021,28 @@ function setupShareButton(boardId) {
 					repliesDiv.setAttribute("data-replies-container", targetComment.id);
 					actionsDiv.after(repliesDiv);
 					repliesContainer = repliesDiv;
-					console.log("[REPLY INSERT] 创建了新的repliesContainer");
 				}
 				
 				const newReplyHtml = renderRepliesFn([newReply], targetComment.id);
 				const tempDiv = document.createElement("div");
 				tempDiv.innerHTML = newReplyHtml.trim();
 				const newReplyElement = tempDiv.firstElementChild;
-				console.log("[REPLY INSERT] newReplyElement:", newReplyElement ? "创建成功" : "创建失败");
 				if (!newReplyElement) return;
 				
 				const beforeInsert = Array.from(repliesContainer.children).map(el => el.getAttribute("data-reply-id")).filter(Boolean);
-				console.log("[REPLY INSERT] 插入前replies顺序:", beforeInsert);
 				
 				if (isReplyToReply && targetReplyId) {
 					const targetReplyElement = repliesContainer.querySelector(`[data-reply-id="${targetReplyId}"]`);
 					if (targetReplyElement) {
 						targetReplyElement.insertAdjacentElement("afterend", newReplyElement);
-						console.log("[REPLY INSERT] 插入到被回复的reply后面");
 					} else {
 						repliesContainer.insertBefore(newReplyElement, repliesContainer.firstChild);
-						console.log("[REPLY INSERT] 找不到被回复的reply，插入到最前面");
 					}
 				} else {
 					repliesContainer.insertBefore(newReplyElement, repliesContainer.firstChild);
-					console.log("[REPLY INSERT] 回复comment，插入到最前面");
 				}
 				
 				const afterInsert = Array.from(repliesContainer.children).map(el => el.getAttribute("data-reply-id")).filter(Boolean);
-				console.log("[REPLY INSERT] 插入后replies顺序:", afterInsert);
-				console.log("[REPLY INSERT] 新reply位置:", afterInsert.indexOf(String(newReply.id || newReply._id)) + 1);
 				
 				setupReplyEventListenersFn(targetComment.id);
 				
@@ -1102,13 +1064,11 @@ function setupShareButton(boardId) {
 					});
 					
 					if (newComment) {
-						try {
-							const authorNameRes = await fetch(`/api/users/${newComment.author}`, { credentials: "include" });
-							if (authorNameRes.ok) {
-								const authorData = await authorNameRes.json();
-								newComment.authorName = authorData.username || "Unknown";
-							}
-						} catch {}
+						const authorNameRes = await fetch(`/api/users/${newComment.author}`, { credentials: "include" });
+						if (authorNameRes.ok) {
+							const authorData = await authorNameRes.json();
+							newComment.authorName = authorData.username || "Unknown";
+						}
 						
 						const commentsContainer = document.getElementById("comments");
 						if (renderCommentFn && setupCommentEventListenersFn && setupReplyEventListenersFn) {
@@ -1153,13 +1113,11 @@ function setupShareButton(boardId) {
 		if (String(newComment.author) === currentUserId) return;
 		
 		if (!newComment.authorName) {
-			try {
-				const authorNameRes = await fetch(`/api/users/${newComment.author}`, { credentials: "include" });
-				if (authorNameRes.ok) {
-					const authorData = await authorNameRes.json();
-					newComment.authorName = authorData.username || "Unknown";
-				}
-			} catch {}
+			const authorNameRes = await fetch(`/api/users/${newComment.author}`, { credentials: "include" });
+			if (authorNameRes.ok) {
+				const authorData = await authorNameRes.json();
+				newComment.authorName = authorData.username || "Unknown";
+			}
 		}
 		
 		const commentsContainer = document.getElementById("comments");
@@ -1193,13 +1151,11 @@ function setupShareButton(boardId) {
 		}
 		
 		if (!newReply.authorName) {
-			try {
-				const authorNameRes = await fetch(`/api/users/${newReply.author}`, { credentials: "include" });
-				if (authorNameRes.ok) {
-					const authorData = await authorNameRes.json();
-					newReply.authorName = authorData.username || "Unknown";
-				}
-			} catch {}
+			const authorNameRes = await fetch(`/api/users/${newReply.author}`, { credentials: "include" });
+			if (authorNameRes.ok) {
+				const authorData = await authorNameRes.json();
+				newReply.authorName = authorData.username || "Unknown";
+			}
 		}
 		
 		if (renderRepliesFn && setupReplyEventListenersFn) {

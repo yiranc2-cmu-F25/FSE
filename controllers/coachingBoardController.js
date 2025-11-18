@@ -16,7 +16,7 @@ async function validateRequiredPublishFields(body) {
 	const { title, category, description, objective, steps, relatedSkills } = body ?? {};
 	if (!validateTitle(title)) return { ok: false, message: "Title must be non-empty and < 50 characters." };
 	
-	const presets = await CoachingBoardPresetDac.getPresets();
+	const presets = await CategorySkillPresetDac.getPresets();
 	const categories = presets.categories || [];
 	const skills = presets.skills || [];
 	
@@ -82,10 +82,7 @@ export async function getBoard(req, res) {
 		if (!id) return res.status(400).json({ status: "error", message: "Missing board id" });
 		const board = await CoachingBoard.getById({ id });
 		if (!board) return res.status(404).json({ status: "error", message: "Board not found" });
-		let authorName = "";
-		try {
-			authorName = await User.getUsernameById(board.author);
-		} catch {}
+		const authorName = await User.getUsernameById(board.author) || "";
 
 		const highlightCommentId = req.query?.highlightComment ? String(req.query.highlightComment) : null;
 		
@@ -611,25 +608,21 @@ export async function addComment(req, res) {
 			} else {
 				for (const c of (board.comments || [])) {
 					for (const r of (c.replies || [])) {
-						try {
-							const replyAuthorName = await User.getUsernameById(r.author);
-							if (replyAuthorName === username) {
-								targetReply = r;
-								targetComment = c;
-								break;
-							}
-						} catch {}
+						const replyAuthorName = await User.getUsernameById(r.author);
+						if (replyAuthorName === username) {
+							targetReply = r;
+							targetComment = c;
+							break;
+						}
 					}
 					if (targetReply) break;
 					
 					if (!targetReply) {
-						try {
-							const commentAuthorName = await User.getUsernameById(c.author);
-							if (commentAuthorName === username) {
-								targetComment = c;
-								break;
-							}
-						} catch {}
+						const commentAuthorName = await User.getUsernameById(c.author);
+						if (commentAuthorName === username) {
+							targetComment = c;
+							break;
+						}
 					}
 				}
 			}
@@ -662,10 +655,8 @@ export async function addComment(req, res) {
 							Math.abs(new Date(r.timestamp).getTime() - Date.now()) < 5000
 						);
 						if (newReply) {
-							try {
-								const authorName = await User.getUsernameById(requesterId);
-								newReply.authorName = authorName || "Unknown";
-							} catch {}
+							const authorName = await User.getUsernameById(requesterId);
+							newReply.authorName = authorName || "Unknown";
 							socketInstance.emitCoachingBoardReply(id, targetComment.id, newReply);
 						}
 					}
@@ -727,10 +718,8 @@ export async function addComment(req, res) {
 					Math.abs(new Date(c.timestamp).getTime() - Date.now()) < 5000
 				);
 				if (newComment) {
-					try {
-						const authorName = await User.getUsernameById(requesterId);
-						newComment.authorName = authorName || "Unknown";
-					} catch {}
+					const authorName = await User.getUsernameById(requesterId);
+					newComment.authorName = authorName || "Unknown";
 					socketInstance.emitCoachingBoardComment(id, newComment);
 				}
 			}
