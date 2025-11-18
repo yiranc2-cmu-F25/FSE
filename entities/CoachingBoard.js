@@ -22,19 +22,23 @@ class CoachingBoard {
 		return await CoachingBoard.DAO.checkDuplicateTitle({ title, category });
 	}
 
+	getPayload() {
+		return {
+			title: this.title,
+			category: this.category,
+			description: this.description,
+			objective: this.objective,
+			steps: this.steps,
+			relatedSkills: this.relatedSkills,
+			tools: this.tools,
+			notes: this.notes
+		};
+	}
+
 	async saveDraft() {
 		return await CoachingBoard.DAO.createDraftOrUpdate({
 			author: this.author,
-			payload: {
-				title: this.title,
-				category: this.category,
-				description: this.description,
-				objective: this.objective,
-				steps: this.steps,
-				relatedSkills: this.relatedSkills,
-				tools: this.tools,
-				notes: this.notes
-			}
+			payload: this.getPayload()
 		});
 	}
 
@@ -45,32 +49,14 @@ class CoachingBoard {
 	async publishNew() {
 		return await CoachingBoard.DAO.publishNew({
 			author: this.author,
-			payload: {
-				title: this.title,
-				category: this.category,
-				description: this.description,
-				objective: this.objective,
-				steps: this.steps,
-				relatedSkills: this.relatedSkills,
-				tools: this.tools,
-				notes: this.notes
-			}
+			payload: this.getPayload()
 		});
 	}
 
 	async publishFromDraft() {
 		return await CoachingBoard.DAO.publishFromDraft({
 			author: this.author,
-			payload: {
-				title: this.title,
-				category: this.category,
-				description: this.description,
-				objective: this.objective,
-				steps: this.steps,
-				relatedSkills: this.relatedSkills,
-				tools: this.tools,
-				notes: this.notes
-			}
+			payload: this.getPayload()
 		});
 	}
 

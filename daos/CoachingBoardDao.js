@@ -169,7 +169,7 @@ export class CoachingBoardDao {
 		);
 	}
 
-	async toggleCommentLike({ id, commentId, userId }) {
+	async #findBoardAndComment({ id, commentId }) {
 		const board = await this.CoachingBoardModel.findOne({
 			_id: id,
 			publicationState: "published",
@@ -180,75 +180,74 @@ export class CoachingBoardDao {
 		const comment = board.comments.id(commentId);
 		if (!comment) return null;
 		
-		const isLiked = comment.likes && comment.likes.some(likeId => String(likeId) === String(userId));
+		return { board, comment };
+	}
+
+	#toggleLike(likesArray, userId) {
+		const isLiked = likesArray.some(likeId => String(likeId) === String(userId));
 		
 		if (isLiked) {
-			comment.likes.pull(userId);
+			likesArray.pull(userId);
 		} else {
-			if (!comment.likes) comment.likes = [];
-			comment.likes.push(userId);
+			likesArray.push(userId);
 		}
-		
+	}
+
+	async #saveAndReturnBoard(board) {
 		await board.save();
 		return this.#toBoard(board.toObject());
 	}
 
-	async toggleReplyLike({ id, commentId, replyId, userId }) {
-		const board = await this.CoachingBoardModel.findOne({
-			_id: id,
-			publicationState: "published",
-			"comments._id": commentId
-		});
-		if (!board) return null;
+	async toggleCommentLike({ id, commentId, userId }) {
+		const result = await this.#findBoardAndComment({ id, commentId });
+		if (!result) return null;
+		const { board, comment } = result;
 		
-		const comment = board.comments.id(commentId);
-		if (!comment) return null;
+		if (!comment.likes) comment.likes = [];
+		this.#toggleLike(comment.likes, userId);
+		
+		return await this.#saveAndReturnBoard(board);
+	}
+
+	async #findBoardCommentAndReply({ id, commentId, replyId }) {
+		const result = await this.#findBoardAndComment({ id, commentId });
+		if (!result) return null;
+		const { board, comment } = result;
 		
 		const reply = comment.replies.id(replyId);
 		if (!reply) return null;
 		
-		const isLiked = reply.likes && reply.likes.some(likeId => String(likeId) === String(userId));
+		return { board, comment, reply };
+	}
+
+	async toggleReplyLike({ id, commentId, replyId, userId }) {
+		const result = await this.#findBoardCommentAndReply({ id, commentId, replyId });
+		if (!result) return null;
+		const { board, reply } = result;
 		
-		if (isLiked) {
-			reply.likes.pull(userId);
-		} else {
-			if (!reply.likes) reply.likes = [];
-			reply.likes.push(userId);
-		}
+		if (!reply.likes) reply.likes = [];
+		this.#toggleLike(reply.likes, userId);
 		
-		await board.save();
-		return this.#toBoard(board.toObject());
+		return await this.#saveAndReturnBoard(board);
 	}
 
 	async deleteComment({ id, commentId, author }) {
-		const board = await this.CoachingBoardModel.findOne({
-			_id: id,
-			publicationState: "published",
-			"comments._id": commentId
-		});
-		if (!board) return null;
+		const result = await this.#findBoardAndComment({ id, commentId });
+		if (!result) return null;
+		const { board, comment } = result;
 		
-		const comment = board.comments.id(commentId);
-		if (!comment || String(comment.author) !== String(author)) return null;
+		if (String(comment.author) !== String(author)) return null;
 		
 		board.comments.pull(commentId);
-		await board.save();
-		return this.#toBoard(board.toObject());
+		return await this.#saveAndReturnBoard(board);
 	}
 
 	async deleteReply({ id, commentId, replyId, author }) {
-		const board = await this.CoachingBoardModel.findOne({
-			_id: id,
-			publicationState: "published",
-			"comments._id": commentId
-		});
-		if (!board) return null;
+		const result = await this.#findBoardCommentAndReply({ id, commentId, replyId });
+		if (!result) return null;
+		const { board, comment, reply } = result;
 		
-		const comment = board.comments.id(commentId);
-		if (!comment) return null;
-		
-		const reply = comment.replies.id(replyId);
-		if (!reply || String(reply.author) !== String(author)) return null;
+		if (String(reply.author) !== String(author)) return null;
 		
 		const repliesToDelete = new Set([String(replyId)]);
 		
@@ -271,8 +270,7 @@ export class CoachingBoardDao {
 			comment.replies.pull(replyIdToDelete);
 		}
 		
-		await board.save();
-		return this.#toBoard(board.toObject());
+		return await this.#saveAndReturnBoard(board);
 	}
 
 	async markNotificationSeen({ id, userId }) {

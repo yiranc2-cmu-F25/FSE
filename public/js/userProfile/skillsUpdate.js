@@ -1,22 +1,17 @@
 import { loadInfo } from "../utils/loadUserInfo.js";
 import { getInitialsSafe, getAvatarColor } from "../utils/avatars.js";
+import { el } from "../utils/domHelpers.js";
+import { fetchCategorySkillPresets } from "../utils/presets.js";
 
 let SKILL_PRESET = [];
 let selectedSkills = [];
 let initialSkills = [];
 
 async function fetchPresets() {
-  try {
-    const res = await fetch("/api/category-skill-presets", { credentials: "include" });
-    if (!res.ok) {
-      console.error("Failed to fetch presets");
-      return;
-    }
-    const data = await res.json();
+  const data = await fetchCategorySkillPresets();
+  if (data) {
     SKILL_PRESET = data.skills || [];
     setupSkills();
-  } catch (err) {
-    console.error("Error fetching presets:", err);
   }
 }
 
@@ -79,19 +74,6 @@ function renderUserInfo() {
       console.error("Failed to load user info:", err);
     }
   });
-}
-
-function el(tag, attrs = {}, children = []) {
-  const node = document.createElement(tag);
-  Object.entries(attrs).forEach(([k, v]) => {
-    if (k === "className") node.className = v;
-    else if (k === "text") node.textContent = v;
-    else if (k === "dataset") {
-      Object.entries(v).forEach(([dk, dv]) => (node.dataset[dk] = dv));
-    } else node.setAttribute(k, v);
-  });
-  children.forEach((c) => node.appendChild(c));
-  return node;
 }
 
 function renderSkillTags() {

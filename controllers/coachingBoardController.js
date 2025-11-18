@@ -8,6 +8,15 @@ function getRequesterUserId(req) {
 	return String(req?.auth?.id ?? req?.user?.id ?? req?.userId ?? "");
 }
 
+function requireAuth(req, res) {
+	const requesterId = getRequesterUserId(req);
+	if (!requesterId) {
+		res.status(401).json({ error: "Unauthorized" });
+		return null;
+	}
+	return requesterId;
+}
+
 function validateTitle(title) {
 	return typeof title === "string" && title.trim().length > 0 && title.trim().length < 50;
 }
@@ -40,6 +49,66 @@ async function verifyAtLeastOneUserSkill(req, relatedSkills) {
 		console.error("Error verifying user skills:", err);
 		return false;
 	}
+}
+
+async function createUsernameMap(userIds) {
+	const usernamePromises = Array.from(userIds).map(async (userId) => {
+		try {
+			const username = await User.getUsernameById(userId);
+			return { userId, username: username || "Unknown" };
+		} catch {
+			return { userId, username: "Unknown" };
+		}
+	});
+	
+	const usernameResults = await Promise.all(usernamePromises);
+	const usernameMap = new Map();
+	usernameResults.forEach(({ userId, username }) => {
+		usernameMap.set(userId, username);
+	});
+	
+	return usernameMap;
+}
+
+function sortRepliesByLikesAndTime(replies) {
+	if (!Array.isArray(replies)) return;
+	replies.sort((a, b) => {
+		const aLikes = (a.likes || []).length;
+		const bLikes = (b.likes || []).length;
+		if (aLikes !== bLikes) {
+			return bLikes - aLikes;
+		}
+		const aTime = new Date(a.timestamp || 0).getTime();
+		const bTime = new Date(b.timestamp || 0).getTime();
+		return bTime - aTime;
+	});
+}
+
+function collectUserIdsFromComments(comments) {
+	const userIds = new Set();
+	for (const comment of comments) {
+		userIds.add(String(comment.author));
+		if (comment.replies && Array.isArray(comment.replies)) {
+			for (const reply of comment.replies) {
+				userIds.add(String(reply.author));
+			}
+		}
+	}
+	return userIds;
+}
+
+function parsePaginationParams(req) {
+	const skip = parseInt(req.query?.skip || "0", 10);
+	const limit = parseInt(req.query?.limit || "10", 10);
+	return { skip, limit };
+}
+
+async function getBoardAndComment(id, commentId) {
+	const board = await CoachingBoard.getById({ id });
+	if (!board) return { board: null, comment: null };
+	
+	const comment = commentId ? (board.comments || []).find(c => c.id === commentId) : null;
+	return { board, comment };
 }
 
 
@@ -243,8 +312,7 @@ export async function getMoreComments(req, res) {
 		const id = String(req.params?.bid ?? "");
 		if (!id) return res.status(400).json({ status: "error", message: "Missing board id" });
 		
-		const skip = parseInt(req.query?.skip || "0", 10);
-		const limit = parseInt(req.query?.limit || "10", 10);
+		const { skip, limit } = parsePaginationParams(req);
 		
 		const board = await CoachingBoard.getById({ id });
 		if (!board) return res.status(404).json({ status: "error", message: "Board not found" });
@@ -265,44 +333,14 @@ export async function getMoreComments(req, res) {
 		const allComments = board.comments || [];
 		const paginatedComments = allComments.slice(skip, skip + limit);
 		
-		const userIds = new Set();
-		for (const comment of paginatedComments) {
-			userIds.add(String(comment.author));
-			if (comment.replies && Array.isArray(comment.replies)) {
-				for (const reply of comment.replies) {
-					userIds.add(String(reply.author));
-				}
-			}
-		}
+		const userIds = collectUserIdsFromComments(paginatedComments);
 		
-		const usernamePromises = Array.from(userIds).map(async (userId) => {
-			try {
-				const username = await User.getUsernameById(userId);
-				return { userId, username: username || "Unknown" };
-			} catch {
-				return { userId, username: "Unknown" };
-			}
-		});
-		
-		const usernameResults = await Promise.all(usernamePromises);
-		const usernameMap = new Map();
-		usernameResults.forEach(({ userId, username }) => {
-			usernameMap.set(userId, username);
-		});
+		const usernameMap = await createUsernameMap(userIds);
 		
 		for (const comment of paginatedComments) {
 			comment.authorName = usernameMap.get(String(comment.author)) || "Unknown";
 			if (comment.replies && Array.isArray(comment.replies)) {
-				comment.replies.sort((a, b) => {
-					const aLikes = (a.likes || []).length;
-					const bLikes = (b.likes || []).length;
-					if (aLikes !== bLikes) {
-						return bLikes - aLikes;
-					}
-					const aTime = new Date(a.timestamp || 0).getTime();
-					const bTime = new Date(b.timestamp || 0).getTime();
-					return bTime - aTime;
-				});
+				sortRepliesByLikesAndTime(comment.replies);
 				comment.totalReplies = comment.replies.length;
 				comment.replies = comment.replies.slice(0, 1);
 				for (const reply of comment.replies) {
@@ -332,26 +370,14 @@ export async function getMoreReplies(req, res) {
 			return res.status(400).json({ status: "error", message: "Missing board id or comment id" });
 		}
 		
-		const skip = parseInt(req.query?.skip || "0", 10);
-		const limit = parseInt(req.query?.limit || "10", 10);
+		const { skip, limit } = parsePaginationParams(req);
 		
-		const board = await CoachingBoard.getById({ id });
+		const { board, comment } = await getBoardAndComment(id, commentId);
 		if (!board) return res.status(404).json({ status: "error", message: "Board not found" });
-		
-		const comment = (board.comments || []).find(c => c.id === commentId);
 		if (!comment) return res.status(404).json({ status: "error", message: "Comment not found" });
 		
 		if (comment.replies && Array.isArray(comment.replies)) {
-			comment.replies.sort((a, b) => {
-				const aLikes = (a.likes || []).length;
-				const bLikes = (b.likes || []).length;
-				if (aLikes !== bLikes) {
-					return bLikes - aLikes;
-				}
-				const aTime = new Date(a.timestamp || 0).getTime();
-				const bTime = new Date(b.timestamp || 0).getTime();
-				return bTime - aTime;
-			});
+			sortRepliesByLikesAndTime(comment.replies);
 		}
 		
 		const allReplies = comment.replies || [];
@@ -362,20 +388,7 @@ export async function getMoreReplies(req, res) {
 			userIds.add(String(reply.author));
 		}
 		
-		const usernamePromises = Array.from(userIds).map(async (userId) => {
-			try {
-				const username = await User.getUsernameById(userId);
-				return { userId, username: username || "Unknown" };
-			} catch {
-				return { userId, username: "Unknown" };
-			}
-		});
-		
-		const usernameResults = await Promise.all(usernamePromises);
-		const usernameMap = new Map();
-		usernameResults.forEach(({ userId, username }) => {
-			usernameMap.set(userId, username);
-		});
+		const usernameMap = await createUsernameMap(userIds);
 		
 		for (const reply of paginatedReplies) {
 			reply.authorName = usernameMap.get(String(reply.author)) || "Unknown";
@@ -761,15 +774,18 @@ export async function addComment(req, res) {
 
 export async function toggleCommentLike(req, res) {
 	try {
-		const requesterId = getRequesterUserId(req);
-		if (!requesterId) return res.status(401).json({ error: "Unauthorized" });
+		const requesterId = requireAuth(req, res);
+		if (!requesterId) return;
+		
 		const id = String(req.params?.bid ?? "");
 		const commentId = String(req.params?.cid ?? "");
 		if (!id || !commentId) {
 			return res.status(400).json({ status: "error", message: "Missing required fields" });
 		}
+		
 		const updated = await CoachingBoard.toggleCommentLike({ id, commentId, userId: requesterId });
 		if (!updated) return res.status(404).json({ status: "error", message: "Board or comment not found" });
+		
 		return res.status(200).json({ message: "Like toggled successfully" });
 	} catch (err) {
 		console.error("toggleCommentLike error", err);
@@ -779,16 +795,19 @@ export async function toggleCommentLike(req, res) {
 
 export async function toggleReplyLike(req, res) {
 	try {
-		const requesterId = getRequesterUserId(req);
-		if (!requesterId) return res.status(401).json({ error: "Unauthorized" });
+		const requesterId = requireAuth(req, res);
+		if (!requesterId) return;
+		
 		const id = String(req.params?.bid ?? "");
 		const commentId = String(req.params?.cid ?? "");
 		const replyId = String(req.params?.rid ?? "");
 		if (!id || !commentId || !replyId) {
 			return res.status(400).json({ status: "error", message: "Missing required fields" });
 		}
+		
 		const updated = await CoachingBoard.toggleReplyLike({ id, commentId, replyId, userId: requesterId });
 		if (!updated) return res.status(404).json({ status: "error", message: "Board, comment, or reply not found" });
+		
 		return res.status(200).json({ message: "Like toggled successfully" });
 	} catch (err) {
 		console.error("toggleReplyLike error", err);

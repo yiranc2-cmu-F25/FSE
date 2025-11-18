@@ -1,34 +1,16 @@
 import { getSocket } from "../utils/socket.js";
+import { el, setupModalEventListeners, openModal } from "../utils/domHelpers.js";
+import { fetchCategorySkillPresets } from "../utils/presets.js";
 
 let CATEGORY_PRESET = [];
 let SKILL_PRESET = [];
 
 async function fetchPresets() {
-	try {
-		const res = await fetch("/api/category-skill-presets", { credentials: "include" });
-		if (!res.ok) {
-			console.error("Failed to fetch presets");
-			return;
-		}
-		const data = await res.json();
+	const data = await fetchCategorySkillPresets();
+	if (data) {
 		CATEGORY_PRESET = data.categories || [];
 		SKILL_PRESET = data.skills || [];
-	} catch (err) {
-		console.error("Error fetching presets:", err);
 	}
-}
-
-function el(tag, attrs = {}, children = []) {
-	const node = document.createElement(tag);
-	Object.entries(attrs).forEach(([k, v]) => {
-		if (k === "className") node.className = v;
-		else if (k === "text") node.textContent = v;
-		else if (k === "dataset") {
-			Object.entries(v).forEach(([dk, dv]) => (node.dataset[dk] = dv));
-		} else node.setAttribute(k, v);
-	});
-	children.forEach(c => node.appendChild(c));
-	return node;
 }
 
 let selectedSkills = [];
@@ -375,11 +357,7 @@ function debounce(func, wait) {
 function showDuplicateModal(boardId) {
 	duplicateState = { isDuplicate: true, boardId };
 	const modal = document.getElementById("duplicateModal");
-	if (modal) {
-		modal.classList.remove("hidden");
-		modal.classList.add("flex");
-		modal.setAttribute("aria-hidden", "false");
-	}
+	openModal(modal);
 }
 
 function hideDuplicateModal() {
@@ -630,9 +608,7 @@ function showDraftSavedModal() {
 	
 	if (!modal.classList.contains("hidden")) return;
 	
-	modal.classList.remove("hidden");
-	modal.classList.add("flex");
-	modal.setAttribute("aria-hidden", "false");
+	openModal(modal);
 	
 	const closeModal = () => {
 		modal.classList.add("hidden");
@@ -641,71 +617,36 @@ function showDraftSavedModal() {
 		window.location.href = "/boards";
 	};
 	
-	okBtn.addEventListener("click", closeModal, { once: true });
+	setupModalEventListeners(modal, okBtn, closeModal);
+}
+
+function showErrorModal(message, modalId, messageElId, okBtnId) {
+	const modal = document.getElementById(modalId);
+	const messageEl = document.getElementById(messageElId);
+	const okBtn = document.getElementById(okBtnId);
 	
-	modal.addEventListener("click", (e) => {
-		if (e.target === modal) {
-			closeModal();
-		}
-	}, { once: true });
+	if (!modal || !messageEl || !okBtn) return;
+	
+	if (!modal.classList.contains("hidden")) return;
+	
+	messageEl.textContent = message;
+	openModal(modal);
+	
+	const closeModal = () => {
+		modal.classList.add("hidden");
+		modal.classList.remove("flex");
+		modal.setAttribute("aria-hidden", "true");
+	};
+	
+	setupModalEventListeners(modal, okBtn, closeModal);
 }
 
 function showSkillErrorModal(message) {
-	const modal = document.getElementById("skillErrorModal");
-	const messageEl = document.getElementById("skillErrorMessage");
-	const okBtn = document.getElementById("skillErrorOkBtn");
-	
-	if (!modal || !messageEl || !okBtn) return;
-	
-	if (!modal.classList.contains("hidden")) return;
-	
-	messageEl.textContent = message;
-	modal.classList.remove("hidden");
-	modal.classList.add("flex");
-	modal.setAttribute("aria-hidden", "false");
-	
-	const closeModal = () => {
-		modal.classList.add("hidden");
-		modal.classList.remove("flex");
-		modal.setAttribute("aria-hidden", "true");
-	};
-	
-	okBtn.addEventListener("click", closeModal, { once: true });
-	
-	modal.addEventListener("click", (e) => {
-		if (e.target === modal) {
-			closeModal();
-		}
-	}, { once: true });
+	showErrorModal(message, "skillErrorModal", "skillErrorMessage", "skillErrorOkBtn");
 }
 
 function showStepErrorModal(message) {
-	const modal = document.getElementById("stepErrorModal");
-	const messageEl = document.getElementById("stepErrorMessage");
-	const okBtn = document.getElementById("stepErrorOkBtn");
-	
-	if (!modal || !messageEl || !okBtn) return;
-	
-	if (!modal.classList.contains("hidden")) return;
-	
-	messageEl.textContent = message;
-	modal.classList.remove("hidden");
-	modal.classList.add("flex");
-	modal.setAttribute("aria-hidden", "false");
-	
-	const closeModal = () => {
-		modal.classList.add("hidden");
-		modal.classList.remove("flex");
-		modal.setAttribute("aria-hidden", "true");
-	};
-	
-	okBtn.addEventListener("click", closeModal, { once: true });
-	
-	modal.addEventListener("click", (e) => {
-		if (e.target === modal) {
-			closeModal();
-		}
-	}, { once: true });
+	showErrorModal(message, "stepErrorModal", "stepErrorMessage", "stepErrorOkBtn");
 }
 
 (async function init() {
