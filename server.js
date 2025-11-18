@@ -7,6 +7,7 @@ import Socket from "./middleware/Socket.js";
 import { makeUserModel } from "./db/UserSchema.js";
 import { makeMsgModel } from "./db/MsgSchema.js";
 import { makeStatusModel } from "./db/StatusSchema.js";
+import makeTaskModel from "./db/TaskSchema.js";
 import { UserDao } from "./daos/UserDao.js";
 import { MsgDao } from "./daos/MsgDao.js";
 import { StatusDao } from "./daos/StatusDao.js";
@@ -16,9 +17,22 @@ import StatusDac from "./dacs/statusDac.js";
 import { makeAnnouncementModel } from "./db/AnnouncementSchema.js";
 import { AnnouncementDao } from "./daos/AnnouncementDao.js";
 import AnnouncementDac from "./dacs/announcementDac.js";
+import TaskDao from "./daos/TaskDao.js";
+import TaskDac from "./dacs/taskDac.js";
 
+// Add new data models here, use name to reference them when you use them in setupModels
+const modelMap = {
+  "user": makeUserModel,
+  "message": makeMsgModel,
+  "announcement": makeAnnouncementModel,
+  "status": makeStatusModel,
+  "task": makeTaskModel,
+}
+
+/**
+ * Connect to MongoDB
+ */
 async function connectToMongo() {
-  // 1. Connect to MongoDB
   const mongoUri = process.env.MONGO_URI;
   if (!mongoUri) {
     throw new Error(
@@ -31,16 +45,10 @@ async function connectToMongo() {
 }
 
 function setupModels() {
-  const modelMap = {
-    "user": makeUserModel,
-    "message": makeMsgModel,
-    "announcement": makeAnnouncementModel,
-    "status": makeStatusModel,
-  }
-
   // Make models
   for (const [key, model] of Object.entries(modelMap)) {
     // TODO: When needed, swap mongoose.connection with something else
+    console.log("Spawning model:", key);
     modelMap[key] = model(mongoose.connection);
   }
 
@@ -48,6 +56,7 @@ function setupModels() {
   AnnouncementDac.DAO = new AnnouncementDao({ AnnouncementModel: modelMap.announcement });
   StatusDac.DAO = new StatusDao({ StatusModel: modelMap.status, UserModel: modelMap.user });
   UserDac.DAO = new UserDao({ UserModel: modelMap.user });
+  TaskDac.DAO = new TaskDao({ TaskModel: modelMap.task });
 }
 
 function setupSocket() {
