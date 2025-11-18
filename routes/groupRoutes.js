@@ -18,7 +18,7 @@ const router = Router();
  *   post:
  *     tags: [Groups]
  *     summary: Create a new group
- *     description: Creates a new group chat with specified members and their privileges
+ *     description: Creates a new group chat with the authenticated user as owner and specified members (0-9 members allowed, not including owner). Group names must be unique.
  *     security:
  *       - cookieAuth: []
  *     requestBody:
@@ -29,34 +29,17 @@ const router = Router();
  *             type: object
  *             required:
  *               - groupName
- *               - members
  *             properties:
  *               groupName:
  *                 type: string
- *                 description: Name of the group
+ *                 description: Name of the group (must be unique)
  *                 example: "Project Team Alpha"
- *               members:
+ *               memberIds:
  *                 type: array
- *                 description: Array of members with their privileges
+ *                 description: Array of user IDs to add as members (0-9 members, not including owner). Owner is automatically set from authenticated user.
  *                 items:
- *                   type: object
- *                   required:
- *                     - userId
- *                     - privilege
- *                   properties:
- *                     userId:
- *                       type: string
- *                       description: User ID of the member
- *                       example: "4"
- *                     privilege:
- *                       type: string
- *                       description: Member privilege level (e.g., "admin", "member")
- *                       example: "admin"
- *                 example:
- *                   - userId: "4"
- *                     privilege: "admin"
- *                   - userId: "5"
- *                     privilege: "member"
+ *                   type: string
+ *                 example: ["userId1", "userId2", "userId3"]
  *     responses:
  *       201:
  *         description: Group created successfully
@@ -79,7 +62,7 @@ const router = Router();
  *               type: object
  *               properties:
  *                 status: { type: string, example: "error" }
- *                 message: { type: string, example: "Group name and members are required" }
+ *                 message: { type: string, example: "Group name is required" }
  *       401:
  *         description: Unauthorized
  *         content:
@@ -88,6 +71,15 @@ const router = Router();
  *               type: object
  *               properties:
  *                 error: { type: string, example: "Unauthorized" }
+ *       409:
+ *         description: Conflict - group name already exists
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status: { type: string, example: "error" }
+ *                 message: { type: string, example: "Group name already exists" }
  *       500:
  *         description: Server error
  *         content:
@@ -166,7 +158,7 @@ router.post("/", auth, createGroup);
  *               type: object
  *               properties:
  *                 status: { type: string, example: "error" }
- *                 message: { type: string, example: "Insufficient privileges to add members" }
+ *                 message: { type: string, example: "Only group owner can add members" }
  *       404:
  *         description: Group not found
  *         content:
@@ -254,7 +246,7 @@ router.patch("/:groupId/members", auth, addGroupMembers);
  *               type: object
  *               properties:
  *                 status: { type: string, example: "error" }
- *                 message: { type: string, example: "Insufficient privileges to remove members" }
+ *                 message: { type: string, example: "Only group owner can remove members" }
  *       404:
  *         description: Group not found
  *         content:
@@ -318,7 +310,7 @@ router.delete("/:groupId/members", auth, removeGroupMembers);
  *               type: object
  *               properties:
  *                 status: { type: string, example: "error" }
- *                 message: { type: string, example: "Only group admins can delete the group" }
+ *                 message: { type: string, example: "Only group owner can delete the group" }
  *       404:
  *         description: Group not found
  *         content:
@@ -346,7 +338,7 @@ router.delete("/:groupId", auth, deleteGroup);
  *   get:
  *     tags: [Groups]
  *     summary: Get list of groups
- *     description: Retrieves a list of all groups the authenticated user is a member of, including group ID, name, and timestamp of the last message
+ *     description: Retrieves a list of all groups the authenticated user is a member of (as owner or member), including group ID, name, timestamp of the last message, and all member usernames
  *     security:
  *       - cookieAuth: []
  *     responses:
@@ -365,12 +357,18 @@ router.delete("/:groupId", auth, deleteGroup);
  *                   groupName:
  *                     type: string
  *                     example: "Project Team Alpha"
- *                   lastMessageTimestamp:
+ *                   timestamp:
  *                     type: string
  *                     format: date-time
  *                     nullable: true
  *                     description: Timestamp of the last message in the group (null if no messages)
  *                     example: "2024-10-24T15:45:00.000Z"
+ *                   usernames:
+ *                     type: array
+ *                     description: Array of all usernames in the group (including owner and members)
+ *                     items:
+ *                       type: string
+ *                     example: ["alice", "bob", "charlie"]
  *       401:
  *         description: Unauthorized
  *         content:
@@ -397,7 +395,7 @@ router.get("/", auth, getGroupsList);
  *   get:
  *     tags: [Groups]
  *     summary: Get all messages from a group
- *     description: Retrieves all messages from a specific group chat, sorted by timestamp
+ *     description: Retrieves all messages from a specific group chat, sorted by timestamp. Each message includes an isOwn flag indicating if the authenticated user sent the message.
  *     security:
  *       - cookieAuth: []
  *     parameters:
@@ -439,7 +437,11 @@ router.get("/", auth, getGroupsList);
  *                     example: "2024-10-24T15:45:00.000Z"
  *                   status:
  *                     type: string
- *                     example: "OK"
+ *                     example: "ok"
+ *                   isOwn:
+ *                     type: boolean
+ *                     description: Whether this message was sent by the authenticated user
+ *                     example: true
  *       401:
  *         description: Unauthorized
  *         content:
@@ -484,7 +486,7 @@ router.get("/:groupId/messages", auth, getGroupMessages);
  *   post:
  *     tags: [Groups]
  *     summary: Send a message to a group
- *     description: Posts a new message to a specific group chat
+ *     description: Posts a new message to a specific group chat. The sender is automatically set from the authenticated user.
  *     security:
  *       - cookieAuth: []
  *     parameters:
@@ -503,21 +505,17 @@ router.get("/:groupId/messages", auth, getGroupMessages);
  *             type: object
  *             required:
  *               - messageText
- *               - senderId
  *               - status
  *             properties:
  *               messageText:
  *                 type: string
  *                 description: Content of the message
  *                 example: "Hello team!"
- *               senderId:
- *                 type: string
- *                 description: User ID of the sender
- *                 example: "4"
  *               status:
  *                 type: string
  *                 description: Sender's current status
- *                 example: "OK"
+ *                 enum: [undefined, ok, help, emergency]
+ *                 example: "ok"
  *               timestamp:
  *                 type: string
  *                 format: date-time
@@ -541,7 +539,7 @@ router.get("/:groupId/messages", auth, getGroupMessages);
  *               type: object
  *               properties:
  *                 status: { type: string, example: "error" }
- *                 message: { type: string, example: "Message text, sender ID, and status are required" }
+ *                 message: { type: string, example: "Message text and status are required" }
  *       401:
  *         description: Unauthorized
  *         content:

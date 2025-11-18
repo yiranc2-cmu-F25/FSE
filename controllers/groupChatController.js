@@ -1,12 +1,92 @@
 // Group Chat Controller
 // Handles all group chat related operations
 
+import Group from "../entities/Group.js";
+import GroupMessage from "../entities/GroupMessage.js";
+import User from "../entities/User.js";
+
+const normId = (idLike) => {
+  if (idLike == null) return "";
+  if (typeof idLike === "string") return idLike;
+  if (typeof idLike === "object") {
+    return String(idLike._id ?? idLike.id ?? "");
+  }
+  return idLike.toString ? idLike.toString() : String(idLike);
+};
+
+const MIN_MEMBERS = 0;
+const MAX_MEMBERS = 9;
+
+async function validateGroupMemberCount(groupId) {
+  const group = await Group.findById(groupId);
+  if (!group) return { valid: false, error: "Group not found" };
+
+  const memberCount = group.members.length;
+  if (memberCount < MIN_MEMBERS || memberCount > MAX_MEMBERS) {
+    return {
+      valid: false,
+      error: `Group must have between ${MIN_MEMBERS} and ${MAX_MEMBERS} members (excluding owner)`
+    };
+  }
+
+  return { valid: true };
+}
+
 /**
  * Create a new group
  * @route POST /api/groups
  */
 export async function createGroup(req, res) {
-  // TODO: Implement group creation logic
+  try {
+    const { groupName, memberIds } = req.body;
+    const ownerId = normId(req.user?.id ?? req.userId);
+
+    if (!groupName) {
+      return res.status(400).json({
+        status: "error",
+        message: "Group name is required"
+      });
+    }
+
+    // Check if group name already exists
+    const trimmedGroupName = groupName.trim();
+    const existingGroup = await Group.findByGroupName(trimmedGroupName);
+    if (existingGroup) {
+      return res.status(409).json({
+        status: "error",
+        message: "Group name already exists"
+      });
+    }
+
+    const members = memberIds || [];
+
+    // Validate member count (not including owner)
+    if (members.length < MIN_MEMBERS || members.length > MAX_MEMBERS) {
+      return res.status(400).json({
+        status: "error",
+        message: `Group must have between ${MIN_MEMBERS} and ${MAX_MEMBERS} members (excluding owner)`
+      });
+    }
+
+    const group = new Group({
+      groupName: trimmedGroupName,
+      owner: ownerId,
+      members: members
+    });
+
+    const createdGroup = await group.create();
+
+    return res.status(201).json({
+      message: "Group created successfully",
+      groupId: String(createdGroup._id)
+    });
+  } catch (err) {
+    console.error("Error creating group:", err);
+    return res.status(500).json({
+      status: "error",
+      message: "Server error"
+    });
+  }
 }
 
 /**
@@ -14,7 +94,58 @@ export async function createGroup(req, res) {
  * @route PATCH /api/groups/:groupId/members
  */
 export async function addGroupMembers(req, res) {
-  // TODO: Implement add members logic
+  try {
+    const { groupId } = req.params;
+    const { userIds } = req.body;
+    const userId = normId(req.user?.id ?? req.userId);
+
+    if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
+      return res.status(400).json({
+        status: "error",
+        message: "User IDs are required"
+      });
+    }
+
+    const group = await Group.findById(groupId);
+    if (!group) {
+      return res.status(404).json({
+        status: "error",
+        message: "Group not found"
+      });
+    }
+
+    // Check if user is owner
+    const isOwner = await Group.isUserOwner(groupId, userId);
+    if (!isOwner) {
+      return res.status(403).json({
+        status: "error",
+        message: "Only group owner can add members"
+      });
+    }
+
+    // Check if adding members would exceed limit
+    const currentMemberCount = group.members.length;
+    const newMemberCount = currentMemberCount + userIds.length;
+
+    if (newMemberCount > MAX_MEMBERS) {
+      return res.status(400).json({
+        status: "error",
+        message: `Cannot add members. Group would exceed maximum of ${MAX_MEMBERS} members (excluding owner)`
+      });
+    }
+
+    await Group.addMembers(groupId, userIds);
+
+    return res.status(200).json({
+      message: "Members added successfully"
+    });
+  } catch (err) {
+    console.error("Error adding group members:", err);
+    return res.status(500).json({
+      status: "error",
+      message: "Server error"
+    });
+  }
 }
 
 /**
@@ -22,7 +153,69 @@ export async function addGroupMembers(req, res) {
  * @route DELETE /api/groups/:groupId/members
  */
 export async function removeGroupMembers(req, res) {
-  // TODO: Implement remove members logic
+  try {
+    const { groupId } = req.params;
+    const { userIds } = req.body;
+    const userId = normId(req.user?.id ?? req.userId);
+
+    if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
+      return res.status(400).json({
+        status: "error",
+        message: "User IDs are required"
+      });
+    }
+
+    const group = await Group.findById(groupId);
+    if (!group) {
+      return res.status(404).json({
+        status: "error",
+        message: "Group not found"
+      });
+    }
+
+    // Check if user is owner
+    const isOwner = await Group.isUserOwner(groupId, userId);
+    if (!isOwner && !(userIds.length === 1 && userIds.at(0) === userId)) {
+      return res.status(403).json({
+        status: "error",
+        message: "Only group owner can remove members"
+      });
+    }
+
+    // Check if users to remove are actually in the group
+    const memberIdsSet = new Set(group.members.map(id => normId(id)));
+    const invalidUsers = userIds.filter(id => !memberIdsSet.has(normId(id)));
+
+    if (invalidUsers.length > 0) {
+      return res.status(400).json({
+        status: "error",
+        message: "Some users are not members of this group"
+      });
+    }
+
+    // Check if removing members would go below minimum
+    const currentMemberCount = group.members.length;
+    const newMemberCount = currentMemberCount - userIds.length;
+
+    if (newMemberCount < MIN_MEMBERS) {
+      return res.status(400).json({
+        status: "error",
+        message: `Cannot remove members. Group must have at least ${MIN_MEMBERS} members (excluding owner)`
+      });
+    }
+
+    await Group.removeMembers(groupId, userIds);
+
+    return res.status(200).json({
+      message: "Members removed successfully"
+    });
+  } catch (err) {
+    console.error("Error removing group members:", err);
+    return res.status(500).json({
+      status: "error",
+      message: "Server error"
+    });
+  }
 }
 
 /**
@@ -30,7 +223,43 @@ export async function removeGroupMembers(req, res) {
  * @route DELETE /api/groups/:groupId
  */
 export async function deleteGroup(req, res) {
-  // TODO: Implement delete group logic
+  try {
+    const { groupId } = req.params;
+    const userId = normId(req.user?.id ?? req.userId);
+
+    const group = await Group.findById(groupId);
+    if (!group) {
+      return res.status(404).json({
+        status: "error",
+        message: "Group not found"
+      });
+    }
+
+    // Check if user is owner
+    const isOwner = await Group.isUserOwner(groupId, userId);
+    if (!isOwner) {
+      return res.status(403).json({
+        status: "error",
+        message: "Only group owner can delete the group"
+      });
+    }
+
+    // Delete all messages in the group
+    await GroupMessage.deleteByGroupId(groupId);
+
+    // Delete the group
+    await Group.deleteGroup(groupId);
+
+    return res.status(200).json({
+      message: "Group deleted successfully"
+    });
+  } catch (err) {
+    console.error("Error deleting group:", err);
+    return res.status(500).json({
+      status: "error",
+      message: "Server error"
+    });
+  }
 }
 
 /**
@@ -38,7 +267,32 @@ export async function deleteGroup(req, res) {
  * @route GET /api/groups
  */
 export async function getGroupsList(req, res) {
-  // TODO: Implement get groups list logic
+  try {
+    const userId = normId(req.user?.id ?? req.userId);
+
+    const groups = await Group.findGroupsByUserId(userId);
+
+    const groupsList = await Promise.all(groups.map(async (group) => {
+      const ownerUsername = group.owner?.username || "Unknown";
+      const memberUsernames = group.members.map(member => member.username);
+      const allUsernames = [ownerUsername, ...memberUsernames];
+
+      return {
+        groupId: String(group._id),
+        groupName: group.groupName,
+        timestamp: group.timestamp,
+        usernames: allUsernames
+      };
+    }));
+
+    return res.status(200).json(groupsList);
+  } catch (err) {
+    console.error("Error getting groups list:", err);
+    return res.status(500).json({
+      status: "error",
+      message: "Server error"
+    });
+  }
 }
 
 /**
@@ -46,7 +300,53 @@ export async function getGroupsList(req, res) {
  * @route GET /api/groups/:groupId/messages
  */
 export async function getGroupMessages(req, res) {
-  // TODO: Implement get group messages logic
+  try {
+    const { groupId } = req.params;
+    const userId = normId(req.user?.id ?? req.userId);
+
+    const group = await Group.findById(groupId);
+    if (!group) {
+      return res.status(404).json({
+        status: "error",
+        message: "Group not found"
+      });
+    }
+
+    // Check if user is a member of the group
+    const isMember = await Group.isUserInGroup(groupId, userId);
+    if (!isMember) {
+      return res.status(403).json({
+        status: "error",
+        message: "You are not a member of this group"
+      });
+    }
+
+    const messages = await GroupMessage.findByGroupId(groupId);
+
+    const messagesData = messages.map(msg => {
+      const senderId = normId(msg.sender?._id ?? msg.sender);
+      const isOwn = senderId === userId;
+
+      return {
+        id: String(msg.id),
+        groupId: String(msg.group),
+        senderId: senderId,
+        senderName: msg.sender?.username || "Unknown",
+        messageText: msg.content,
+        timestamp: msg.timestamp,
+        status: msg.status,
+        isOwn: isOwn
+      };
+    });
+
+    return res.status(200).json(messagesData);
+  } catch (err) {
+    console.error("Error getting group messages:", err);
+    return res.status(500).json({
+      status: "error",
+      message: "Server error"
+    });
+  }
 }
 
 /**
@@ -54,5 +354,59 @@ export async function getGroupMessages(req, res) {
  * @route POST /api/groups/:groupId/messages
  */
 export async function sendGroupMessage(req, res) {
-  // TODO: Implement send group message logic
+  try {
+    const { groupId } = req.params;
+    const { messageText, status, timestamp } = req.body;
+    const senderId = normId(req.user?.id ?? req.userId);
+
+    if (!messageText || !status) {
+      return res.status(400).json({
+        status: "error",
+        message: "Message text and status are required"
+      });
+    }
+
+    const group = await Group.findById(groupId);
+    if (!group) {
+      return res.status(404).json({
+        status: "error",
+        message: "Group not found"
+      });
+    }
+
+    // Check if user is a member of the group
+    const isMember = await Group.isUserInGroup(groupId, senderId);
+    if (!isMember) {
+      return res.status(403).json({
+        status: "error",
+        message: "You are not a member of this group"
+      });
+    }
+
+    const msgTimestamp = timestamp || new Date();
+
+    const message = new GroupMessage({
+      sender: senderId,
+      group: groupId,
+      content: messageText.trim(),
+      status: status,
+      timestamp: msgTimestamp
+    });
+
+    const createdMessage = await message.create();
+
+    // Update group's timestamp to latest message timestamp
+    await Group.updateTimestamp(groupId, msgTimestamp);
+
+    return res.status(201).json({
+      message: "Message sent successfully",
+      messageId: String(createdMessage._id)
+    });
+  } catch (err) {
+    console.error("Error sending group message:", err);
+    return res.status(500).json({
+      status: "error",
+      message: "Server error"
+    });
+  }
 }

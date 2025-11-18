@@ -7,12 +7,18 @@ import Socket from "./middleware/Socket.js";
 import { makeUserModel } from "./db/UserSchema.js";
 import { makeMsgModel } from "./db/MsgSchema.js";
 import { makeStatusModel } from "./db/StatusSchema.js";
+import { makeGroupModel } from "./db/GroupSchema.js";
+import { makeGroupMessageModel } from "./db/GroupMessageSchema.js";
 import { UserDao } from "./daos/UserDao.js";
 import { MsgDao } from "./daos/MsgDao.js";
 import { StatusDao } from "./daos/StatusDao.js";
+import { GroupDao } from "./daos/GroupDao.js";
+import { GroupMessageDao } from "./daos/GroupMessageDao.js";
 import userDac from "./dacs/userDac.js";
 import msgDac from "./dacs/msgDac.js";
 import statusDac from "./dacs/statusDac.js";
+import groupDac from "./dacs/groupDac.js";
+import groupMessageDac from "./dacs/groupMessageDac.js";
 import { makeAnnouncementModel } from "./db/AnnouncementSchema.js";
 import { AnnouncementDao } from "./daos/AnnouncementDao.js";
 import AnnouncementDac from "./dacs/announcementDac.js";
@@ -36,12 +42,16 @@ function setupModels() {
   const MessageModel = makeMsgModel(mongoose.connection);
   const AnnouncementModel = makeAnnouncementModel(mongoose.connection);
   const StatusModel = makeStatusModel(mongoose.connection);
+  const GroupModel = makeGroupModel(mongoose.connection);
+  const GroupMessageModel = makeGroupMessageModel(mongoose.connection);
 
   // 2. Inject models into DAOs for persistence operations
   userDac.DAO = new UserDao({ UserModel });
   msgDac.DAO = new MsgDao({ MessageModel });
   AnnouncementDac.DAO = new AnnouncementDao({ AnnouncementModel });
   statusDac.DAO = new StatusDao({ StatusModel, UserModel});
+  groupDac.DAO = new GroupDao({ GroupModel });
+  groupMessageDac.DAO = new GroupMessageDao({ GroupMessageModel });
 }
 
 function setupSocket() {

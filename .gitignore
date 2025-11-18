@@ -4,3 +4,4 @@ public/css/output.css
 **/*.bundle.js
 **/.DS_Store
 coverage/
+local/
