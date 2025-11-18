@@ -51,7 +51,8 @@ function setupPublicMessageListener() {
 
 function setupOnlineMemberCountListener() {
   socket.on("user_list", (userList) => {
-    ui.onlineCount.textContent = userList.length.toString();
+    console.log("[publicChat] updated online user list", userList);
+    ui.onlineCount.textContent = [...new Set(userList)].length.toString();
   });
 }
 

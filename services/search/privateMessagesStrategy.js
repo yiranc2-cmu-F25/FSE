@@ -2,9 +2,10 @@ import Msg from "../../entities/Msg.js";
 import Status from "../../entities/Status.js";
 import mongoose from "mongoose";
 import { parseQuery } from "../../utils/search/parseQuery.js";
-import { mapSearchResults } from "./resultMappers.js";
+import { mapSearchResults } from "../../utils/search/resultMappers.js";
+import { SearchStrategy } from "./SearchStrategy.js";
 
-export const privateMessagesStrategy = {
+export class PrivateMessagesStrategy extends SearchStrategy {
   async tryStatus({ raw, peerId, limit, cursor }) {
     if (!raw || raw.toLowerCase() !== "status") return null;
 
@@ -21,7 +22,7 @@ export const privateMessagesStrategy = {
     }));
 
     return { code: 200, mode: "status_history", count: total, results, nextCursor };
-  },
+  }
 
   async execute({ req }) {
     try {
@@ -66,4 +67,6 @@ export const privateMessagesStrategy = {
         return { code: 500, status: "error", message: "Server error" };
     }
   }
-};
+}
+
+export const privateMessagesStrategy = new PrivateMessagesStrategy();

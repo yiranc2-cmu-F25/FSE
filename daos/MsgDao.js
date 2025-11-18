@@ -1,7 +1,7 @@
 import { iMsgDao } from "./iMsgDao.js";
 import mongoose from "mongoose";
 import {buildSubstringRegex} from "../utils/search/search.js";
-import { searchByModel } from "../services/search/searchCommon.js";
+import { searchByModel } from "../utils/search/searchCommon.js";
 import { pushCursorClause } from "../utils/search/cursor.js";
 
 export class MsgDao extends iMsgDao {

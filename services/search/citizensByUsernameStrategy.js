@@ -1,6 +1,8 @@
 import { getOnlineOfflineMembers } from "../../entities/MemberList.js";
+import { SearchStrategy } from "./SearchStrategy.js";
+import { paginateResults } from "../../utils/search/searchCommon.js";
 
-export const citizensByUsernameStrategy = {
+export class CitizensByUsernameStrategy extends SearchStrategy {
   async execute({ req }) {
     try {
         const q = (req.query.username ?? '').trim();
@@ -21,14 +23,11 @@ export const citizensByUsernameStrategy = {
             ...off.map(u => ({ u, availability: 'offline' })),
         ];
 
-        const count = merged.length;
-        const results = req.query.limit ? 
-            merged.slice(offset, offset + limit) :
-            merged.slice(offset);
-
-        return { code: 200, count, results };
+        return paginateResults(merged, limit, offset, !!req.query.limit);
     } catch (err) {
         return { code: 500, status: "error", message: "Server error" };
     }
   }
-};
+}
+
+export const citizensByUsernameStrategy = new CitizensByUsernameStrategy();
