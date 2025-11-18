@@ -39,8 +39,12 @@ async function connectToMongo() {
       "MONGO_URI environment variable is not set. Please create a .env file with MONGO_URI=mongodb://localhost:27017 (or your MongoDB connection string)"
     );
   }
+
+  const useTls = mongoUri.startsWith("mongodb://");
+
   await mongoose.connect(mongoUri, {
-    dbName: process.env.MONGO_DB || "myDatabase",
+    // dbName: process.env.MONGO_DB || "myDatabase",
+    ...(useTls ? { tls: true } : {}),
   });
 }
 
