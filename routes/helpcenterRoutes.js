@@ -35,7 +35,7 @@ const router = Router();
  *                   type:
  *                     type: string
  *                     description: Type of help center
- *                     example: "SHELTER"
+ *                     example: "shelter"
  *                   location:
  *                     type: string
  *                     description: Human-readable address or location description
@@ -46,7 +46,7 @@ const router = Router();
  *                     example: "Provides temporary shelter and basic medical support."
  *                   coordinates:
  *                     type: array
- *                     description: [longitude, latitude] of the help center
+ *                     description: "[longitude, latitude] of the help center"
  *                     items:
  *                       type: number
  *                     example: [-121.8863, 37.3382]
@@ -64,16 +64,6 @@ const router = Router();
  *                     format: date-time
  *                     description: Time when the help center was last updated
  *                     example: "2024-10-25T12:15:00.000Z"
- *       401:
- *         description: Unauthorized – user is not authenticated
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: "Unauthorized"
  *       500:
  *         description: Server error
  *         content:
@@ -140,7 +130,7 @@ router.get("/", auth, getHelpCentersByUserId);
  *                   type:
  *                     type: string
  *                     description: Type of help center
- *                     example: "SHELTER"
+ *                     example: "shelter"
  *                   location:
  *                     type: string
  *                     description: Human-readable address or location description
@@ -151,7 +141,7 @@ router.get("/", auth, getHelpCentersByUserId);
  *                     example: "Provides temporary shelter and basic medical support."
  *                   coordinates:
  *                     type: array
- *                     description: [longitude, latitude] of the help center
+ *                     description: "[longitude, latitude] of the help center"
  *                     items:
  *                       type: number
  *                     example: [-121.8863, 37.3382]
@@ -233,7 +223,7 @@ router.get("/nearby", auth, getClosestHelpCenters);
  *               type:
  *                 type: string
  *                 description: Type of help center
- *                 example: "SHELTER"
+ *                 example: "shelter"
  *               location:
  *                 type: string
  *                 description: Human-readable address or area description
@@ -244,14 +234,10 @@ router.get("/nearby", auth, getClosestHelpCenters);
  *                 example: "Newly updated shelter with medical support."
  *               coordinates:
  *                 type: array
- *                 description: GeoJSON coordinate array in the format [longitude, latitude]
+ *                 description: "GeoJSON coordinate array in the format [longitude, latitude]"
  *                 items:
  *                   type: number
  *                 example: [-122.1700, 37.4275]
- *               owner:
- *                 type: string
- *                 description: ID of the user who owns the help center
- *                 example: "672abc123def456789012345"
  *     responses:
  *       200:
  *         description: Help center successfully updated
@@ -268,7 +254,7 @@ router.get("/nearby", auth, getClosestHelpCenters);
  *                   example: "Updated Emergency Shelter"
  *                 type:
  *                   type: string
- *                   example: "SHELTER"
+ *                   example: "shelter"
  *                 location:
  *                   type: string
  *                   example: "500 University Ave, Palo Alto, CA"
@@ -345,7 +331,7 @@ router.patch("/:id", auth, updateHelpCenter);
  *                   example: "Downtown Emergency Shelter"
  *                 type:
  *                   type: string
- *                   example: "SHELTER"
+ *                   example: "shelter"
  *                 location:
  *                   type: string
  *                   example: "123 Main St, San Jose, CA"
@@ -428,7 +414,7 @@ router.delete("/:id", auth, deleteHelpCenter);
  *               type:
  *                 type: string
  *                 description: Type of help center
- *                 example: "SHELTER"
+ *                 example: "shelter"
  *               location:
  *                 type: string
  *                 description: Human-readable address or location description
@@ -439,14 +425,10 @@ router.delete("/:id", auth, deleteHelpCenter);
  *                 example: "Provides temporary shelter and basic medical support."
  *               coordinates:
  *                 type: array
- *                 description: GeoJSON coordinate array in the format [longitude, latitude]
+ *                 description: "GeoJSON coordinate array in the format [longitude, latitude]"
  *                 items:
  *                   type: number
  *                 example: [-121.8863, 37.3382]
- *               owner:
- *                 type: string
- *                 description: ID of the user who owns or created the help center
- *                 example: "672abc123def456789012345"
  *     responses:
  *       201:
  *         description: Help center successfully created

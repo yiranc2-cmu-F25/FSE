@@ -15,7 +15,7 @@ class HelpCenter {
     }
 
     async create() {
-        await Announcement.DAO.create({
+        await HelpCenter.DAO.create({
             name: this.name,
             type: this.type,
             location: this.location,
@@ -37,8 +37,8 @@ class HelpCenter {
         return await HelpCenter.DAO.updateHelpCenter({ id, name, type, location, description, coordinates, owner });
     }
 
-    static async deleteHelpCenter({ id }) {
-        return await HelpCenter.DAO.deleteHelpCenter({ id });
+    static async deleteHelpCenter( id ) {
+        return await HelpCenter.DAO.deleteHelpCenter( id );
     }
 }
 

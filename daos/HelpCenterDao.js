@@ -1,4 +1,4 @@
-import { iHelpCenterDao } from "./iAnnouncementDao.js";
+import { iHelpCenterDao } from "./iHelpCenterDao.js";
 
 export class HelpCenterDao extends iHelpCenterDao {
     constructor({ HelpCenterModel }) {
@@ -34,19 +34,19 @@ export class HelpCenterDao extends iHelpCenterDao {
         }).limit(limit);
     }
 
-    async updateHelpCenter({ id, name, type, location, description, coordinates, owner }) {
+    async updateHelpCenter({ id, name, type, location, description, coordinates }) {
         return this.HelpCenterModel.findByIdAndUpdate(id, {
             name,
             type,
             location,
             description,
             coordinates,
-            owner,
             updatedAt: Date.now()
-        }, { new: true });
+        }, { new: true, runValidators: true });
     }
 
-    async deleteHelpCenter({ id }) {
+    async deleteHelpCenter(id) {
+        console.log("trying to delete", id)
         return this.HelpCenterModel.findByIdAndDelete(id);
     }
 }
