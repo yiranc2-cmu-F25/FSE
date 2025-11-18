@@ -10,9 +10,9 @@ import { makeStatusModel } from "./db/StatusSchema.js";
 import { UserDao } from "./daos/UserDao.js";
 import { MsgDao } from "./daos/MsgDao.js";
 import { StatusDao } from "./daos/StatusDao.js";
-import userDac from "./dacs/userDac.js";
-import msgDac from "./dacs/msgDac.js";
-import statusDac from "./dacs/statusDac.js";
+import UserDac from "./dacs/userDac.js";
+import MsgDac from "./dacs/msgDac.js";
+import StatusDac from "./dacs/statusDac.js";
 import { makeAnnouncementModel } from "./db/AnnouncementSchema.js";
 import { AnnouncementDao } from "./daos/AnnouncementDao.js";
 import AnnouncementDac from "./dacs/announcementDac.js";
@@ -31,17 +31,23 @@ async function connectToMongo() {
 }
 
 function setupModels() {
-  // now these use the default connection:
-  const UserModel = makeUserModel(mongoose.connection);
-  const MessageModel = makeMsgModel(mongoose.connection);
-  const AnnouncementModel = makeAnnouncementModel(mongoose.connection);
-  const StatusModel = makeStatusModel(mongoose.connection);
+  const modelMap = {
+    "user": makeUserModel,
+    "message": makeMsgModel,
+    "announcement": makeAnnouncementModel,
+    "status": makeStatusModel,
+  }
 
-  // 2. Inject models into DAOs for persistence operations
-  userDac.DAO = new UserDao({ UserModel });
-  msgDac.DAO = new MsgDao({ MessageModel });
-  AnnouncementDac.DAO = new AnnouncementDao({ AnnouncementModel });
-  statusDac.DAO = new StatusDao({ StatusModel, UserModel});
+  // Make models
+  for (const [key, model] of Object.entries(modelMap)) {
+    // TODO: When needed, swap mongoose.connection with something else
+    modelMap[key] = model(mongoose.connection);
+  }
+
+  MsgDac.DAO = new MsgDao({ MessageModel: modelMap.message });
+  AnnouncementDac.DAO = new AnnouncementDao({ AnnouncementModel: modelMap.announcement });
+  StatusDac.DAO = new StatusDao({ StatusModel: modelMap.status, UserModel: modelMap.user });
+  UserDac.DAO = new UserDao({ UserModel: modelMap.user });
 }
 
 function setupSocket() {
@@ -63,13 +69,17 @@ function setupSocket() {
   return server;
 }
 
+function getAppPort() {
+  return process.env.PORT || 3000;
+}
+
 function startServer(server) {
-  let serverInstance = server.listen(process.env.PORT || 3000, () => {
+  server.listen(getAppPort(), () => {
     console.log(
-      "Server running at http://localhost:3000/",
+      `Server running at http://localhost:${getAppPort()}/`,
     );
     console.log(
-      "Swagger docs at http://localhost:3000/api-docs",
+      `Swagger docs at http://localhost:${getAppPort()}/api-docs`,
     );
   });
 }

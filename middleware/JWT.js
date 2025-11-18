@@ -4,10 +4,17 @@ dotenv.config();
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const isProd = process.env.NODE_ENV === "production";
+const requireAuth = process.env.REQUIRE_AUTH !== "false";
 
 // jwt middleware
 // example useage: app.get('/protected', auth, (req, res) => { ... });
+
 export function auth(req, res, next) {
+    if (!requireAuth) {
+        next();
+        return;
+    }
+
     const token = req.cookies.jwt_token;
     if (!token) return res.status(401).json({ error: "Unauthorized" })
     try {
