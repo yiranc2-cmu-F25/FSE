@@ -19,7 +19,7 @@ const router = Router();
  *         required: true
  *         schema:
  *           type: string
- *           enum: [citizens, citizens_status, announcements, messages_public, messages_private]
+ *           enum: [citizens, citizens_status, announcements, messages_public, messages_private, boards]
  *         description: Which search strategy to apply.
  *         example: "announcements"
  *       - in: query

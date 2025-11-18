@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Coaching Boards</title>
+    <%- include('../partials/head') %>
+    <script>window.__CURRENT_USER_ID__ = "<%= currentUserId %>"; window.__CURRENT_USER__ = "<%= username %>";</script>
+    <script type="module" src="/js/coachingBoards/list.js"></script>
+    <script type="module" src="/js/searchInfo/searchBoards.js"></script>
+  </head>
+  <body class="min-h-screen bg-white coaching-boards">
+    <div class="relative mx-auto flex h-screen w-full max-w-md flex-col overflow-hidden">
+      <header class="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-white z-50 flex items-center border-b-2 border-slate-200 px-4 pb-4 pt-12">
+        <div class="w-12">
+          <a href="/members" class="inline-flex items-center justify-center rounded-xl border border-gray-200 p-3">
+            <img src="/images/chat-privately/keyboard_arrow_left.svg" alt="Back" class="h-6 w-6" />
+          </a>
+        </div>
+        <div class="flex-1 text-center">
+          <h1 class="font-poppins text-lg font-semibold text-black">Coaching Boards</h1>
+        </div>
+        <div class="w-12"></div>
+      </header>
+      <main class="flex-1 pt-32 overflow-y-auto pb-24">
+        <div id="boardsList" class="p-4 space-y-5 pb-20"></div>
+      </main>
+      <div class="pointer-events-none fixed bottom-0 left-1/2 z-0 w-full -translate-x-1/2">
+        <div class="mx-auto w-full max-w-md px-4 pb-6">
+          <a
+            href="/boards/new"
+            class="pointer-events-auto inline-flex w-full items-center justify-center rounded-2xl px-6 py-4 text-base font-semibold text-white shadow focus:outline-none focus:ring-2"
+            style="background-color:#C35F49"
+          >
+            Add New Board
+          </a>
+        </div>
+      </div>
+      <%- include('../partials/fixedFAB.ejs') %>
+      <%- include('../partials/searchScreen.ejs') %>
+    </div>
+    <%- include('../partials/subscriptionModal.ejs') %>
+    <%- include('../partials/boardNotificationModal.ejs') %>
+    <script type="module" src="/js/coachingBoards/boardNotifications.js"></script>
+    <style>
+      .coaching-boards .fixed.bottom-4.right-4 { bottom: 7rem; }
+    </style>
+  </body>
+</html>
+
+

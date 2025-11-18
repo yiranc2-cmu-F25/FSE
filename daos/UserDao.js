@@ -8,13 +8,14 @@ export class UserDao extends iUserDao {
         this.UserModel = UserModel;
     }
 
-    async create({ username, password, sharedstatus, status, role }) {
+    async create({ username, password, sharedstatus, status, role, skills }) {
         const doc = await this.UserModel.create({
             username,
             password,
             sharedstatus,
             status,
             role,
+            skills: skills || [],
         });
 
         return doc.toObject();
@@ -82,6 +83,29 @@ export class UserDao extends iUserDao {
             console.log("After update, doc =", doc);
         } catch (err) {
             console.error("Error updating status for user ID:", id, err);
+            throw err;
+        }
+    }
+
+    async getSkillsById(id) {
+        try {
+            const doc = await this.UserModel.findById(id).select("skills").lean();
+            return doc ? (doc.skills || []) : [];
+        } catch (err) {
+            console.error("Error getting skills for user ID:", id, err);
+            throw err;
+        }
+    }
+
+    async updateSkillsById(id, skills) {
+        try {
+            await this.UserModel.findByIdAndUpdate(
+                id,
+                { skills: Array.isArray(skills) ? skills : [] },
+                { new: true },
+            );
+        } catch (err) {
+            console.error("Error updating skills for user ID:", id, err);
             throw err;
         }
     }

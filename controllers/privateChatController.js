@@ -85,11 +85,13 @@ export async function sendPrivateMessage(req, res) {
             return res.status(400).json({ status: "error", message: "receiver/content required" });
         }
 
+        const normalizedStatus = (typeof status === 'string') ? status.toLowerCase() : status;
+
         const msg = new Msg({
             sender,
             receiver,
             content: content.trim(),
-            status,
+            status: normalizedStatus,
             timestamp,
         });
         await msg.create();

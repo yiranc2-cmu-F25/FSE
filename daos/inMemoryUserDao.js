@@ -14,6 +14,7 @@ export class inMemoryUserDao extends iUserDao {
       sharedstatus: SHARED_STATUS.UNDEFINED,
       status: USER_STATUS.ACTIVE,
       role: USER_ROLE.CITIZEN,
+      skills: [],
       createdAt: new Date(),
     });
     this.users.push({
@@ -23,6 +24,7 @@ export class inMemoryUserDao extends iUserDao {
       sharedstatus: SHARED_STATUS.OK,
       status: USER_STATUS.ACTIVE,
       role: USER_ROLE.CITIZEN,
+      skills: [],
       createdAt: new Date(),
     });
     this.users.push({
@@ -32,12 +34,13 @@ export class inMemoryUserDao extends iUserDao {
       sharedstatus: SHARED_STATUS.HELP,
       status: USER_STATUS.ACTIVE,
       role: USER_ROLE.CITIZEN,
+      skills: [],
       createdAt: new Date(),
     });
     this.delay = 100;
   }
 
-  async create({ username, password, sharedstatus, status, role }) {
+  async create({ username, password, sharedstatus, status, role, skills }) {
     // Enforce unique username (in-memory simulation of DB unique index)
     const exists = this.users.find((u) => u.username === username);
     if (exists) {
@@ -58,6 +61,7 @@ export class inMemoryUserDao extends iUserDao {
       sharedstatus: normalizedShared,
       status: status || USER_STATUS.ACTIVE,
       role: normalizedRole,
+      skills: skills || [],
       createdAt: new Date(),
     };
 
@@ -99,6 +103,18 @@ export class inMemoryUserDao extends iUserDao {
     const user = this.users.find((u) => id == u.id);
     if (user) {
       user.sharedstatus = newStatus;
+    }
+  }
+
+  async getSkillsById(id) {
+    const user = this.users.find((u) => id == u.id);
+    return user ? (user.skills || []) : [];
+  }
+
+  async updateSkillsById(id, skills) {
+    const user = this.users.find((u) => id == u.id);
+    if (user) {
+      user.skills = Array.isArray(skills) ? skills : [];
     }
   }
 }
