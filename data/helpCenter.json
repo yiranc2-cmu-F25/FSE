@@ -1,0 +1,158 @@
+{
+  "highlightedTasks": [
+    {
+      "id": "remove-fallen-trees",
+      "title": "Remove fallen trees blocking Pine Avenue",
+      "category": "Remove Debris",
+      "categoryType": "debris",
+      "statusLabel": "Critical",
+      "statusLevel": "critical",
+      "joinedCount": 12,
+      "capacity": 20,
+      "ctaLabel": "Join Now",
+      "href": "/tasks/remove-fallen-trees",
+      "location": "Pine Avenue",
+      "icon": {
+        "src": "/images/icons/tasks/landslide.svg",
+        "alt": "Debris removal icon"
+      },
+      "bgImageUrl": "/images/backgrounds/task-debris.png"
+    },
+    {
+      "id": "feed-dogs",
+      "title": "Feed stray dogs near Market Street after flood",
+      "category": "Animal Care",
+      "categoryType": "animal-care",
+      "statusLabel": "Urgent",
+      "statusLevel": "urgent",
+      "joinedCount": 4,
+      "capacity": 10,
+      "ctaLabel": "Join Now",
+      "href": "/tasks/feed-dogs",
+      "location": "Market Street",
+      "icon": {
+        "src": "/images/icons/tasks/paw.svg",
+        "alt": "Animal care icon"
+      },
+      "bgImageUrl": "/images/backgrounds/task-animal.png"
+    },
+    {
+      "id": "temp-repair-substation",
+      "title": "Reinforce damaged power substation fence",
+      "category": "Temp Repair",
+      "categoryType": "temp-repair",
+      "statusLabel": "Standard",
+      "statusLevel": "standard",
+      "joinedCount": 2,
+      "capacity": 8,
+      "ctaLabel": "Join Now",
+      "href": "/tasks/temp-repair-substation",
+      "location": "North Substation",
+      "icon": {
+        "src": "/images/icons/tasks/tools.svg",
+        "alt": "Temporary repair icon"
+      }
+    }
+  ],
+  "hero": {
+    "navButtons": {
+      "pageTitle": "ESN Help Center",
+      "createTask": {
+        "href": "/tasks/new",
+        "label": "Create A New Task"
+      },
+      "joinedTasks": {
+        "href": "/my-tasks",
+        "label": "View Joined Tasks",
+        "activeCount": 3,
+        "badgeIcon": "/images/icons/clock-outline.svg",
+        "badgeAriaLabel": "Number of joined tasks"
+      }
+    },
+    "highlightedSection": {
+      "title": "Recently Posted",
+      "viewAllHref": "/tasks",
+      "viewAllLabel": "View all",
+      "joinedLabel": "Joined"
+    }
+  },
+  "taskList": {
+    "title": "Tasks",
+    "searchPlaceholder": "Search tasks",
+    "filterLabel": "Select option",
+    "filterOptions": ["All", "Critical", "Urgent", "Scheduled", "Standard"]
+  },
+  "tasks": [
+    {
+      "id": "remove-fallen-trees",
+      "title": "Remove fallen trees blocking Pine Avenue",
+      "category": "Remove Debris",
+      "categoryType": "debris",
+      "statusLabel": "Critical",
+      "statusLevel": "critical",
+      "joinedCount": 12,
+      "capacity": 20,
+      "ctaLabel": "Join Now",
+      "href": "/tasks/remove-fallen-trees",
+      "location": "Pine Avenue",
+      "icon": {
+        "src": "/images/icons/tasks/landslide.svg",
+        "alt": "Debris removal icon"
+      },
+      "bgImageUrl": "/images/backgrounds/task-debris.png"
+    },
+    {
+      "id": "shelter-roof",
+      "title": "Patch leaking roof of local shelter",
+      "category": "Temp Repair",
+      "categoryType": "temp-repair",
+      "statusLabel": "Standard",
+      "statusLevel": "standard",
+      "joinedCount": 10,
+      "capacity": 10,
+      "ctaLabel": "View Joined Task",
+      "href": "/tasks/shelter-roof",
+      "location": "Community Shelter",
+      "icon": {
+        "src": "/images/icons/tasks/tools.svg",
+        "alt": "Temporary repair icon"
+      },
+      "bgImageUrl": "/images/backgrounds/task-repair.png"
+    },
+    {
+      "id": "feed-dogs",
+      "title": "Feed stray dogs near Market Street after flood",
+      "category": "Animal Care",
+      "categoryType": "animal-care",
+      "statusLabel": "Urgent",
+      "statusLevel": "urgent",
+      "joinedCount": 4,
+      "capacity": 10,
+      "ctaLabel": "Join Now",
+      "href": "/tasks/feed-dogs",
+      "location": "Market Street",
+      "icon": {
+        "src": "/images/icons/tasks/paw.svg",
+        "alt": "Animal care icon"
+      },
+      "bgImageUrl": "/images/backgrounds/task-animal.png"
+    },
+    {
+      "id": "temp-repair-substation",
+      "title": "Reinforce damaged power substation fence",
+      "category": "Temp Repair",
+      "categoryType": "temp-repair",
+      "statusLabel": "Standard",
+      "statusLevel": "standard",
+      "joinedCount": 2,
+      "capacity": 8,
+      "ctaLabel": "Join Now",
+      "href": "/tasks/temp-repair-substation",
+      "location": "North Substation",
+      "icon": {
+        "src": "/images/icons/tasks/tools.svg",
+        "alt": "Temporary repair icon"
+      }
+    }
+  ]
+}

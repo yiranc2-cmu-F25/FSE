@@ -1,6 +1,11 @@
 import express from "express";
 import { authView } from "../middleware/JWT.js";
 import { se } from "date-fns/locale";
+import { setup } from "swagger-ui-express";
+
+// Static JSON Testing Config
+
+import helpCenterConfig from "../data/helpCenter.json" with { type: "json" };
 
 const router = express.Router();
 const JOIN_PATH = "joinCommunity/";
@@ -81,10 +86,30 @@ function setupMyTasksRoutes() {
     });
   });
 }
-function setupESNTaskCenterRoutes() {
-  router.get("/esn-help-center", authView, (req, res) => {
+// function setupESNTaskCenterRoutes() {
+//   router.get("/esn-help-center", authView, (req, res) => {
+//     res.render("helpTasks/ESNHelpCenter.ejs", {
+//       username: req.username || "",
+//     });
+//   });
+// }
+
+function setupESNHelpCenterRoutes() {
+  router.get("/esn-help-center", (req, res) => {
+    const allTasks = Array.isArray(helpCenterConfig.highlightedTasks)
+      ? helpCenterConfig.highlightedTasks
+      : [];
+
+    // Only tasks where joinedCount < capacity, take latest 5
+    const highlightedTasks = allTasks
+      .filter((t) => t.joinedCount < t.capacity)
+      .slice(0, 5);
+
     res.render("helpTasks/ESNHelpCenter.ejs", {
+      hero: helpCenterConfig.hero,
+      highlightedTasks,
       username: req.username || "",
+      // you can also pass req.user, users etc if needed
     });
   });
 }
@@ -96,6 +121,6 @@ setupUpdateStatusRoutes();
 setupPrivateChatRoutes();
 setupAnnouncementRoutes();
 setupMyTasksRoutes();
-setupESNTaskCenterRoutes();
+setupESNHelpCenterRoutes();
 
 export default router;

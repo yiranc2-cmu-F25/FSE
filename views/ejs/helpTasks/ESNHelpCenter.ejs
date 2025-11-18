@@ -10,7 +10,11 @@
 
   <body class="bg-stone-50 text-stone-800">
     <% const __users = (typeof users !== 'undefined' && Array.isArray(users)) ?
-    users : []; %>
+    users : []; %> <% const __hero = (typeof hero !== 'undefined') ? hero : {};
+    %> <% const __navButtons = __hero.navButtons || {}; %> <% const
+    __highlightSection = __hero.highlightedSection || {}; %> <% const
+    __highlightedTasks = Array.isArray(highlightedTasks) ? highlightedTasks :
+    []; %>
 
     <main class="relative">
       <header
@@ -21,7 +25,7 @@
         <div class="px-8 sm:px-10">
           <!-- one oversized white card, centered and cropped by overflow -->
           <div
-            class="relative left-1/2 w-[110vw] -translate-x-1/2 rounded-3xl border border-stone-200 bg-white px-12 py-8 shadow-sm sm:w-[108vw]"
+            class="relative left-1/2 w-[110vw] -translate-x-1/2 rounded-3xl border border-stone-200 bg-white px-12 py-6 shadow-sm sm:w-[108vw] sm:px-12 sm:py-8"
           >
             <!-- ROW 1: top controls on the same card -->
             <div class="flex items-center justify-between">
@@ -65,12 +69,22 @@
                 <span id="header-avatar-initials"> </span>
               </div>
             </div>
+
+            <!-- ROW 2 & 3: Page title + nav buttons + highlighted tasks -->
+            <%- include('../partials/help-center/navButtons', { navButtons:
+            __navButtons }) %> <%-
+            include('../partials/help-center/highlightedTasks', {
+            highlightsection: __highlightSection, highlightedtasks:
+            __highlightedTasks }) %>
           </div>
         </div>
       </header>
+
+      <!-- feature modal + bottom nav -->
       <%- include('../partials/featureModal.ejs') %> <%-
       include('../partials/nav-bar/absNavBar.ejs') %>
     </main>
+
     <script type="module" src="/js/extensionFeatures/featureModal.js"></script>
     <script type="module" src="/js/nav-bar/nav-bar.js"></script>
   </body>
