@@ -15,7 +15,8 @@
     "test:integration:chat-privately": "npm test tests/privateChat.test.js",
     "test:integration:search-information": "npm test tests/searchInformation.test.js",
     "test:integration:update-status": "npm test tests/updateStatus.test.js",
-    "test:postAnnouncement": "npm test tests/postAnnouncement.test.js"
+    "test:postAnnouncement": "npm test tests/postAnnouncement.test.js",
+    "test:HelpCenter": "npm test tests/helpCenter.unit.test.js"
   },
   "repository": {
     "type": "git",
