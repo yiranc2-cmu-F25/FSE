@@ -18,10 +18,13 @@ import coachingBoardRoutes from "./routes/coachingBoardRoutes.js";
 import categorySkillPresetRoutes from "./routes/categorySkillPresetRoutes.js";
 import groupRoutes from "./routes/groupRoutes.js";
 import callRoutes from "./routes/callRoutes.js";
+import emergencyProfileRoutes from "./routes/emergencyProfileRoutes.js";
+import publicEmergencyInfoRoutes from "./routes/publicEmergencyInfoRoutes.js";
 import swaggerUi from "swagger-ui-express";
 import swaggerSpec from "./config/swagger/swaggerConfig.js";
 import { blockWhenSpeedTest } from "./middleware/blockWhenSpeedTest.js";
 import taskRoutes from "./routes/taskRoutes.js";
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -124,6 +127,8 @@ function setupRoutes() {
   app.use("/api/calls/", callRoutes); // group voice call Routes
   app.use("/api/help-centers", helpcenterRoutes); // help center Routes
   app.use("/api/addresses", addressRoutes);
+  app.use("/api/emergency-profiles", emergencyProfileRoutes); // emergency profile Routes
+  app.use("/api/public/emergency-profiles", publicEmergencyInfoRoutes); // public emergency profile Routes
 
   // Non-API Routes
   app.use("/speed-test", speedTestRoutes); // Speed Test Routes

@@ -36,7 +36,13 @@ import CoachingBoardDac from "./dacs/coachingBoardDac.js";
 import { makeCategorySkillPresetModel } from "./db/CategorySkillPresetSchema.js";
 import { CategorySkillPresetDao } from "./daos/CategorySkillPresetDao.js";
 import CategorySkillPresetDac from "./dacs/categorySkillPresetDac.js";
-
+import { makeEmergencyProfileModel } from "./db/EmergencyProfileSchema.js";
+import { makeProfilePhotoModel } from "./db/ProfilePhotoSchema.js";
+import { makeBookmarkModel } from "./db/BookmarksSchema.js";
+import { EmergencyProfileDao } from "./daos/EmergencyProfileDao.js";
+import ProfilePhotoDao from "./daos/ProfilePhotoDao.js";
+import EmergencyProfileDac from "./dacs/emergencyprofileDac.js";
+import ProfilePhotoDac from "./dacs/profilephotoDac.js";
 /**
  * Connect to MongoDB
  */
@@ -69,10 +75,15 @@ function setupModels() {
   const TaskLogModel = makeTaskLogModel(mongoose.connection);
   const GroupModel = makeGroupModel(mongoose.connection);
   const GroupMessageModel = makeGroupMessageModel(mongoose.connection);
+  const EmergencyProfileModel = makeEmergencyProfileModel(mongoose.connection);
+  const ProfilePhotoModel = makeProfilePhotoModel(mongoose.connection);
+  const BookmarkModel = makeBookmarkModel(mongoose.connection);
 
   UserDac.DAO = new UserDao({ UserModel });
   MsgDac.DAO = new MsgDao({ MessageModel });
   AnnouncementDac.DAO = new AnnouncementDao({ AnnouncementModel });
+  EmergencyProfileDac.DAO = new EmergencyProfileDao({ EmergencyProfileModel, ProfilePhotoModel, UserModel, BookmarkModel });
+  ProfilePhotoDac.DAO = new ProfilePhotoDao({ ProfilePhotoModel });
   HelpCenterDac.DAO = new HelpCenterDao({ HelpCenterModel });
   StatusDac.DAO = new StatusDao({ StatusModel, UserModel });
   CoachingBoardDac.DAO = new CoachingBoardDao({ CoachingBoardModel });
