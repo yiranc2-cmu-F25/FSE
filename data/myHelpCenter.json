@@ -1,8 +1,7 @@
 {
   "hero": {
     "title": "My Help Center",
-    "body": "Here is your centralized task management page. You can view and manage all the help you are providing / have offered. Thanks for your contribution! 👏🏻"
-  },
+    "body": "Welcome to your Help Center! Use filter and search to see tasks you have published or are involved in." },
   "taskList": {
     "title": "Tasks",
     "searchPlaceholder": "Search tasks",

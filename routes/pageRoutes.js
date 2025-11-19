@@ -86,7 +86,7 @@ function setupAnnouncementRoutes() {
 
 function setupESNHelpCenterRoutes() {
   console.log("Setting up ESN Help Center Routes...");
-  router.get("/esn-help-center", optionalAuth, (req, res) => {
+  router.get("/esn-help-center", optionalAuth, async (req, res) => {
     const allTasks = Array.isArray(helpCenterConfig.highlightedTasks)
       ? helpCenterConfig.highlightedTasks
       : [];
@@ -100,8 +100,32 @@ function setupESNHelpCenterRoutes() {
     // Get current user ID if authenticated
     const currentUserId = req.userId || req.user?.id || null;
     
+    // Get participant count for the badge (only if user is authenticated)
+    let participantCount = 0;
+    if (currentUserId) {
+      try {
+        const Task = (await import("../entities/Task.js")).default;
+        participantCount = await Task.countTasksByParticipant(currentUserId, {});
+      } catch (error) {
+        console.error("Error fetching participant count:", error);
+        // Use default value 0 on error
+      }
+    }
+    
+    // Update hero config with participant count
+    const heroWithCount = {
+      ...helpCenterConfig.hero,
+      navButtons: {
+        ...helpCenterConfig.hero.navButtons,
+        joinedTasks: {
+          ...helpCenterConfig.hero.navButtons.joinedTasks,
+          activeCount: participantCount,
+        },
+      },
+    };
+    
     res.render("helpTasks/ESNHelpCenter.ejs", {
-      hero: helpCenterConfig.hero,
+      hero: heroWithCount,
       highlightedTasks,
       username: req.username || "",
       tasks: allTasks,
@@ -115,29 +139,25 @@ function setupESNHelpCenterRoutes() {
 }
 
 function setupMyHelpCenterRoutes() {
-  router.get("/my-tasks", (req, res) => {
-    const allTasks = Array.isArray(myHelpCenterConfig.tasks)
-      ? myHelpCenterConfig.tasks
-      : [];
-    console.log("All tasks for myHelpCenter: ", allTasks);
-    const openTasks = allTasks.filter(
-      (t) => (t.status || "").toUpperCase() === "OPEN",
-    );
-    const closedTasks = allTasks.filter(
-      (t) => (t.status || "").toUpperCase() === "CLOSED",
-    );
-    
+  router.get("/my-tasks", authView, (req, res) => {
     // Get current user ID if authenticated
     const currentUserId = req.userId || req.user?.id || null;
     
+    // Use same taskListMeta structure as ESN Help Center
+    const taskListMeta = {
+      title: "Tasks",
+      searchPlaceholder: "Search tasks",
+      filterLabel: "Filter by",
+    };
+    
     res.render("helpTasks/myHelpCenter.ejs", {
       hero: myHelpCenterConfig.hero,
-      taskListMeta: myHelpCenterConfig.taskList,
-      tasks: allTasks,
-      openTasks,
-      closedTasks,
+      taskListMeta: taskListMeta,
+      tasks: [], // Empty array - will be fetched from API on client side
       username: req.username || "",
       currentUserId: currentUserId,
+      task: null,
+      viewer: null,
     });
   });
 }

@@ -556,6 +556,51 @@ router.get("/self", auth, TaskController.getMyTasks);
  */
 router.get("/self/count", auth, TaskController.countMyTasks);
 
+/**
+ * @openapi
+ * /api/tasks/participated/count:
+ *   get:
+ *     tags: [Tasks]
+ *     summary: Count tasks where current user is a participant
+ *     description: Returns the count of tasks where the authenticated user is a participant (not owner) matching the specified filters
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: emergencyLevel
+ *         schema:
+ *           type: string
+ *           enum: [critical, urgent, standard, scheduled]
+ *         description: Filter by emergency level
+ *       - in: query
+ *         name: category
+ *         schema:
+ *           type: string
+ *           enum: [debris_removal_and_cleanup, temporary_repair, animal_care, others]
+ *         description: Filter by category
+ *       - in: query
+ *         name: isOpen
+ *         schema:
+ *           type: boolean
+ *         description: Filter by open/closed status
+ *     responses:
+ *       200:
+ *         description: Success
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 count:
+ *                   type: number
+ *                   example: 5
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Server error
+ */
+router.get("/participated/count", auth, TaskController.countParticipatedTasks);
+
 // Note: Specific routes (/self, /self/count, /count, /single) are defined before parameterized routes
 
 /**

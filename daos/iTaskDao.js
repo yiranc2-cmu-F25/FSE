@@ -87,6 +87,19 @@ export default class iTaskDao {
   }
 
   /**
+   * Get all tasks where user is either creator or participant
+   * @param {String} userId - User ID
+   * @param {Object} options - Filter and sort options (same as getAllTasks)
+   * @returns {Promise<Array>} Array of task documents where user is owner or participant
+   */
+  async getTasksByUser(
+    userId,
+    { emergencyLevel, category, isOpen, sortBy, sortOrder, limit, skip },
+  ) {
+    this.onWip();
+  }
+
+  /**
    * Update a task (only by owner)
    * @param {String} taskId - Task ID
    * @param {String} creatorId - Creator user ID (for ownership verification)

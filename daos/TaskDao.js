@@ -313,6 +313,124 @@ export default class TaskDao extends iTaskDao {
     }));
   }
 
+  /**
+   * Get all tasks where user is either creator or participant
+   * @param {String} userId - User ID
+   * @param {Object} options - Filter and sort options
+   * @returns {Promise<Array>} Array of task documents
+   */
+  async getTasksByUser(userId, {
+    emergencyLevel,
+    category,
+    isOpen,
+    sortBy = "createdAt",
+    sortOrder = "desc",
+    limit,
+    skip,
+  } = {}) {
+    // Get all task IDs where user is a participant
+    const participantTasks = await this.TaskParticipantModel.find({ user: userId })
+      .select("task")
+      .lean();
+    const participantTaskIds = participantTasks.map((p) => p.task);
+
+    // Build filter: tasks where user is creator OR participant
+    const filter = {
+      $or: [
+        { creator: userId },
+        { _id: { $in: participantTaskIds } },
+      ],
+    };
+
+    // Apply additional filters
+    if (emergencyLevel) {
+      filter.emergencyLevel = emergencyLevel;
+    }
+    if (category) {
+      filter.category = category;
+    }
+    if (isOpen !== undefined) {
+      filter.isOpen = isOpen;
+    }
+
+    // Build sort object
+    let sort = {};
+    switch (sortBy) {
+      case "emergencyLevel":
+        sort.emergencyLevel = sortOrder === "asc" ? 1 : -1;
+        break;
+      case "helpers":
+        sort.helpers = sortOrder === "asc" ? 1 : -1;
+        break;
+      case "category":
+        sort.category = sortOrder === "asc" ? 1 : -1;
+        break;
+      case "createdAt":
+        sort.createdAt = sortOrder === "asc" ? 1 : -1;
+        break;
+      case "updatedAt":
+        sort.updatedAt = sortOrder === "asc" ? 1 : -1;
+        break;
+      case "isOpen":
+        sort.isOpen = sortOrder === "asc" ? 1 : -1;
+        break;
+      default:
+        sort.createdAt = -1;
+    }
+
+    const query = this.TaskModel.find(filter)
+      .sort(sort)
+      .populate("creator", "username");
+
+    if (skip !== undefined) query.skip(skip);
+    if (limit !== undefined) query.limit(limit);
+
+    const docs = await query.lean();
+
+    // Get participant counts and check if user is participant for each task
+    const taskIds = docs.map((doc) => doc._id);
+    const participantCounts = await this.TaskParticipantModel.aggregate([
+      { $match: { task: { $in: taskIds } } },
+      { $group: { _id: "$task", count: { $sum: 1 } } },
+    ]);
+
+    // Get user's participation status for each task
+    const userParticipations = await this.TaskParticipantModel.find({
+      task: { $in: taskIds },
+      user: userId,
+    }).lean();
+
+    const participationSet = new Set(
+      userParticipations.map((p) => p.task.toString())
+    );
+
+    // Create a map of task ID to participant count
+    const countMap = {};
+    participantCounts.forEach((pc) => {
+      countMap[pc._id.toString()] = pc.count;
+    });
+
+    return docs.map((doc) => ({
+      id: doc._id,
+      title: doc.title,
+      description: doc.description,
+      category: doc.category,
+      helpers: doc.helpers,
+      emergencyLevel: doc.emergencyLevel,
+      taskType: doc.taskType,
+      dueDate: doc.dueDate,
+      location: doc.location,
+      resourcesNeeded: doc.resourcesNeeded || {},
+      skillsRequired: doc.skillsRequired || [],
+      isOpen: doc.isOpen,
+      creator: doc.creator,
+      createdAt: doc.createdAt,
+      updatedAt: doc.updatedAt,
+      helpersJoined: countMap[doc._id.toString()] || 0,
+      isParticipant: participationSet.has(doc._id.toString()),
+    }));
+  }
+
   async updateTask(taskId, creatorId, updateData) {
     // First verify ownership
     const existingTask = await this.TaskModel.findById(taskId).lean();
@@ -391,6 +509,38 @@ export default class TaskDao extends iTaskDao {
     { emergencyLevel, category, isOpen } = {},
   ) {
     const filter = { creator: creatorId };
+
+    if (emergencyLevel) filter.emergencyLevel = emergencyLevel;
+    if (category) filter.category = category;
+    if (isOpen !== undefined) filter.isOpen = isOpen;
+
+    return await this.TaskModel.countDocuments(filter);
+  }
+
+  /**
+   * Count tasks where user is a participant (including tasks they created)
+   * @param {String} userId - User ID
+   * @param {Object} filters - Filter options
+   * @returns {Promise<Number>} Count of tasks where user is a participant
+   */
+  async countTasksByParticipant(
+    userId,
+    { emergencyLevel, category, isOpen } = {},
+  ) {
+    // Get all task IDs where user is a participant
+    const participantTasks = await this.TaskParticipantModel.find({ user: userId })
+      .select("task")
+      .lean();
+    const participantTaskIds = participantTasks.map((p) => p.task);
+
+    if (participantTaskIds.length === 0) {
+      return 0;
+    }
+
+    // Build filter: tasks where user is participant (including tasks they created)
+    const filter = {
+      _id: { $in: participantTaskIds },
+    };
 
     if (emergencyLevel) filter.emergencyLevel = emergencyLevel;
     if (category) filter.category = category;

@@ -245,7 +245,7 @@ if (searchInput && sortSelect && sortToggle && listContainer) {
                 <img 
                   src="${categoryIconPath}" 
                   alt="${task.category || 'Task category'}" 
-                  class="h-6 w-6" 
+                  class="h-full w-full" 
                 />
               </div>
 

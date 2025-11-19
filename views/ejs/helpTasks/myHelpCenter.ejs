@@ -44,26 +44,43 @@
         </div>
       </header>
 
-      <!-- Tasks card -->
+      <!-- Tasks list section -->
       <section class="">
-        <%- include('../partials/help-center/myTaskList', {
-          taskListMeta: __taskListMeta,
-          openTasks: __openTasks,
-          closedTasks: __closedTasks
-        }) %>
+        <%- include('../partials/help-center/taskList', { taskListMeta:
+        __taskListMeta, tasks: __tasks, isMyTasksPage: true }) %>
       </section>
 
-      <!-- existing global components -->
-      <%- include('../partials/featureModal.ejs') %>
-      <%- include('../partials/nav-bar/absNavBar.ejs') %>
+      <!-- feature modal + bottom nav -->
+      <%- include('../partials/featureModal.ejs') %> <%-
+      include('../partials/nav-bar/absNavBar.ejs') %>
     </main>
-
-    <!-- Expose tasks for frontend filtering -->
     <script>
-      window.__MY_TASKS__ = <%- JSON.stringify(__tasks || []) %>;
+      window.__TASKS__ = <%- JSON.stringify(__tasks || []) %>;
+      window.__CURRENT_USER_ID__ = <%- JSON.stringify(currentUserId || null) %>;
     </script>
     <script type="module" src="/js/helpCenter/myTasks.js"></script>
+
     <script type="module" src="/js/extensionFeatures/featureModal.js"></script>
     <script type="module" src="/js/nav-bar/nav-bar.js"></script>
+
+    <!-- Task Detail Modal-->
+    <%- include('../partials/help-center/taskDetailModal', { task, viewer }) %>
+
+    <!-- Task action alerts -->
+    <%- include('../partials/help-tasks/modals/joinConfirmModal') %>
+    <%- include('../partials/help-tasks/modals/quitConfirmModal') %>
+    <%- include('../partials/help-tasks/modals/joinSuccessModal') %>
+    <%- include('../partials/help-tasks/modals/quitSuccessModal') %>
+    <%- include('../partials/help-tasks/modals/logSuccessModal') %>
+
+    <script>
+      window.__TASK_DETAIL__ = <%- JSON.stringify(task || {}) %>;
+      window.__TASK_VIEWER__ = <%- JSON.stringify(viewer || {}) %>;
+    </script>
+
+    <script type="module" src="/js/ui/modalManager.js"></script>
+    <script type="module" src="/js/helpCenter/taskDetailModal.js"></script>
+    <script type="module" src="/js/helpCenter/clickTaskCard.js"></script>
+
   </body>
 </html>

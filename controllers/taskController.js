@@ -143,18 +143,18 @@ export default class TaskController {
   }
 
   /**
-   * Get all tasks created by the current user (My Tasks)
+   * Get all tasks created by or participated by the current user (My Tasks)
    * GET /tasks/my-tasks
    */
   static async getMyTasks(req, res) {
     try {
-      const creatorIdRaw = req.user?.id ?? req.userId;
-      if (!creatorIdRaw) {
+      const userIdRaw = req.user?.id ?? req.userId;
+      if (!userIdRaw) {
         return res
           .status(401)
           .json({ status: "error", message: "Unauthorized" });
       }
-      const creatorId = normId(creatorIdRaw);
+      const userId = normId(userIdRaw);
 
       const {
         emergencyLevel,
@@ -182,7 +182,8 @@ export default class TaskController {
         skip: skip ? parseInt(skip, 10) : undefined,
       };
 
-      const tasks = await Task.getTasksByCreator(creatorId, options);
+      // Get tasks where user is either creator or participant
+      const tasks = await Task.getTasksByUser(userId, options);
 
       return res.status(200).json(tasks);
     } catch (err) {
@@ -338,6 +339,38 @@ export default class TaskController {
       return res.status(200).json({ count });
     } catch (err) {
       console.error("Error counting my tasks:", err);
+      return res.status(500).json({ status: "error", message: "Server error" });
+    }
+  }
+
+  /**
+   * Count tasks where current user is a participant (not owner)
+   * GET /tasks/participated/count
+   */
+  static async countParticipatedTasks(req, res) {
+    try {
+      const userIdRaw = req.user?.id ?? req.userId;
+      if (!userIdRaw) {
+        return res
+          .status(401)
+          .json({ status: "error", message: "Unauthorized" });
+      }
+      const userId = normId(userIdRaw);
+
+      const { emergencyLevel, category, isOpen } = req.query;
+
+      const filters = {};
+      if (emergencyLevel) filters.emergencyLevel = emergencyLevel;
+      if (category) filters.category = category;
+      if (isOpen !== undefined) {
+        filters.isOpen = isOpen === "true" || isOpen === true;
+      }
+
+      const count = await Task.countTasksByParticipant(userId, filters);
+
+      return res.status(200).json({ count });
+    } catch (err) {
+      console.error("Error counting participated tasks:", err);
       return res.status(500).json({ status: "error", message: "Server error" });
     }
   }

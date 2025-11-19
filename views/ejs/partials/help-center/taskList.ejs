@@ -88,6 +88,10 @@ const statusClasses = function (statusLevel) {
           <option value="category">Category</option>
           <option value="postedAt">Posted time</option>
           <option value="status">Task status</option>
+          <% if (typeof isMyTasksPage !== 'undefined' && isMyTasksPage) { %>
+          <option value="owned">OWNED</option>
+          <option value="joined">JOINED</option>
+          <% } %>
         </select>
         <span
           class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-stone-400"

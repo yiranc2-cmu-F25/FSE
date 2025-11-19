@@ -119,6 +119,29 @@ class Task {
     });
   }
 
+  static async getTasksByUser(
+    userId,
+    {
+      emergencyLevel,
+      category,
+      isOpen,
+      sortBy = "createdAt",
+      sortOrder = "desc",
+      limit,
+      skip,
+    } = {},
+  ) {
+    return await Task.DAO.getTasksByUser(userId, {
+      emergencyLevel,
+      category,
+      isOpen,
+      sortBy,
+      sortOrder,
+      limit,
+      skip,
+    });
+  }
+
   static async updateTask(taskId, creatorId, updateData) {
     return await Task.DAO.updateTask(taskId, creatorId, updateData);
   }
@@ -136,6 +159,17 @@ class Task {
     { emergencyLevel, category, isOpen } = {},
   ) {
     return await Task.DAO.countTasksByCreator(creatorId, {
+      emergencyLevel,
+      category,
+      isOpen,
+    });
+  }
+
+  static async countTasksByParticipant(
+    userId,
+    { emergencyLevel, category, isOpen } = {},
+  ) {
+    return await Task.DAO.countTasksByParticipant(userId, {
       emergencyLevel,
       category,
       isOpen,
