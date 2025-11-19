@@ -1,13 +1,13 @@
 export class iProfilePhotoDao {
-    async uploadProfilePhoto(userId, photoData) {
+    async uploadProfilePhoto(profileId, photoData, contentType, visibility) {
         throw new Error("To be implemented!");
     }
 
-    async getProfilePhoto(userId) {
+    async getProfilePhoto(profileId) {
         throw new Error("To be implemented!");
     }
 
-    async deleteProfilePhoto(userId) {
+    async deleteProfilePhoto(profileId) {
         throw new Error("To be implemented!");
     }
 }

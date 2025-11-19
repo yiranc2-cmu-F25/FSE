@@ -3,6 +3,8 @@ import { parseArrayField, parseNumberField, parseEmergencyContacts, parseHeight,
 import { getVisibilitySetting } from "../utils/emergencyProfile/visibilityUtils.js";
 import { loadProfileData, saveProfile, deleteProfile, uploadPhoto } from "../utils/emergencyProfile/emergencyProfileApi.js";
 import { populateFormFields, collectFormData } from "../utils/emergencyProfile/formUtils.js";
+import { showSuccessModal, closeSuccessModal, showConfirmDeleteModal, closeConfirmDeleteModal, setupModalCloseHandlers } from "../utils/emergencyProfile/modalUtils.js";
+import { setupEmergencyContactsValidation, setupHeightValidation, setupWeightValidation } from "../utils/emergencyProfile/validationUtils.js";
 
 document.addEventListener("DOMContentLoaded", () => {
   const changeBtn = document.getElementById("change-btn");
@@ -20,98 +22,17 @@ document.addEventListener("DOMContentLoaded", () => {
   const confirmDeleteCancel = document.getElementById("confirm-delete-cancel");
   const confirmDeleteOk = document.getElementById("confirm-delete-ok");
   
-  // Helper function to show success modal
-  function showSuccessModal(title, description) {
-    if (successModal && successModalTitle && successModalDescription) {
-      successModalTitle.textContent = title;
-      successModalDescription.textContent = description;
-      successModal.classList.remove("hidden");
-      document.body.classList.add("overflow-hidden");
-      successModalClose?.focus();
-    }
-  }
+  // Wrapper functions for modal utilities
+  const showSuccessModalWrapper = (title, description) => {
+    showSuccessModal(successModal, successModalTitle, successModalDescription, successModalClose, title, description);
+  };
   
-  // Helper function to close success modal
-  function closeSuccessModal() {
-    if (successModal) {
-      successModal.classList.add("hidden");
-      document.body.classList.remove("overflow-hidden");
-    }
-  }
-  
-  // Helper function to show confirm delete modal
-  function showConfirmDeleteModal() {
-    return new Promise((resolve) => {
-      if (confirmDeleteModal) {
-        confirmDeleteModal.classList.remove("hidden");
-        document.body.classList.add("overflow-hidden");
-        
-        // Setup one-time event listeners
-        const handleConfirm = () => {
-          closeConfirmDeleteModal();
-          resolve(true);
-        };
-        
-        const handleCancel = () => {
-          closeConfirmDeleteModal();
-          resolve(false);
-        };
-        
-        if (confirmDeleteOk) {
-          confirmDeleteOk.addEventListener("click", handleConfirm, { once: true });
-        }
-        if (confirmDeleteCancel) {
-          confirmDeleteCancel.addEventListener("click", handleCancel, { once: true });
-        }
-        
-        // Close on overlay click
-        const handleOverlayClick = (e) => {
-          if (e.target === confirmDeleteModal) {
-            closeConfirmDeleteModal();
-            resolve(false);
-          }
-        };
-        confirmDeleteModal.addEventListener("click", handleOverlayClick, { once: true });
-        
-        // Close on Escape key
-        const handleEscape = (e) => {
-          if (e.key === "Escape") {
-            closeConfirmDeleteModal();
-            resolve(false);
-          }
-        };
-        document.addEventListener("keydown", handleEscape, { once: true });
-      } else {
-        resolve(false);
-      }
-    });
-  }
-  
-  // Helper function to close confirm delete modal
-  function closeConfirmDeleteModal() {
-    if (confirmDeleteModal) {
-      confirmDeleteModal.classList.add("hidden");
-      document.body.classList.remove("overflow-hidden");
-    }
-  }
+  const showConfirmDeleteModalWrapper = () => {
+    return showConfirmDeleteModal(confirmDeleteModal, confirmDeleteCancel, confirmDeleteOk);
+  };
   
   // Setup modal close handlers
-  if (successModalClose) {
-    successModalClose.addEventListener("click", closeSuccessModal);
-  }
-  if (successModal) {
-    // Close modal when clicking on the overlay (background)
-    successModal.addEventListener("click", (e) => {
-      if (e.target === successModal) {
-        closeSuccessModal();
-      }
-    });
-  }
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && successModal && !successModal.classList.contains("hidden")) {
-      closeSuccessModal();
-    }
-  });
+  setupModalCloseHandlers(successModal, successModalClose);
   
   // Helper function to show error message
   function showPhotoError(message) {
@@ -211,107 +132,18 @@ document.addEventListener("DOMContentLoaded", () => {
   // Initialize profile data on page load
   initProfileData();
 
-  // Add real-time validation for emergency contacts input
+  // Setup real-time validation for form fields
   const emergencyContactsInput = form.querySelector('input[name="emergencyContacts"]');
   const emergencyContactsError = document.getElementById('emergency-contacts-error');
-  
-  if (emergencyContactsInput) {
-    emergencyContactsInput.addEventListener('input', (e) => {
-      const value = e.target.value;
-      if (!value || value.trim() === "") {
-        // Clear any error styling and hide error message if field is empty
-        e.target.classList.remove('border-red-500');
-        if (emergencyContactsError) {
-          emergencyContactsError.classList.add('hidden');
-        }
-        return;
-      }
-      
-      // Check if all comma-separated values are numbers
-      const contacts = value.split(",").map((item) => item.trim()).filter((item) => item !== "");
-      const invalidContacts = contacts.filter((contact) => contact !== "" && !/^\d+$/.test(contact));
-      
-      if (invalidContacts.length > 0) {
-        // Add error styling and show error message
-        e.target.classList.add('border-red-500');
-        if (emergencyContactsError) {
-          emergencyContactsError.classList.remove('hidden');
-        }
-      } else {
-        // Remove error styling and hide error message
-        e.target.classList.remove('border-red-500');
-        if (emergencyContactsError) {
-          emergencyContactsError.classList.add('hidden');
-        }
-      }
-    });
-  }
+  setupEmergencyContactsValidation(emergencyContactsInput, emergencyContactsError);
 
-  // Add real-time validation for height input
   const heightInput = form.querySelector('input[name="height"]');
   const heightError = document.getElementById('height-error');
-  
-  if (heightInput) {
-    heightInput.addEventListener('input', (e) => {
-      const value = e.target.value;
-      if (!value || value.trim() === "") {
-        // Clear any error styling and hide error message if field is empty
-        e.target.classList.remove('border-red-500');
-        if (heightError) {
-          heightError.classList.add('hidden');
-        }
-        return;
-      }
-      
-      const num = parseFloat(value);
-      if (isNaN(num) || num < 50 || num > 300) {
-        // Add error styling and show error message
-        e.target.classList.add('border-red-500');
-        if (heightError) {
-          heightError.classList.remove('hidden');
-        }
-      } else {
-        // Remove error styling and hide error message
-        e.target.classList.remove('border-red-500');
-        if (heightError) {
-          heightError.classList.add('hidden');
-        }
-      }
-    });
-  }
+  setupHeightValidation(heightInput, heightError);
 
-  // Add real-time validation for weight input
   const weightInput = form.querySelector('input[name="weight"]');
   const weightError = document.getElementById('weight-error');
-  
-  if (weightInput) {
-    weightInput.addEventListener('input', (e) => {
-      const value = e.target.value;
-      if (!value || value.trim() === "") {
-        // Clear any error styling and hide error message if field is empty
-        e.target.classList.remove('border-red-500');
-        if (weightError) {
-          weightError.classList.add('hidden');
-        }
-        return;
-      }
-      
-      const num = parseFloat(value);
-      if (isNaN(num) || num < 10 || num > 500) {
-        // Add error styling and show error message
-        e.target.classList.add('border-red-500');
-        if (weightError) {
-          weightError.classList.remove('hidden');
-        }
-      } else {
-        // Remove error styling and hide error message
-        e.target.classList.remove('border-red-500');
-        if (weightError) {
-          weightError.classList.add('hidden');
-        }
-      }
-    });
-  }
+  setupWeightValidation(weightInput, weightError);
 
   // Attach click handler to profile avatar (reload data)
   profileAvatar.addEventListener("click", async () => {
@@ -354,7 +186,7 @@ document.addEventListener("DOMContentLoaded", () => {
         toggleEditMode();
         
         // Show success modal
-        showSuccessModal(
+        showSuccessModalWrapper(
           "Emergency Profile Saved!",
           "Your emergency profile has been updated successfully."
         );
@@ -387,7 +219,7 @@ document.addEventListener("DOMContentLoaded", () => {
       console.log("Discarding changes...");
     } else {
       // Delete action - show confirm modal first
-      const confirmed = await showConfirmDeleteModal();
+      const confirmed = await showConfirmDeleteModalWrapper();
       if (!confirmed) {
         return;
       }
@@ -399,7 +231,7 @@ document.addEventListener("DOMContentLoaded", () => {
         await deleteProfile();
         
         // Show success modal before redirecting
-        showSuccessModal(
+        showSuccessModalWrapper(
           "Emergency Profile Deleted!",
           "Your emergency profile has been deleted successfully."
         );
@@ -422,7 +254,8 @@ document.addEventListener("DOMContentLoaded", () => {
     // Create a file input element
     const fileInput = document.createElement("input");
     fileInput.type = "file";
-    fileInput.accept = "image/*";
+    // Accept common image formats, but exclude SVG (note: accept attribute doesn't fully prevent SVG selection)
+    fileInput.accept = "image/jpeg,image/jpg,image/png,image/gif,image/webp,image/bmp";
     
     fileInput.addEventListener("change", async (e) => {
       const file = e.target.files[0];
@@ -430,7 +263,13 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
       
-      // Check file size (limit to 10MB)
+      // Check file type - must be an image, but exclude SVG for security reasons (matches backend fileFilter)
+      if (!file.type || !file.type.startsWith('image/') || file.type.includes('svg')) {
+        showPhotoError("Only image files are allowed (SVG not supported)");
+        return;
+      }
+      
+      // Check file size (limit to 10MB, matches backend limits)
       if (file.size > 10 * 1024 * 1024) {
         showPhotoError("File size must be less than 10MB");
         return;

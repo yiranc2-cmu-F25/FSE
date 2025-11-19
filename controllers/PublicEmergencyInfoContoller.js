@@ -104,51 +104,63 @@ export async function getBookmarkedEmergencyProfiles(req, res) {
     }
 }
 
+// Helper function to validate bookmark request
+function validateBookmarkRequest(req) {
+    const userId = req.user?.id || req.userId;
+    const profileId = req.body.profileId;
+    
+    if (!userId) {
+        return { error: { status: 401, message: "User ID not found" } };
+    }
+    
+    if (!profileId) {
+        return { error: { status: 400, message: "Profile ID is required" } };
+    }
+    
+    return { userId, profileId: String(profileId) };
+}
+
+// Helper function to handle bookmark operation errors
+function handleBookmarkError(err, operation) {
+    console.error(`Error ${operation} emergency profile:`, err);
+    return { 
+        status: 500, 
+        message: `Error ${operation} emergency profile`, 
+        error: err.message 
+    };
+}
+
 export async function bookmarkEmergencyProfile(req, res) {
     try {
-        const userId = req.user?.id || req.userId;
-        const profileId = req.body.profileId;
-        
-        if (!userId) {
-            return res.status(401).json({ error: "User ID not found" });
+        const validation = validateBookmarkRequest(req);
+        if (validation.error) {
+            return res.status(validation.error.status).json({ error: validation.error.message });
         }
         
-        if (!profileId) {
-            return res.status(400).json({ error: "Profile ID is required" });
-        }
+        const { userId, profileId } = validation;
+        await EmergencyProfile.bookmarkEmergencyProfile(userId, profileId);
         
-        // Convert profileId to string to ensure consistency
-        const profileIdStr = String(profileId);
-        await EmergencyProfile.bookmarkEmergencyProfile(userId, profileIdStr);
-        
-        res.json({ message: "Emergency profile bookmarked", profileId: profileIdStr });
+        res.json({ message: "Emergency profile bookmarked", profileId });
     } catch (err) {
-        console.error("Error bookmarking emergency profile:", err);
-        res.status(500).json({ message: "Error bookmarking emergency profile", error: err.message });
+        const error = handleBookmarkError(err, "bookmarking");
+        res.status(error.status).json({ message: error.message, error: error.error });
     }
 }
 
 export async function unbookmarkEmergencyProfile(req, res) {
     try {
-        const userId = req.user?.id || req.userId;
-        const profileId = req.body.profileId;
-        
-        if (!userId) {
-            return res.status(401).json({ error: "User ID not found" });
+        const validation = validateBookmarkRequest(req);
+        if (validation.error) {
+            return res.status(validation.error.status).json({ error: validation.error.message });
         }
         
-        if (!profileId) {
-            return res.status(400).json({ error: "Profile ID is required" });
-        }
+        const { userId, profileId } = validation;
+        await EmergencyProfile.unbookmarkEmergencyProfile(userId, profileId);
         
-        // Convert profileId to string to ensure consistency
-        const profileIdStr = String(profileId);
-        await EmergencyProfile.unbookmarkEmergencyProfile(userId, profileIdStr);
-        
-        res.json({ message: "Emergency profile unbookmarked", profileId: profileIdStr });
+        res.json({ message: "Emergency profile unbookmarked", profileId });
     } catch (err) {
-        console.error("Error unbookmarking emergency profile:", err);
-        res.status(500).json({ message: "Error unbookmarking emergency profile", error: err.message });
+        const error = handleBookmarkError(err, "unbookmarking");
+        res.status(error.status).json({ message: error.message, error: error.error });
     }
 }
 
