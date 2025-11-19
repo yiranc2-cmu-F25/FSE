@@ -99,5 +99,16 @@
 
     <script type="module" src="/js/extensionFeatures/featureModal.js"></script>
     <script type="module" src="/js/nav-bar/nav-bar.js"></script>
+
+    <!-- Task Detail Modal-->
+    <%- include('../partials/help-center/taskDetailModal', { task, viewer }) %>
+
+    <script>
+      window.__TASK_DETAIL__ = <%- JSON.stringify(task || {}) %>;
+      window.__TASK_VIEWER__ = <%- JSON.stringify(viewer || {}) %>;
+    </script>
+    <script type="module" src="/js/helpCenter/taskDetailModal.js"></script>
+    <script type="module" src="/js/helpCenter/clickTaskCard.js"></script>
+
   </body>
 </html>

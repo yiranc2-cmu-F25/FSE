@@ -123,7 +123,7 @@ if (searchInput && sortSelect && sortToggle && listContainer) {
 
         return `
           <article
-            class="flex items-center justify-between rounded-3xl bg-gradient-to-r px-4 py-4 shadow-sm ${gradient}"
+            class="flex items-center justify-between rounded-3xl bg-gradient-to-r px-4 py-4 shadow-sm ${gradient} task-list-item task-card"
           >
             <div class="flex items-center gap-3">
               <div

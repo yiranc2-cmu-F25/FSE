@@ -114,7 +114,7 @@ const statusClasses = function (statusLevel) {
     <div class="mt-5 space-y-4" id="task-list-items">
       <% taskItems.forEach(function (task) { %>
       <article
-        class="<%= gradientClasses(task.categoryType) %> flex items-center justify-between rounded-3xl bg-gradient-to-r px-4 py-4 shadow-sm"
+        class="<%= gradientClasses(task.categoryType) %> flex items-center justify-between rounded-3xl bg-gradient-to-r px-4 py-4 shadow-sm task-card task-list-item"
       >
         <!-- Left: icon + text -->
         <div class="flex items-center gap-3">

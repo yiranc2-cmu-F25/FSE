@@ -8,6 +8,7 @@ import { setup } from "swagger-ui-express";
 import helpCenterConfig from "../data/helpCenter.json" with { type: "json" };
 
 import myHelpCenterConfig from "../data/myHelpCenter.json" with { type: "json" };
+import detailMock from "../data/taskDetailMock.json" with { type: "json" };
 import { set } from "mongoose";
 
 const router = express.Router();
@@ -101,6 +102,9 @@ function setupESNHelpCenterRoutes() {
       username: req.username || "",
       tasks: allTasks,
       taskListMeta,
+      // testing static task detail pop up
+      task: detailMock.task,
+      viewer: detailMock.viewer,
     });
   });
 }
@@ -135,6 +139,15 @@ function setupCreateTaskRoutes() {
     });
   });
 }
+// function setupViewTaskDetailRoutes() {
+//   router.get("/task-detail/demo-taskId", (req, res) => {
+//     res.render("helpTasks/taskDetail.ejs", {
+//       username: req.username || "",
+//       task: detailMock.task,
+//       viewer: detailMock.viewer,
+//     });
+//   });
+// }
 console.log("Setting up routes...");
 setupJoinCommunityRoutes();
 setupPublicChatRoutes();
@@ -145,5 +158,6 @@ setupAnnouncementRoutes();
 setupESNHelpCenterRoutes();
 setupMyHelpCenterRoutes();
 setupCreateTaskRoutes();
+// setupViewTaskDetailRoutes();
 
 export default router;
