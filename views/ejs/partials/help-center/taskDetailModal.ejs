@@ -70,42 +70,50 @@
               <dt class="w-20 font-semibold text-stone-400">Due Date:</dt>
               <dd class="flex-1 text-stone-700"><%= formatDate(t.dueDate) %></dd>
             </div>
-            <div class="flex items-center gap-2">
-              <dt class="w-20 font-semibold text-stone-400">Helpers:</dt>
-              <dd class="flex flex-1 items-center justify-between gap-3">
-                <!-- ratio pill -->
-                <div class="flex items-center gap-2">
-                  <span
-                    class="inline-flex items-center rounded-full bg-amber-100 px-2 py-1 text-[11px] font-semibold text-amber-700"
-                  >
-                    <%= helpersRatio %> / <%= t.helpersCapacity || 0 %>
-                  </span>
-                  <!-- small bar -->
-                  <span class="relative inline-flex h-1.5 w-20 overflow-hidden rounded-full bg-stone-200">
+            <div class="flex items-start gap-2">
+              <dt class="w-20 pt-1 font-semibold text-stone-400">Helpers:</dt>
+              <dd class="flex-1 space-y-1">
+                <!-- ratio + avatars row -->
+                <div class="flex items-center justify-between gap-3">
+                  <!-- ratio pill + bar -->
+                  <div class="flex items-center gap-2">
                     <span
-                      class="absolute inset-y-0 left-0 rounded-full bg-amber-400"
-                      style="width: <%= t.helpersCapacity ? (100 * helpersRatio / t.helpersCapacity) : 0 %>%"
-                    ></span>
-                  </span>
+                      class="helpers-ratio-pill inline-flex items-center rounded-full bg-amber-100 px-2 py-1 text-[11px] font-semibold text-amber-700"
+                    >
+                      <%= helpersRatio %> / <%= t.helpersCapacity || 0 %>
+                    </span>
+                    <!-- small bar -->
+                    <span class="relative inline-flex h-1.5 w-20 overflow-hidden rounded-full bg-stone-200">
+                      <span
+                        class="helpers-progress-bar absolute inset-y-0 left-0 rounded-full bg-amber-400"
+                        style="width: <%= t.helpersCapacity ? (100 * helpersRatio / t.helpersCapacity) : 0 %>%"
+                      ></span>
+                    </span>
+                  </div>
+
+                  <!-- mini avatars -->
+                  <div class="helpers-avatars -mr-1 flex items-center">
+                    <% (t.helperAvatars || []).slice(0, 5).forEach(function (h, idx) { %>
+                      <span
+                        class="relative -ml-2 flex h-7 w-7 items-center justify-center rounded-full border border-white text-[9px] font-semibold text-white shadow-sm"
+                        style="background-color: <%= h.color || '#f97316' %>;"
+                      >
+                        <%= h.initials || '' %>
+                      </span>
+                    <% }); %>
+                    <% if ((t.helperAvatars || []).length > 5) { %>
+                      <span
+                        class="-ml-2 flex h-7 w-7 items-center justify-center rounded-full border border-white bg-stone-200 text-[9px] font-semibold text-stone-700"
+                      >
+                        +<%= (t.helperAvatars || []).length - 5 %>
+                      </span>
+                    <% } %>
+                  </div>
                 </div>
 
-                <!-- mini avatars -->
-                <div class="-mr-1 flex items-center">
-                  <% (t.helperAvatars || []).slice(0, 5).forEach(function (h, idx) { %>
-                    <span
-                      class="relative -ml-2 flex h-7 w-7 items-center justify-center rounded-full border border-white text-[9px] font-semibold text-white shadow-sm"
-                      style="background-color: <%= h.color || '#f97316' %>;"
-                    >
-                      <%= h.initials || '' %>
-                    </span>
-                  <% }); %>
-                  <% if ((t.helperAvatars || []).length > 5) { %>
-                    <span
-                      class="-ml-2 flex h-7 w-7 items-center justify-center rounded-full border border-white bg-stone-200 text-[9px] font-semibold text-stone-700"
-                    >
-                      +<%= (t.helperAvatars || []).length - 5 %>
-                    </span>
-                  <% } %>
+                <!-- helper names list (will be updated by JS) -->
+                <div class="helper-names-list mt-1 space-y-0.5 text-[11px] text-stone-600">
+                  <p class="text-[11px] text-stone-500">No helpers yet.</p>
                 </div>
               </dd>
             </div>
@@ -199,7 +207,6 @@
               type="button"
               id="btn-join-task"
               class="hidden w-full rounded-2xl bg-amber-700 py-3 text-sm font-semibold text-white shadow-md hover:bg-amber-800"
-              data-modal-open="join-confirm-modal"
             >
               Join Task
             </button>

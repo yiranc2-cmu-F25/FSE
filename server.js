@@ -8,6 +8,8 @@ import { makeUserModel } from "./db/UserSchema.js";
 import { makeMsgModel } from "./db/MsgSchema.js";
 import { makeStatusModel } from "./db/StatusSchema.js";
 import makeTaskModel from "./db/TaskSchema.js";
+import makeTaskParticipantModel from "./db/TaskParticipantSchema.js";
+import makeTaskLogModel from "./db/TaskLogSchema.js";
 import { UserDao } from "./daos/UserDao.js";
 import { MsgDao } from "./daos/MsgDao.js";
 import { StatusDao } from "./daos/StatusDao.js";
@@ -27,6 +29,8 @@ const modelMap = {
   "announcement": makeAnnouncementModel,
   "status": makeStatusModel,
   "task": makeTaskModel,
+  "taskParticipant": makeTaskParticipantModel,
+  "taskLog": makeTaskLogModel,
 }
 
 /**
@@ -60,7 +64,11 @@ function setupModels() {
   AnnouncementDac.DAO = new AnnouncementDao({ AnnouncementModel: modelMap.announcement });
   StatusDac.DAO = new StatusDao({ StatusModel: modelMap.status, UserModel: modelMap.user });
   UserDac.DAO = new UserDao({ UserModel: modelMap.user });
-  TaskDac.DAO = new TaskDao({ TaskModel: modelMap.task });
+  TaskDac.DAO = new TaskDao({ 
+    TaskModel: modelMap.task,
+    TaskParticipantModel: modelMap.taskParticipant,
+    TaskLogModel: modelMap.taskLog,
+  });
 }
 
 function setupSocket() {

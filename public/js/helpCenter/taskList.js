@@ -1,12 +1,96 @@
 // public/js/helpCenter/taskList.js
 
-const tasks = Array.isArray(window.__TASKS__) ? window.__TASKS__ : [];
+// Fallback to window.__TASKS__ if available (for backward compatibility)
+let tasks = Array.isArray(window.__TASKS__) ? window.__TASKS__ : [];
 
 const searchInput = document.querySelector("#task-search-input");
 const sortSelect = document.querySelector("#task-sort-select");
 const sortToggle = document.querySelector("#task-sort-toggle");
 const sortToggleIcon = document.querySelector("#task-sort-toggle-icon");
 const listContainer = document.querySelector("#task-list-items");
+
+// Map backend category values to frontend categoryType
+const CATEGORY_TYPE_MAP = {
+  debris_removal_and_cleanup: "debris",
+  temporary_repair: "temp-repair",
+  animal_care: "animal-care",
+  others: "other",
+};
+
+// Map backend category enum to display name
+const CATEGORY_DISPLAY_MAP = {
+  debris_removal_and_cleanup: "Debris Removal",
+  temporary_repair: "Temp Repair",
+  animal_care: "Animal Care",
+  others: "Others",
+};
+
+// Map emergencyLevel to statusLabel (capitalize first letter)
+function getStatusLabel(emergencyLevel) {
+  if (!emergencyLevel) return "";
+  return emergencyLevel.charAt(0).toUpperCase() + emergencyLevel.slice(1);
+}
+
+// Transform backend task data to frontend format
+function transformTask(backendTask) {
+  const categoryType =
+    CATEGORY_TYPE_MAP[backendTask.category] || "other";
+  const categoryDisplay =
+    CATEGORY_DISPLAY_MAP[backendTask.category] || backendTask.category || "";
+  const statusLabel = getStatusLabel(backendTask.emergencyLevel);
+  const status = backendTask.isOpen ? "OPEN" : "CLOSED";
+
+  return {
+    id: backendTask.id || backendTask._id,
+    title: backendTask.title || "",
+    category: categoryDisplay,
+    categoryType: categoryType,
+    statusLevel: backendTask.emergencyLevel || "standard",
+    statusLabel: statusLabel,
+    status: status,
+    capacity: backendTask.helpers || 0,
+    joinedCount: backendTask.helpersJoined || 0,
+    postedAt: backendTask.createdAt || backendTask.updatedAt,
+    href: `/tasks/${backendTask.id || backendTask._id}`,
+    // Optional fields
+    icon: backendTask.icon,
+    location: backendTask.location,
+    description: backendTask.description,
+  };
+}
+
+// Fetch tasks from API
+async function fetchTasks() {
+  try {
+    const response = await fetch("/api/tasks", {
+      method: "GET",
+      credentials: "include", // Include cookies for authentication
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        console.error("Unauthorized: Please log in");
+        return [];
+      }
+      throw new Error(`Failed to fetch tasks: ${response.status}`);
+    }
+
+    const backendTasks = await response.json();
+    if (!Array.isArray(backendTasks)) {
+      console.error("Invalid response format: expected array");
+      return [];
+    }
+
+    return backendTasks.map(transformTask);
+  } catch (error) {
+    console.error("Error fetching tasks:", error);
+    // Return empty array on error, but keep using fallback data if available
+    return [];
+  }
+}
 
 if (searchInput && sortSelect && sortToggle && listContainer) {
   let currentDirection =
@@ -124,6 +208,7 @@ if (searchInput && sortSelect && sortToggle && listContainer) {
         return `
           <article
             class="flex items-center justify-between rounded-3xl bg-gradient-to-r px-4 py-4 shadow-sm ${gradient} task-list-item task-card"
+            data-task-id="${task.id}"
           >
             <div class="flex items-center gap-3">
               <div
@@ -156,6 +241,7 @@ if (searchInput && sortSelect && sortToggle && listContainer) {
               href="${href}"
               class="ml-4 inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/80 text-stone-500 shadow-sm transition hover:bg-amber-600 hover:text-white"
               aria-label="View task details"
+              data-task-id="${task.id}"
             >
               <!-- chevron icon placeholder -->
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-4 w-4" aria-hidden="true">
@@ -208,7 +294,36 @@ if (searchInput && sortSelect && sortToggle && listContainer) {
     applyFiltersAndRender();
   });
 
-  // Initial render
-  updateToggleIcon();
-  applyFiltersAndRender();
+  // Initialize: fetch tasks from API and render
+  async function initialize() {
+    // If we have fallback data, render it immediately for better UX
+    if (tasks.length > 0) {
+      updateToggleIcon();
+      applyFiltersAndRender();
+    } else {
+      // Show loading state only if no fallback data
+      if (listContainer) {
+        listContainer.innerHTML = '<p class="text-center text-stone-500 py-4">Loading tasks...</p>';
+      }
+    }
+
+    // Fetch tasks from API in the background
+    const fetchedTasks = await fetchTasks();
+    
+    // Update tasks if API returned data
+    if (fetchedTasks.length > 0) {
+      tasks = fetchedTasks;
+      updateToggleIcon();
+      applyFiltersAndRender();
+    } else if (tasks.length === 0) {
+      // If no tasks from API and no fallback, show empty state
+      if (listContainer) {
+        listContainer.innerHTML = '<p class="text-center text-stone-500 py-4">No tasks available</p>';
+      }
+      return;
+    }
+  }
+
+  // Start initialization
+  initialize();
 }

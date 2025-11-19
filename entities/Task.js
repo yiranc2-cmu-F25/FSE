@@ -72,8 +72,8 @@ class Task {
     });
   }
 
-  static async getTask(id) {
-    return await Task.DAO.getTask(id);
+  static async getTask(id, userId = null) {
+    return await Task.DAO.getTask(id, userId);
   }
 
   static async getAllTasks({
@@ -140,6 +140,22 @@ class Task {
       category,
       isOpen,
     });
+  }
+
+  static async joinTask(taskId, userId, note = "") {
+    return await Task.DAO.joinTask(taskId, userId, note);
+  }
+
+  static async quitTask(taskId, userId) {
+    return await Task.DAO.quitTask(taskId, userId);
+  }
+
+  static async addTaskLog(taskId, userId, summary) {
+    return await Task.DAO.addTaskLog(taskId, userId, summary);
+  }
+
+  static async isUserParticipant(taskId, userId) {
+    return await Task.DAO.isUserParticipant(taskId, userId);
   }
 }
 

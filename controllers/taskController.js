@@ -83,7 +83,11 @@ export default class TaskController {
           .json({ status: "error", message: "Task ID is required" });
       }
 
-      const task = await Task.getTask(taskId);
+      // Get current user ID if authenticated
+      const userIdRaw = req.user?.id ?? req.userId;
+      const userId = userIdRaw ? normId(userIdRaw) : null;
+
+      const task = await Task.getTask(taskId, userId);
       if (!task) {
         return res
           .status(404)
@@ -334,6 +338,130 @@ export default class TaskController {
       return res.status(200).json({ count });
     } catch (err) {
       console.error("Error counting my tasks:", err);
+      return res.status(500).json({ status: "error", message: "Server error" });
+    }
+  }
+
+  /**
+   * Join a task
+   * POST /tasks/:id/join
+   */
+  static async joinTask(req, res) {
+    try {
+      const taskId = req.params.id;
+      if (!taskId) {
+        return res
+          .status(400)
+          .json({ status: "error", message: "Task ID is required" });
+      }
+
+      const userIdRaw = req.user?.id ?? req.userId;
+      if (!userIdRaw) {
+        return res
+          .status(401)
+          .json({ status: "error", message: "Unauthorized" });
+      }
+      const userId = normId(userIdRaw);
+
+      const { note } = req.body;
+
+      await Task.joinTask(taskId, userId, note || "");
+
+      return res.status(200).json({
+        status: "success",
+        message: "Task joined successfully",
+      });
+    } catch (err) {
+      console.error("Error joining task:", err);
+      if (err.message === "Task not found") {
+        return res.status(404).json({ status: "error", message: err.message });
+      }
+      if (err.message === "Task is closed" || err.message === "Task is full" || err.message === "User is already a participant in this task") {
+        return res.status(400).json({ status: "error", message: err.message });
+      }
+      return res.status(500).json({ status: "error", message: "Server error" });
+    }
+  }
+
+  /**
+   * Quit a task
+   * POST /tasks/:id/quit
+   */
+  static async quitTask(req, res) {
+    try {
+      const taskId = req.params.id;
+      if (!taskId) {
+        return res
+          .status(400)
+          .json({ status: "error", message: "Task ID is required" });
+      }
+
+      const userIdRaw = req.user?.id ?? req.userId;
+      if (!userIdRaw) {
+        return res
+          .status(401)
+          .json({ status: "error", message: "Unauthorized" });
+      }
+      const userId = normId(userIdRaw);
+
+      await Task.quitTask(taskId, userId);
+
+      return res.status(200).json({
+        status: "success",
+        message: "Task quit successfully",
+      });
+    } catch (err) {
+      console.error("Error quitting task:", err);
+      if (err.message === "User is not a participant in this task") {
+        return res.status(400).json({ status: "error", message: err.message });
+      }
+      return res.status(500).json({ status: "error", message: "Server error" });
+    }
+  }
+
+  /**
+   * Add a task log
+   * POST /tasks/:id/logs
+   */
+  static async addTaskLog(req, res) {
+    try {
+      const taskId = req.params.id;
+      if (!taskId) {
+        return res
+          .status(400)
+          .json({ status: "error", message: "Task ID is required" });
+      }
+
+      const userIdRaw = req.user?.id ?? req.userId;
+      if (!userIdRaw) {
+        return res
+          .status(401)
+          .json({ status: "error", message: "Unauthorized" });
+      }
+      const userId = normId(userIdRaw);
+
+      const { summary } = req.body;
+      if (!summary || typeof summary !== "string" || summary.trim().length === 0) {
+        return res
+          .status(400)
+          .json({ status: "error", message: "Log summary is required" });
+      }
+
+      const log = await Task.addTaskLog(taskId, userId, summary.trim());
+
+      return res.status(201).json({
+        status: "success",
+        message: "Task log added successfully",
+        log: log,
+      });
+    } catch (err) {
+      console.error("Error adding task log:", err);
+      if (err.message === "Task not found") {
+        return res.status(404).json({ status: "error", message: err.message });
+      }
+      if (err.message === "Only participants can add task logs") {
+        return res.status(403).json({ status: "error", message: err.message });
+      }
       return res.status(500).json({ status: "error", message: "Server error" });
     }
   }

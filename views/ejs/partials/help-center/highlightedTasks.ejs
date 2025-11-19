@@ -17,6 +17,7 @@ highlightedtasks : []; %>
     </a>
     <% } %>
   </div>
+  <div id="highlighted-tasks-container">
   <% if (tasks.length === 0) { %>
   <p>All tasks are fully joined. Nice work everyone!</p>
   <% } else { %>
@@ -105,4 +106,10 @@ highlightedtasks : []; %>
     </div>
   </div>
   <% } %>
+  </div>
 </section>
+<script>
+  window.__HIGHLIGHT_SECTION__ = <%- JSON.stringify(section || {}) %>;
+  window.__HIGHLIGHTED_TASKS__ = <%- JSON.stringify(tasks || []) %>;
+</script>
+<script type="module" src="/js/helpCenter/highlightedTasks.js"></script>

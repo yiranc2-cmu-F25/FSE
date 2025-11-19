@@ -916,4 +916,178 @@ router.put("/single/:id", auth, TaskController.updateTask);
  */
 router.delete("/single/:id", auth, TaskController.deleteTask);
 
+/**
+ * @openapi
+ * /api/tasks/single/{id}/join:
+ *   post:
+ *     tags: [Tasks]
+ *     summary: Join a task
+ *     description: Allows a user to join a task as a participant. The user must be authenticated and the task must be open and not full.
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Task ID
+ *         example: "507f1f77bcf86cd799439011"
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               note:
+ *                 type: string
+ *                 description: Optional note from the user to the task owner
+ *                 example: "I can help with chainsaw operation and have safety equipment."
+ *     responses:
+ *       200:
+ *         description: Task joined successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: "success"
+ *                 message:
+ *                   type: string
+ *                   example: "Task joined successfully"
+ *       400:
+ *         description: Bad request (task closed, full, or already a participant)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: "error"
+ *                 message:
+ *                   type: string
+ *                   example: "Task is full"
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Task not found
+ *       500:
+ *         description: Server error
+ */
+router.post("/single/:id/join", auth, TaskController.joinTask);
+
+/**
+ * @openapi
+ * /api/tasks/single/{id}/quit:
+ *   post:
+ *     tags: [Tasks]
+ *     summary: Quit a task
+ *     description: Allows a participant to quit a task they have joined.
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Task ID
+ *         example: "507f1f77bcf86cd799439011"
+ *     responses:
+ *       200:
+ *         description: Task quit successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: "success"
+ *                 message:
+ *                   type: string
+ *                   example: "Task quit successfully"
+ *       400:
+ *         description: Bad request (user is not a participant)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: "error"
+ *                 message:
+ *                   type: string
+ *                   example: "User is not a participant in this task"
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Server error
+ */
+router.post("/single/:id/quit", auth, TaskController.quitTask);
+
+/**
+ * @openapi
+ * /api/tasks/single/{id}/logs:
+ *   post:
+ *     tags: [Tasks]
+ *     summary: Add a task log
+ *     description: Allows a participant to add a log entry to a task. Only participants can add logs.
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Task ID
+ *         example: "507f1f77bcf86cd799439011"
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - summary
+ *             properties:
+ *               summary:
+ *                 type: string
+ *                 description: Log summary/description
+ *                 example: "Cleared northbound lane; still 2 large trunks remaining."
+ *     responses:
+ *       201:
+ *         description: Task log added successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: "success"
+ *                 message:
+ *                   type: string
+ *                   example: "Task log added successfully"
+ *                 log:
+ *                   type: object
+ *       400:
+ *         description: Bad request (missing summary)
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden (only participants can add logs)
+ *       404:
+ *         description: Task not found
+ *       500:
+ *         description: Server error
+ */
+router.post("/single/:id/logs", auth, TaskController.addTaskLog);
+
 export default router;

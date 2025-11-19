@@ -102,9 +102,9 @@ function setupESNHelpCenterRoutes() {
       username: req.username || "",
       tasks: allTasks,
       taskListMeta,
-      // testing static task detail pop up
-      task: detailMock.task,
-      viewer: detailMock.viewer,
+      // Task detail modal will be populated from API when clicked
+      task: null,
+      viewer: null,
     });
   });
 }
@@ -139,6 +139,47 @@ function setupCreateTaskRoutes() {
     });
   });
 }
+
+function setupEditTaskRoutes() {
+  router.get("/task-edit/:id", authView, async (req, res) => {
+    try {
+      const taskId = req.params.id;
+      if (!taskId) {
+        return res.status(400).send("Task ID is required");
+      }
+
+      // Fetch task details from API
+      const Task = (await import("../entities/Task.js")).default;
+      const currentUserId = req.userId || req.user?.id;
+      const task = await Task.getTask(taskId, currentUserId);
+      
+      if (!task) {
+        return res.status(404).send("Task not found");
+      }
+
+      // Check if current user is the creator
+      const creatorId = task.creator?.id || task.creator?._id || task.creator;
+      
+      if (!currentUserId || String(creatorId) !== String(currentUserId)) {
+        return res.status(403).send("Unauthorized: Only the task owner can edit this task");
+      }
+
+      // Ensure task has id field (normalize _id to id if needed)
+      const normalizedTask = {
+        ...task,
+        id: task.id || task._id?.toString() || taskId,
+      };
+
+      res.render("helpTasks/editTask.ejs", {
+        username: req.username || "",
+        task: normalizedTask,
+      });
+    } catch (error) {
+      console.error("Error loading edit task page:", error);
+      res.status(500).send("Server error");
+    }
+  });
+}
 // function setupViewTaskDetailRoutes() {
 //   router.get("/task-detail/demo-taskId", (req, res) => {
 //     res.render("helpTasks/taskDetail.ejs", {
@@ -158,6 +199,7 @@ setupAnnouncementRoutes();
 setupESNHelpCenterRoutes();
 setupMyHelpCenterRoutes();
 setupCreateTaskRoutes();
+setupEditTaskRoutes();
 // setupViewTaskDetailRoutes();
 
 export default router;
