@@ -73,3 +73,26 @@ export function clearAuthCookie(res) {
     });
     res.json({ ok: true });
 }
+
+// Optional auth middleware - sets req.userId if token exists, but doesn't require it
+export function optionalAuth(req, res, next) {
+    const token = req.cookies.jwt_token;
+    if (!token) {
+        // No token, continue without user info
+        next();
+        return;
+    }
+    
+    try {
+        const payload = jwt.verify(token, JWT_SECRET);
+        const userId = String(payload.userId ?? payload.sub ?? "");
+        req.username = payload.username;
+        req.userId = userId;
+        req.user = { id: userId, username: payload.username };
+    } catch (err) {
+        // Invalid token, continue without user info
+        // Don't set req.userId
+    }
+    
+    next();
+}

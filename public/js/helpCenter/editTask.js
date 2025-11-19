@@ -200,6 +200,14 @@ function overrideFormSubmission() {
       requestBody.isOpen = taskData.isOpen;
     }
 
+    // Get submit button and disable during submission
+    const submitBtn = document.querySelector("#update-task-btn");
+    const originalText = submitBtn?.textContent || "Update Task";
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Updating...";
+    }
+
     // Submit to API using PUT method
     try {
       const response = await fetch(`/api/tasks/single/${encodeURIComponent(taskId)}`, {
@@ -214,6 +222,15 @@ function overrideFormSubmission() {
       const data = await response.json();
 
       if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error("Unauthorized: Please log in");
+        }
+        if (response.status === 403) {
+          throw new Error(data.message || "Unauthorized: Only the task owner can edit this task");
+        }
+        if (response.status === 404) {
+          throw new Error("Task not found");
+        }
         throw new Error(data.message || "Failed to update task");
       }
 
@@ -231,6 +248,12 @@ function overrideFormSubmission() {
     } catch (error) {
       console.error("Error updating task:", error);
       alert(`Failed to update task: ${error.message}`);
+    } finally {
+      // Re-enable button
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+      }
     }
   });
 }

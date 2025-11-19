@@ -419,6 +419,7 @@ function populateModal(task) {
 }
 
 function setDetailButtonsVisibility(isParticipant, isOwner) {
+  console.log("[setDetailButtonsVisibility] Setting buttons:", { isParticipant, isOwner });
   const anyButtons = [];
 
   if (!isParticipant) {
@@ -427,17 +428,20 @@ function setDetailButtonsVisibility(isParticipant, isOwner) {
     showElement(btnJoinTask);
     hideElement(btnQuitTask);
     hideElement(btnUploadLog);
+    console.log("[setDetailButtonsVisibility] Showing Join Task button");
   } else {
     // participant: can quit and upload log
     anyButtons.push(btnQuitTask, btnUploadLog);
     showElement(btnQuitTask);
     showElement(btnUploadLog);
     hideElement(btnJoinTask);
+    console.log("[setDetailButtonsVisibility] Showing Quit Task + Upload Log buttons");
   }
 
   if (isOwner) {
     anyButtons.push(btnEditTask);
     showElement(btnEditTask);
+    console.log("[setDetailButtonsVisibility] Showing Edit Task button");
   } else {
     hideElement(btnEditTask);
   }
@@ -449,6 +453,8 @@ function setDetailButtonsVisibility(isParticipant, isOwner) {
     hideElement(actionOverlay);
     hideElement(actionButtonsBox);
   }
+  
+  console.log("[setDetailButtonsVisibility] Total buttons shown:", anyButtons.length);
 }
 
 // ----- Modal open / close helpers -----
@@ -569,10 +575,20 @@ document.addEventListener("click", (e) => {
   }
 }, true); // Use capture phase to run early
 
-if (btnQuitTask && !hasModalTrigger(btnQuitTask)) {
-  btnQuitTask.addEventListener("click", (e) => {
+// Quit Task button handler - use event delegation to ensure it works
+document.addEventListener("click", (e) => {
+  // Check if the clicked element is the Quit Task button or inside it
+  const quitBtn = e.target.closest("#btn-quit-task");
+  if (quitBtn) {
     e.preventDefault();
     e.stopPropagation();
+    console.log("[Quit Task] Button clicked, opening quit panel");
+    
+    // Remove any existing data-modal-open attribute to prevent ModalManager interference
+    if (quitBtn.hasAttribute("data-modal-open")) {
+      quitBtn.removeAttribute("data-modal-open");
+    }
+    
     // Open quit panel for confirmation
     // Update quit panel title before opening
     if (quitPanel && currentTaskData) {
@@ -581,9 +597,15 @@ if (btnQuitTask && !hasModalTrigger(btnQuitTask)) {
         quitPanelTitle.textContent = currentTaskData.title || "";
       }
     }
+    
+    if (!quitPanel) {
+      console.error("[Quit Task] Quit panel not found");
+      return;
+    }
+    
     openPanel(quitPanel);
-  });
-}
+  }
+}, true); // Use capture phase to run early
 
 if (btnUploadLog) {
   btnUploadLog.addEventListener("click", () => {
@@ -765,9 +787,7 @@ document.addEventListener("click", (event) => {
 // ===== Quit Task Functionality =====
 async function quitTask(taskId) {
   try {
-    // TODO: Replace with actual API endpoint when available
-    // Example: POST /api/tasks/{taskId}/quit
-    const response = await fetch(`/api/tasks/${encodeURIComponent(taskId)}/quit`, {
+    const response = await fetch(`/api/tasks/single/${encodeURIComponent(taskId)}/quit`, {
       method: "POST",
       credentials: "include",
       headers: {
@@ -783,6 +803,9 @@ async function quitTask(taskId) {
         const error = await response.json();
         throw new Error(error.message || "Failed to quit task");
       }
+      if (response.status === 404) {
+        throw new Error("Task not found");
+      }
       throw new Error(`Failed to quit task: ${response.status}`);
     }
 
@@ -790,27 +813,49 @@ async function quitTask(taskId) {
     return result;
   } catch (error) {
     console.error("Error quitting task:", error);
-    // For now, if API doesn't exist, simulate success
-    // Remove this when API is implemented
-    if (error.message.includes("Failed to fetch") || error.message.includes("404")) {
-      console.warn("Quit task API not yet implemented, simulating success");
-      return { status: "success", message: "Task quit successfully (simulated)" };
-    }
     throw error;
   }
 }
 
-// Quit panel confirm button - opens confirm modal
+// Quit panel confirm button - performs API call
 const quitConfirmBtn = document.querySelector("#quit-confirm-btn");
 if (quitConfirmBtn) {
-  quitConfirmBtn.addEventListener("click", (e) => {
+  quitConfirmBtn.addEventListener("click", async (e) => {
     e.preventDefault();
     e.stopPropagation();
     
-    // Close quit panel and open confirm modal
-    closeModal();
-    if (window.ModalManager) {
-      window.ModalManager.open("quit-confirm-modal");
+    if (!currentTaskData || !currentTaskData.id) {
+      console.error("No task data available to quit");
+      alert("Error: No task data available");
+      return;
+    }
+
+    const originalText = quitConfirmBtn.textContent;
+    quitConfirmBtn.disabled = true;
+    quitConfirmBtn.textContent = "Quitting...";
+
+    try {
+      await quitTask(currentTaskData.id);
+      
+      // Update viewer state to reflect non-participation
+      currentViewer.isParticipant = false;
+      
+      // Update button visibility
+      setDetailButtonsVisibility(false, currentViewer.isOwner);
+      
+      // Close quit panel
+      closeModal();
+      
+      // Show success modal
+      if (window.ModalManager) {
+        window.ModalManager.open("quit-success-modal");
+      }
+    } catch (error) {
+      alert(`Failed to quit task: ${error.message}`);
+      console.error("Quit task error:", error);
+    } finally {
+      quitConfirmBtn.disabled = false;
+      quitConfirmBtn.textContent = originalText;
     }
   });
 }
@@ -862,7 +907,7 @@ document.addEventListener("click", async (event) => {
   }
 });
 
-// Handle quit success modal close - reopen task detail modal
+// Handle quit success modal close - refresh task data and reopen modal
 document.addEventListener("click", (event) => {
   const target = event.target;
   const successModal = target?.closest('[data-modal="quit-success-modal"]');
@@ -873,11 +918,60 @@ document.addEventListener("click", (event) => {
       window.ModalManager.close("quit-success-modal");
     }
     
-    // Reopen task detail modal with updated state
-    if (currentTaskData && window.TaskDetailModal) {
-      setTimeout(() => {
-        window.TaskDetailModal.open(currentTaskData, currentViewer);
-      }, 200);
+    // Refresh task data from API to get updated participant list
+    if (currentTaskData && currentTaskData.id) {
+      fetch(`/api/tasks/single/${encodeURIComponent(currentTaskData.id)}`, {
+        method: "GET",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error(`Failed to fetch task: ${response.status}`);
+          }
+          return response.json();
+        })
+        .then((updatedTask) => {
+          // Get current user ID for determining relationship
+          const currentUserId = window.__CURRENT_USER_ID__ || null;
+          
+          // Determine viewer relationship
+          const creatorId = updatedTask.creator?.id || updatedTask.creator?._id || updatedTask.creator;
+          const isOwner = currentUserId && creatorId ? String(creatorId) === String(currentUserId) : false;
+          const isParticipant = updatedTask.isParticipant !== undefined 
+            ? updatedTask.isParticipant 
+            : false;
+          
+          const updatedViewer = { isParticipant, isOwner };
+          
+          // Transform and update task data
+          const transformedTask = transformTaskForModal(updatedTask);
+          if (transformedTask) {
+            currentTaskData = transformedTask;
+            currentViewer = updatedViewer;
+            
+            // Reopen task detail modal with updated data
+            if (window.TaskDetailModal) {
+              setTimeout(() => {
+                window.TaskDetailModal.open(updatedTask, updatedViewer);
+              }, 200);
+            }
+          }
+        })
+        .catch((error) => {
+          console.error("Error refreshing task data after quit:", error);
+          // Still reopen modal with current data
+          if (window.TaskDetailModal) {
+            setTimeout(() => {
+              window.TaskDetailModal.open(currentTaskData, currentViewer);
+            }, 200);
+          }
+        });
+    } else {
+      // No task data, just close
+      closeModal();
     }
   }
 });
@@ -885,17 +979,14 @@ document.addEventListener("click", (event) => {
 // ===== Upload Task Log Functionality =====
 async function uploadTaskLog(taskId, logText) {
   try {
-    // TODO: Replace with actual API endpoint when available
-    // Example: POST /api/tasks/{taskId}/logs
-    const response = await fetch(`/api/tasks/${encodeURIComponent(taskId)}/logs`, {
+    const response = await fetch(`/api/tasks/single/${encodeURIComponent(taskId)}/logs`, {
       method: "POST",
       credentials: "include",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ 
-        summary: logText,
-        timestamp: new Date().toISOString(),
+        summary: logText.trim(),
       }),
     });
 
@@ -907,6 +998,13 @@ async function uploadTaskLog(taskId, logText) {
         const error = await response.json();
         throw new Error(error.message || "Failed to upload task log");
       }
+      if (response.status === 403) {
+        const error = await response.json();
+        throw new Error(error.message || "Only participants can add task logs");
+      }
+      if (response.status === 404) {
+        throw new Error("Task not found");
+      }
       throw new Error(`Failed to upload task log: ${response.status}`);
     }
 
@@ -914,12 +1012,6 @@ async function uploadTaskLog(taskId, logText) {
     return result;
   } catch (error) {
     console.error("Error uploading task log:", error);
-    // For now, if API doesn't exist, simulate success
-    // Remove this when API is implemented
-    if (error.message.includes("Failed to fetch") || error.message.includes("404")) {
-      console.warn("Upload task log API not yet implemented, simulating success");
-      return { status: "success", message: "Task log uploaded successfully (simulated)" };
-    }
     throw error;
   }
 }
@@ -929,6 +1021,7 @@ if (logSubmitBtn) {
   logSubmitBtn.addEventListener("click", async () => {
     if (!currentTaskData || !currentTaskData.id) {
       console.error("No task data available to upload log");
+      alert("Error: No task data available");
       return;
     }
 
@@ -941,6 +1034,7 @@ if (logSubmitBtn) {
     }
 
     // Disable button during submission
+    const originalText = logSubmitBtn.textContent;
     logSubmitBtn.disabled = true;
     logSubmitBtn.textContent = "Submitting...";
 
@@ -952,20 +1046,36 @@ if (logSubmitBtn) {
         logTextarea.value = "";
       }
       
+      // Refresh task data to show new log
+      // Fetch updated task data from API
+      const response = await fetch(`/api/tasks/single/${encodeURIComponent(currentTaskData.id)}`, {
+        method: "GET",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        const updatedTask = await response.json();
+        const transformedTask = transformTaskForModal(updatedTask);
+        if (transformedTask) {
+          currentTaskData = transformedTask;
+          populateModal(currentTaskData);
+        }
+      }
+      
       // Show success message
       alert("Task log uploaded successfully!");
       
       // Return to detail panel
-    openDetail();
-      
-      // Optionally refresh task data to show new log
-      // Could fetch task again and repopulate modal
+      openDetail();
     } catch (error) {
       alert(`Failed to upload task log: ${error.message}`);
       console.error("Upload log error:", error);
     } finally {
       logSubmitBtn.disabled = false;
-      logSubmitBtn.textContent = "Submit Task Log";
+      logSubmitBtn.textContent = originalText;
     }
   });
 }

@@ -1,5 +1,5 @@
 import express from "express";
-import { authView } from "../middleware/JWT.js";
+import { authView, optionalAuth } from "../middleware/JWT.js";
 import { se } from "date-fns/locale";
 import { setup } from "swagger-ui-express";
 
@@ -86,7 +86,7 @@ function setupAnnouncementRoutes() {
 
 function setupESNHelpCenterRoutes() {
   console.log("Setting up ESN Help Center Routes...");
-  router.get("/esn-help-center", (req, res) => {
+  router.get("/esn-help-center", optionalAuth, (req, res) => {
     const allTasks = Array.isArray(helpCenterConfig.highlightedTasks)
       ? helpCenterConfig.highlightedTasks
       : [];
@@ -96,12 +96,17 @@ function setupESNHelpCenterRoutes() {
       .filter((t) => t.joinedCount < t.capacity)
       .slice(0, 5);
     const taskListMeta = helpCenterConfig.taskListMeta || {};
+    
+    // Get current user ID if authenticated
+    const currentUserId = req.userId || req.user?.id || null;
+    
     res.render("helpTasks/ESNHelpCenter.ejs", {
       hero: helpCenterConfig.hero,
       highlightedTasks,
       username: req.username || "",
       tasks: allTasks,
       taskListMeta,
+      currentUserId: currentUserId,
       // Task detail modal will be populated from API when clicked
       task: null,
       viewer: null,
@@ -121,6 +126,10 @@ function setupMyHelpCenterRoutes() {
     const closedTasks = allTasks.filter(
       (t) => (t.status || "").toUpperCase() === "CLOSED",
     );
+    
+    // Get current user ID if authenticated
+    const currentUserId = req.userId || req.user?.id || null;
+    
     res.render("helpTasks/myHelpCenter.ejs", {
       hero: myHelpCenterConfig.hero,
       taskListMeta: myHelpCenterConfig.taskList,
@@ -128,6 +137,7 @@ function setupMyHelpCenterRoutes() {
       openTasks,
       closedTasks,
       username: req.username || "",
+      currentUserId: currentUserId,
     });
   });
 }

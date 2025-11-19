@@ -94,6 +94,7 @@
     </main>
     <script>
       window.__TASKS__ = <%- JSON.stringify(__tasks || []) %>;
+      window.__CURRENT_USER_ID__ = <%- JSON.stringify(currentUserId || null) %>;
     </script>
     <script type="module" src="/js/helpCenter/taskList.js"></script>
 
