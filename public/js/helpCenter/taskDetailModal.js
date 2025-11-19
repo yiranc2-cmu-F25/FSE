@@ -137,23 +137,56 @@ function populateModal(task) {
     console.warn("[populateModal] Title element not found");
   }
 
-  // Update status label - find the first rounded-full in the mb-3 div
+  // Update status label and status tag - find the mb-3 div
   const statusContainer = detailPanel.querySelector(".mb-3");
-  const statusLabelEl = statusContainer?.querySelector(".rounded-full");
-  if (statusLabelEl) {
-    statusLabelEl.textContent = task.statusLabel || task.emergencyLevel || "";
-    // Update status class based on level
-    statusLabelEl.className = "inline-flex rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide ";
-    if (task.emergencyLevel === "critical") {
-      statusLabelEl.className += "bg-rose-100 text-rose-600";
-    } else if (task.emergencyLevel === "urgent") {
-      statusLabelEl.className += "bg-amber-100 text-amber-600";
-    } else {
-      statusLabelEl.className += "bg-stone-100 text-stone-600";
+  if (statusContainer) {
+    // Update emergency level tag (first rounded-full)
+    const statusLabelEl = statusContainer.querySelector(".rounded-full");
+    if (statusLabelEl) {
+      statusLabelEl.textContent = task.statusLabel || task.emergencyLevel || "";
+      // Update status class based on level
+      statusLabelEl.className = "inline-flex rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide ";
+      if (task.emergencyLevel === "critical") {
+        statusLabelEl.className += "bg-rose-100 text-rose-600";
+      } else if (task.emergencyLevel === "urgent") {
+        statusLabelEl.className += "bg-amber-100 text-amber-600";
+      } else {
+        statusLabelEl.className += "bg-stone-100 text-stone-600";
+      }
+      console.log("[populateModal] Updated emergency level tag:", task.statusLabel);
     }
-    console.log("[populateModal] Updated status label:", task.statusLabel);
+    
+    // Update status tag (OPEN/CLOSED) - second rounded-full
+    const statusTags = statusContainer.querySelectorAll(".rounded-full");
+    if (statusTags.length >= 2) {
+      const statusTag = statusTags[1];
+      const status = task.status || (task.isOpen !== false ? "OPEN" : "CLOSED");
+      statusTag.textContent = status;
+      statusTag.className = "inline-flex rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide ";
+      if (status === "OPEN") {
+        statusTag.className += "bg-emerald-100 text-emerald-700";
+      } else {
+        statusTag.className += "bg-stone-200 text-stone-600";
+      }
+      console.log("[populateModal] Updated status tag:", status);
+    }
+    
+    // Update category icon
+    const categoryIcon = statusContainer.querySelector("#task-category-icon");
+    if (categoryIcon) {
+      const categoryIconMap = {
+        debris_removal_and_cleanup: "/images/help-tasks/icons/task_category/debrisRemoval_cleanUp.svg",
+        temporary_repair: "/images/help-tasks/icons/task_category/tempRepair.svg",
+        animal_care: "/images/help-tasks/icons/task_category/animalCare.svg",
+        others: "/images/help-tasks/icons/task_category/otherCategory.svg",
+      };
+      const iconPath = categoryIconMap[task.category] || categoryIconMap.others;
+      categoryIcon.src = iconPath;
+      categoryIcon.alt = task.category || "Task category";
+      console.log("[populateModal] Updated category icon:", iconPath);
+    }
   } else {
-    console.warn("[populateModal] Status label element not found");
+    console.warn("[populateModal] Status container not found");
   }
 
   // Update location
@@ -204,6 +237,23 @@ function populateModal(task) {
     }
   } else {
     console.warn("[populateModal] Due date dt element not found");
+  }
+
+  // Update publisher
+  const publisherDt = Array.from(detailPanel.querySelectorAll("dt")).find(
+    (dt) => dt.textContent.trim() === "Publisher:",
+  );
+  if (publisherDt) {
+    const publisherDd = publisherDt.nextElementSibling;
+    if (publisherDd) {
+      const publisherName = task.creator?.username || "Unknown";
+      publisherDd.textContent = publisherName;
+      console.log("[populateModal] Updated publisher:", publisherName);
+    } else {
+      console.warn("[populateModal] Publisher dd element not found");
+    }
+  } else {
+    console.warn("[populateModal] Publisher dt element not found");
   }
 
   // Update helpers
@@ -468,6 +518,9 @@ function openPanel(panel) {
   hideElement(logPanel);
   showElement(panel);
   overlay.setAttribute("aria-hidden", "false");
+  
+  // Prevent body scroll when modal is open
+  document.body.style.overflow = "hidden";
 }
 
 function openDetail() {
@@ -485,6 +538,9 @@ function closeModal() {
   if (!overlay) return;
   hideElement(overlay);
   overlay.setAttribute("aria-hidden", "true");
+  
+  // Restore body scroll when modal is closed
+  document.body.style.overflow = "";
 }
 
 // ----- Click-outside handling -----

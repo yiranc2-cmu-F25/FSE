@@ -197,12 +197,39 @@ if (searchInput && sortSelect && sortToggle && listContainer) {
     return "bg-stone-100 text-stone-700";
   }
 
+  function getCategoryIconPath(categoryType) {
+    switch (categoryType) {
+      case "debris":
+        return "/images/help-tasks/icons/task_category/debrisRemoval_cleanUp.svg";
+      case "temp-repair":
+        return "/images/help-tasks/icons/task_category/tempRepair.svg";
+      case "animal-care":
+        return "/images/help-tasks/icons/task_category/animalCare.svg";
+      case "other":
+        return "/images/help-tasks/icons/task_category/otherCategory.svg";
+      default:
+        return "/images/help-tasks/icons/task_category/otherCategory.svg";
+    }
+  }
+
+  function getStatusTagClass(status) {
+    const normalizedStatus = (status || "").toUpperCase();
+    if (normalizedStatus === "OPEN") {
+      return "bg-emerald-100 text-emerald-700";
+    } else if (normalizedStatus === "CLOSED") {
+      return "bg-stone-200 text-stone-600";
+    }
+    return "bg-stone-100 text-stone-700";
+  }
+
   function renderTaskList(items) {
     const html = items
       .map((task) => {
         const gradient = getGradientClass(task.categoryType);
         const statusClass = getStatusClass(task.statusLevel);
-        const categoryOrTitle = task.category || task.title || "";
+        const statusTagClass = getStatusTagClass(task.status);
+        const categoryIconPath = getCategoryIconPath(task.categoryType);
+        const taskTitle = task.title || "Untitled Task";
         const href = task.href || `/tasks/${task.id}`;
 
         return `
@@ -211,29 +238,41 @@ if (searchInput && sortSelect && sortToggle && listContainer) {
             data-task-id="${task.id}"
           >
             <div class="flex items-center gap-3">
+              <!-- Category Icon -->
               <div
                 class="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/70 shadow-sm"
               >
-                ${
-                  task.icon && task.icon.src
-                    ? `<img src="${task.icon.src}" alt="${task.icon.alt || ""}" class="h-6 w-6" />`
-                    : `<span class="text-base font-semibold text-stone-700">${categoryOrTitle.charAt(
-                        0,
-                      )}</span>`
-                }
+                <img 
+                  src="${categoryIconPath}" 
+                  alt="${task.category || 'Task category'}" 
+                  class="h-6 w-6" 
+                />
               </div>
 
+              <!-- Task Info -->
               <div class="space-y-1">
+                <!-- Task Name -->
                 <p class="text-sm font-semibold text-stone-900">
-                  &lt;${categoryOrTitle}&gt;
+                  ${taskTitle}
                 </p>
-                ${
-                  task.statusLabel
-                    ? `<span class="inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold ${statusClass}">
-                        ${task.statusLabel}
-                      </span>`
-                    : ""
-                }
+                
+                <!-- Tags: Emergency Level and Status -->
+                <div class="flex items-center gap-2 flex-wrap">
+                  ${
+                    task.statusLabel
+                      ? `<span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase ${statusClass}">
+                          ${task.statusLabel}
+                        </span>`
+                      : ""
+                  }
+                  ${
+                    task.status
+                      ? `<span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase ${statusTagClass}">
+                          ${task.status}
+                        </span>`
+                      : ""
+                  }
+                </div>
               </div>
             </div>
 
