@@ -167,7 +167,7 @@ function setupDeleteModal() {
 
 function setupHighlighting(highlightCommentId, highlightReplyId) {
 	if (!highlightCommentId) return;
-	
+
 	const tryHighlight = () => {
 		const commentElement = document.querySelector(`[data-comment-id="${highlightCommentId}"]`);
 		if (commentElement) {
@@ -853,202 +853,202 @@ function setupShareButton(boardId) {
 }
 
 function parseCommentText(commentText, targetId) {
-	let isReply = false;
-	let replyUsername = null;
-	let storedTargetId = null;
+		let isReply = false;
+		let replyUsername = null;
+		let storedTargetId = null;
 	let processedText = commentText;
-	
-	if (targetId) {
-		const match = commentText.match(/^@([^:]+):\s*(.+)$/);
-		if (match) {
-			const [, username, text] = match;
+		
+		if (targetId) {
+			const match = commentText.match(/^@([^:]+):\s*(.+)$/);
+			if (match) {
+				const [, username, text] = match;
 			processedText = `@${username}#${targetId}: ${text}`;
-			isReply = true;
-			replyUsername = username;
-			storedTargetId = targetId;
+				isReply = true;
+				replyUsername = username;
+				storedTargetId = targetId;
 			console.log("[detail.js] Reply with target ID:", { username, targetId, finalText: processedText });
+			} else {
+				console.warn("[detail.js] Target ID exists but text doesn't match reply pattern:", commentText);
+			}
 		} else {
-			console.warn("[detail.js] Target ID exists but text doesn't match reply pattern:", commentText);
+			const match = commentText.match(/^@([^:]+):\s*(.+)$/);
+			if (match) {
+				isReply = true;
+				replyUsername = match[1];
+			}
 		}
-	} else {
-		const match = commentText.match(/^@([^:]+):\s*(.+)$/);
-		if (match) {
-			isReply = true;
-			replyUsername = match[1];
-		}
-	}
-	
+		
 	return { isReply, replyUsername, storedTargetId, processedText };
 }
 
 async function findTargetComment(boardId, storedTargetId, isReplyToReply, targetReplyId, commentElement) {
-	const boardRes = await fetch(`/api/coaching-boards/${boardId}`, { credentials: "include" });
-	if (!boardRes.ok) {
+				const boardRes = await fetch(`/api/coaching-boards/${boardId}`, { credentials: "include" });
+				if (!boardRes.ok) {
 		return null;
-	}
-	
-	const updatedBoard = await boardRes.json();
-	let targetComment = null;
-	
-	if (isReplyToReply) {
-		let commentId = null;
-		if (commentElement) {
-			commentId = commentElement.getAttribute("data-comment-id");
-		}
-		
-		if (commentId) {
-			for (const c of updatedBoard.comments || []) {
-				if (String(c.id || c._id) === commentId) {
-					targetComment = c;
-					break;
 				}
-			}
-			
-			if (!targetComment) {
-				const commentRes = await fetch(`/api/coaching-boards/${boardId}?cid=${commentId}`, { credentials: "include" });
-				if (commentRes.ok) {
-					const commentData = await commentRes.json();
-					if (commentData.comments && commentData.comments.length > 0) {
-						targetComment = commentData.comments[0];
+				
+				const updatedBoard = await boardRes.json();
+				let targetComment = null;
+	
+				if (isReplyToReply) {
+					let commentId = null;
+					if (commentElement) {
+						commentId = commentElement.getAttribute("data-comment-id");
 					}
+					
+					if (commentId) {
+						for (const c of updatedBoard.comments || []) {
+							if (String(c.id || c._id) === commentId) {
+								targetComment = c;
+								break;
+							}
+						}
+						
+						if (!targetComment) {
+							const commentRes = await fetch(`/api/coaching-boards/${boardId}?cid=${commentId}`, { credentials: "include" });
+							if (commentRes.ok) {
+								const commentData = await commentRes.json();
+								if (commentData.comments && commentData.comments.length > 0) {
+									targetComment = commentData.comments[0];
+								}
+							}
+						}
+					} else {
+						for (const c of updatedBoard.comments || []) {
+							if ((c.replies || []).some(r => String(r.id || r._id) === targetReplyId)) {
+								targetComment = c;
+								break;
+							}
+						}
+					}
+				} else {
+					targetComment = (updatedBoard.comments || []).find(c => String(c.id || c._id) === storedTargetId);
 				}
-			}
-		} else {
-			for (const c of updatedBoard.comments || []) {
-				if ((c.replies || []).some(r => String(r.id || r._id) === targetReplyId)) {
-					targetComment = c;
-					break;
-				}
-			}
-		}
-	} else {
-		targetComment = (updatedBoard.comments || []).find(c => String(c.id || c._id) === storedTargetId);
-	}
-	
+				
 	return targetComment;
 }
-
+				
 function findNewReply(targetComment, currentUserId) {
-	const now = Date.now();
-	
-	let newReply = (targetComment.replies || []).find(r => {
-		const timeDiff = Math.abs(new Date(r.timestamp).getTime() - now);
-		return String(r.author) === currentUserId && timeDiff < 10000;
-	});
-	
-	if (!newReply) {
-		newReply = (targetComment.replies || []).find(r => {
-			const timeDiff = Math.abs(new Date(r.timestamp).getTime() - now);
-			return String(r.author) === currentUserId && timeDiff < 30000;
-		});
-		if (!newReply) {
-			const userReplies = (targetComment.replies || []).filter(r => String(r.author) === currentUserId);
-			if (userReplies.length > 0) {
-				userReplies.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-				newReply = userReplies[0];
+				const now = Date.now();
+				
+				let newReply = (targetComment.replies || []).find(r => {
+					const timeDiff = Math.abs(new Date(r.timestamp).getTime() - now);
+					return String(r.author) === currentUserId && timeDiff < 10000;
+				});
+				
+				if (!newReply) {
+					newReply = (targetComment.replies || []).find(r => {
+						const timeDiff = Math.abs(new Date(r.timestamp).getTime() - now);
+						return String(r.author) === currentUserId && timeDiff < 30000;
+					});
+					if (!newReply) {
+						const userReplies = (targetComment.replies || []).filter(r => String(r.author) === currentUserId);
+						if (userReplies.length > 0) {
+							userReplies.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+							newReply = userReplies[0];
 			}
 		}
 	}
 	
 	return newReply;
-}
+						}
 
 async function addReplyToDOM(newReply, targetComment, commentElement, isReplyToReply, targetReplyId, boardId) {
 	if (!newReply.authorName) {
-		const authorNameRes = await fetch(`/api/users/${newReply.author}`, { credentials: "include" });
-		if (authorNameRes.ok) {
-			const authorData = await authorNameRes.json();
-			newReply.authorName = authorData.username || "Unknown";
+				const authorNameRes = await fetch(`/api/users/${newReply.author}`, { credentials: "include" });
+				if (authorNameRes.ok) {
+					const authorData = await authorNameRes.json();
+					newReply.authorName = authorData.username || "Unknown";
 		}
-	}
-	
-	if (!commentElement) {
-		commentElement = document.querySelector(`[data-comment-id="${targetComment.id}"]`);
-	}
-	if (!commentElement) return;
-	
-	const actionsDiv = commentElement.querySelector(".mt-2.flex.items-center.gap-3");
-	if (!actionsDiv) {
-		return;
-	}
-	
-	let repliesContainer = commentElement.querySelector(`[data-replies-container="${targetComment.id}"]`);
-	
-	if (!repliesContainer) {
-		const repliesDiv = document.createElement("div");
-		repliesDiv.className = "mt-2 pl-4 border-l space-y-2";
-		repliesDiv.setAttribute("data-replies-container", targetComment.id);
-		actionsDiv.after(repliesDiv);
-		repliesContainer = repliesDiv;
-	}
-	
-	const replyId = newReply.id || newReply._id;
-	if (repliesContainer) {
-		const existingReply = repliesContainer.querySelector(`[data-reply-id="${replyId}"]`);
-		if (existingReply) {
-			console.log("[detail.js] Reply already exists, skipping local add:", replyId);
-			return;
-		}
-	}
-	
-	const newReplyHtml = renderRepliesFn([newReply], targetComment.id);
-	const tempDiv = document.createElement("div");
-	tempDiv.innerHTML = newReplyHtml.trim();
-	const newReplyElement = tempDiv.firstElementChild;
-	if (!newReplyElement) return;
-	
-	if (isReplyToReply && targetReplyId) {
-		const targetReplyElement = repliesContainer.querySelector(`[data-reply-id="${targetReplyId}"]`);
-		if (targetReplyElement) {
-			targetReplyElement.insertAdjacentElement("afterend", newReplyElement);
-		} else {
-			repliesContainer.insertBefore(newReplyElement, repliesContainer.firstChild);
-		}
-	} else {
-		repliesContainer.insertBefore(newReplyElement, repliesContainer.firstChild);
-	}
-	
-	setupReplyEventListenersFn(targetComment.id);
-	
-	setTimeout(() => {
-		newReplyElement.scrollIntoView({ behavior: "smooth", block: "center" });
-		newReplyElement.style.backgroundColor = "#fef3c7";
-		setTimeout(() => {
-			newReplyElement.style.backgroundColor = "";
-		}, 2000);
-	}, 100);
+				}
+
+				if (!commentElement) {
+					commentElement = document.querySelector(`[data-comment-id="${targetComment.id}"]`);
+				}
+				if (!commentElement) return;
+				
+				const actionsDiv = commentElement.querySelector(".mt-2.flex.items-center.gap-3");
+				if (!actionsDiv) {
+					return;
+				}
+				
+				let repliesContainer = commentElement.querySelector(`[data-replies-container="${targetComment.id}"]`);
+				
+				if (!repliesContainer) {
+					const repliesDiv = document.createElement("div");
+					repliesDiv.className = "mt-2 pl-4 border-l space-y-2";
+					repliesDiv.setAttribute("data-replies-container", targetComment.id);
+					actionsDiv.after(repliesDiv);
+					repliesContainer = repliesDiv;
+				}
+				
+				const replyId = newReply.id || newReply._id;
+				if (repliesContainer) {
+					const existingReply = repliesContainer.querySelector(`[data-reply-id="${replyId}"]`);
+					if (existingReply) {
+						console.log("[detail.js] Reply already exists, skipping local add:", replyId);
+						return;
+					}
+				}
+				
+				const newReplyHtml = renderRepliesFn([newReply], targetComment.id);
+				const tempDiv = document.createElement("div");
+				tempDiv.innerHTML = newReplyHtml.trim();
+				const newReplyElement = tempDiv.firstElementChild;
+				if (!newReplyElement) return;
+				
+				if (isReplyToReply && targetReplyId) {
+					const targetReplyElement = repliesContainer.querySelector(`[data-reply-id="${targetReplyId}"]`);
+					if (targetReplyElement) {
+						targetReplyElement.insertAdjacentElement("afterend", newReplyElement);
+					} else {
+						repliesContainer.insertBefore(newReplyElement, repliesContainer.firstChild);
+					}
+				} else {
+					repliesContainer.insertBefore(newReplyElement, repliesContainer.firstChild);
+				}
+				
+				setupReplyEventListenersFn(targetComment.id);
+				
+				setTimeout(() => {
+					newReplyElement.scrollIntoView({ behavior: "smooth", block: "center" });
+					newReplyElement.style.backgroundColor = "#fef3c7";
+					setTimeout(() => {
+						newReplyElement.style.backgroundColor = "";
+					}, 2000);
+				}, 100);
 }
 
 async function addCommentToDOM(newComment, boardId, shouldHighlight = true) {
 	if (!newComment.authorName) {
-		const authorNameRes = await fetch(`/api/users/${newComment.author}`, { credentials: "include" });
-		if (authorNameRes.ok) {
-			const authorData = await authorNameRes.json();
-			newComment.authorName = authorData.username || "Unknown";
+						const authorNameRes = await fetch(`/api/users/${newComment.author}`, { credentials: "include" });
+						if (authorNameRes.ok) {
+							const authorData = await authorNameRes.json();
+							newComment.authorName = authorData.username || "Unknown";
 		}
-	}
-	
-	const commentsContainer = document.getElementById("comments");
-	if (renderCommentFn && setupCommentEventListenersFn && setupReplyEventListenersFn) {
-		const newCommentElement = renderCommentFn(newComment);
-		commentsContainer.insertBefore(newCommentElement, commentsContainer.firstChild);
-		
-		setupCommentEventListenersFn();
-		if (newComment.replies && newComment.replies.length > 0) {
-			setupReplyEventListenersFn(newComment.id || newComment._id);
-		}
-		
+						}
+						
+						const commentsContainer = document.getElementById("comments");
+						if (renderCommentFn && setupCommentEventListenersFn && setupReplyEventListenersFn) {
+							const newCommentElement = renderCommentFn(newComment);
+							commentsContainer.insertBefore(newCommentElement, commentsContainer.firstChild);
+							
+							setupCommentEventListenersFn();
+							if (newComment.replies && newComment.replies.length > 0) {
+								setupReplyEventListenersFn(newComment.id || newComment._id);
+							}
+							
 		if (shouldHighlight) {
-			setTimeout(() => {
-				newCommentElement.scrollIntoView({ behavior: "smooth", block: "center" });
-				newCommentElement.style.backgroundColor = "#fef3c7";
-				setTimeout(() => {
-					newCommentElement.style.backgroundColor = "";
-				}, 2000);
-			}, 100);
-		}
-	}
-}
+							setTimeout(() => {
+								newCommentElement.scrollIntoView({ behavior: "smooth", block: "center" });
+								newCommentElement.style.backgroundColor = "#fef3c7";
+								setTimeout(() => {
+									newCommentElement.style.backgroundColor = "";
+								}, 2000);
+							}, 100);
+						}
+					}
+				}
 
 function setupCommentFormHandler(boardId, currentUserId) {
 	const commentForm = document.getElementById("commentForm");
@@ -1124,11 +1124,8 @@ async function handleCommentSubmission(boardId, currentUserId) {
 	}
 }
 
-function setupSocketHandlers(boardId, currentUserId) {
-	const socket = getSocket();
-	
-	socket.on("coaching_board_comment", async (eventData) => {
-		if (eventData.boardId !== boardId) return;
+async function handleSocketComment(eventData, boardId, currentUserId) {
+	if (eventData.boardId !== boardId) return;
 		
 		const newComment = eventData.comment;
 		if (!newComment) return;
@@ -1138,11 +1135,11 @@ function setupSocketHandlers(boardId, currentUserId) {
 		
 		if (String(newComment.author) === currentUserId) return;
 		
-		await addCommentToDOM(newComment, boardId, false);
-	});
-	
-	socket.on("coaching_board_reply", async (eventData) => {
-		if (eventData.boardId !== boardId) return;
+	await addCommentToDOM(newComment, boardId, false);
+}
+
+async function handleSocketReply(eventData, boardId) {
+	if (eventData.boardId !== boardId) return;
 		
 		const newReply = eventData.reply;
 		const commentId = String(eventData.commentId || "");
@@ -1219,10 +1216,10 @@ function setupSocketHandlers(boardId, currentUserId) {
 				commentRepliesState[commentId].hasMore = true;
 			}
 		}
-	});
+}
 	
-	socket.on("coaching_board_comment_deleted", (eventData) => {
-		if (eventData.boardId !== boardId) return;
+function handleSocketCommentDeleted(eventData, boardId) {
+	if (eventData.boardId !== boardId) return;
 		
 		const commentId = eventData.commentId;
 		if (!commentId) return;
@@ -1231,10 +1228,10 @@ function setupSocketHandlers(boardId, currentUserId) {
 		if (commentElement) {
 			commentElement.remove();
 		}
-	});
+}
 	
-	socket.on("coaching_board_reply_deleted", (eventData) => {
-		if (eventData.boardId !== boardId) return;
+function handleSocketReplyDeleted(eventData, boardId) {
+	if (eventData.boardId !== boardId) return;
 		
 		const commentId = eventData.commentId;
 		const replyId = eventData.replyId;
@@ -1247,7 +1244,15 @@ function setupSocketHandlers(boardId, currentUserId) {
 		if (replyElement) {
 			replyElement.remove();
 		}
-	});
+}
+
+function setupSocketHandlers(boardId, currentUserId) {
+	const socket = getSocket();
+	
+	socket.on("coaching_board_comment", (eventData) => handleSocketComment(eventData, boardId, currentUserId));
+	socket.on("coaching_board_reply", (eventData) => handleSocketReply(eventData, boardId));
+	socket.on("coaching_board_comment_deleted", (eventData) => handleSocketCommentDeleted(eventData, boardId));
+	socket.on("coaching_board_reply_deleted", (eventData) => handleSocketReplyDeleted(eventData, boardId));
 }
 
 (async function init() {

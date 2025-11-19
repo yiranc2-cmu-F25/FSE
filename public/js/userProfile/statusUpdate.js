@@ -3,6 +3,7 @@
 import { getSocket } from "../utils/socket.js";
 import { setupUserInfoRenderer } from "../utils/userInfoRenderer.js";
 import { setupModalCloseWithRedirect, openModal as openModalUtil } from "../utils/modalHelpers.js";
+import { loadInfo } from "../utils/loadUserInfo.js";
 
 function connectSocket() {
   const sock = getSocket();
