@@ -48,17 +48,13 @@ function escapeHtml(text) {
 	return div.innerHTML;
 }
 
-
-function setSubscribeIcon(btn, subscribed) {
-	btn.innerHTML = subscribed
-		? `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-7 w-7 fill-yellow-400 stroke-yellow-500"><path d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.702.663.321.988l-4.203 3.573a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.563.563 0 0 0-.586 0L6.984 20.51a.562.562 0 0 1-.84-.61l1.285-5.386a.563.563 0 0 0-.182-.557l-4.203-3.572a.563.563 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345l2.125-5.111Z"/></svg>`
-		: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-7 w-7 fill-stone-300 stroke-stone-400"><path d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.702.663.321.988l-4.203 3.573a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.563.563 0 0 0-.586 0L6.984 20.51a.562.562 0 0 1-.84-.61l1.285-5.386a.563.563 0 0 0-.182-.557l-4.203-3.572a.563.563 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345l2.125-5.111Z"/></svg>`;
-}
-
-function render(board) {
-	const currentUserId = String(window.__CURRENT_USER_ID__ || "");
-	const boardAuthorId = String(board.author || "");
-	const isAuthor = currentUserId === boardAuthorId;
+function renderBoardHeader(board, isAuthor) {
+	document.getElementById("headerTitle").textContent = board.title;
+	document.getElementById("headerCategory").textContent = board.category || "";
+	document.getElementById("meta").textContent = `Last edited ${new Date(board.updatedAt).toLocaleString()}`;
+	document.getElementById("description").textContent = board.description;
+	document.getElementById("objective").textContent = board.objective;
+	document.getElementById("authorName").textContent = board.authorName || "Unknown";
 	
 	const editContainer = document.getElementById("editButtonContainer");
 	const editButton = document.getElementById("editButton");
@@ -70,16 +66,35 @@ function render(board) {
 			editContainer.classList.add("hidden");
 		}
 	}
-	
-	document.getElementById("headerTitle").textContent = board.title;
-	document.getElementById("headerCategory").textContent = board.category || "";
-	document.getElementById("meta").textContent = `Last edited ${new Date(board.updatedAt).toLocaleString()}`;
-	document.getElementById("description").textContent = board.description;
-	document.getElementById("objective").textContent = board.objective;
+}
 
+function renderBoardContent(board) {
+	const steps = document.getElementById("steps");
+	steps.innerHTML = "";
+	(board.steps || []).forEach(s => {
+		const li = document.createElement("li");
+		li.textContent = s;
+		steps.appendChild(li);
+	});
+	
+	const skills = document.getElementById("skills");
+	skills.innerHTML = "";
+	(board.relatedSkills || []).forEach(s => skills.appendChild(badge(s)));
+	
+	const tools = document.getElementById("tools");
+	tools.innerHTML = "";
+	(board.tools || []).forEach(t => tools.appendChild(badge(t)));
+	
+	document.getElementById("notes").textContent = board.notes || "";
+}
+
+function setupSubscriptionButton(board, currentUserId) {
 	const subBtn = document.getElementById("headerSubscribeBtn");
+	if (!subBtn) return;
+	
 	const isSub = (board.subscribers || []).includes(currentUserId);
 	setSubscribeIcon(subBtn, isSub);
+	
 	subBtn.addEventListener("click", async () => {
 		const url = `/api/coaching-boards/${board.id}/subscriptions`;
 		const method = ((board.subscribers || []).includes(currentUserId)) ? "DELETE" : "POST";
@@ -101,26 +116,170 @@ function render(board) {
 		}
 		subBtn.disabled = false;
 	});
+}
 
-	document.getElementById("authorName").textContent = board.authorName || "Unknown";
-	document.getElementById("meta").textContent = `Last edited ${new Date(board.updatedAt).toLocaleString()}`;
-
-	setupShareButton(board.id);
-
-	const steps = document.getElementById("steps");
-	steps.innerHTML = "";
-	(board.steps || []).forEach(s => {
-		const li = document.createElement("li");
-		li.textContent = s;
-		steps.appendChild(li);
+function setupDeleteModal() {
+	const deleteModal = document.getElementById("deleteConfirmModal");
+	const deleteCancelBtn = document.getElementById("deleteCancelBtn");
+	const deleteConfirmBtn = document.getElementById("deleteConfirmBtn");
+	const deleteConfirmMessage = document.getElementById("deleteConfirmMessage");
+	
+	let pendingDeleteAction = null;
+	
+	function showDeleteModal(message, onConfirm) {
+		if (!deleteModal || !deleteConfirmMessage) return;
+		deleteConfirmMessage.textContent = message;
+		pendingDeleteAction = onConfirm;
+		deleteModal.classList.remove("hidden");
+		deleteModal.classList.add("flex");
+		deleteModal.setAttribute("aria-hidden", "false");
+	}
+	
+	function hideDeleteModal() {
+		if (!deleteModal) return;
+		deleteModal.classList.add("hidden");
+		deleteModal.classList.remove("flex");
+		deleteModal.setAttribute("aria-hidden", "true");
+		pendingDeleteAction = null;
+	}
+	
+	deleteCancelBtn?.addEventListener("click", () => {
+		hideDeleteModal();
 	});
-	const skills = document.getElementById("skills");
-	skills.innerHTML = "";
-	(board.relatedSkills || []).forEach(s => skills.appendChild(badge(s)));
-	const tools = document.getElementById("tools");
-	tools.innerHTML = "";
-	(board.tools || []).forEach(t => tools.appendChild(badge(t)));
-	document.getElementById("notes").textContent = board.notes || "";
+	
+	deleteConfirmBtn?.addEventListener("click", async () => {
+		if (pendingDeleteAction) {
+			await pendingDeleteAction();
+		}
+		hideDeleteModal();
+	});
+	
+	if (deleteModal) {
+		deleteModal.addEventListener("click", (e) => {
+			if (e.target === deleteModal) {
+				hideDeleteModal();
+			}
+		});
+	}
+	
+	return { showDeleteModal, hideDeleteModal };
+}
+
+function setupHighlighting(highlightCommentId, highlightReplyId) {
+	if (!highlightCommentId) return;
+	
+	const tryHighlight = () => {
+		const commentElement = document.querySelector(`[data-comment-id="${highlightCommentId}"]`);
+		if (commentElement) {
+			if (highlightReplyId) {
+				const replyElement = commentElement.querySelector(`[data-reply-id="${highlightReplyId}"]`);
+				if (replyElement) {
+					replyElement.scrollIntoView({ behavior: "smooth", block: "center" });
+					replyElement.style.backgroundColor = "#fef3c7";
+					setTimeout(() => {
+						replyElement.style.backgroundColor = "";
+					}, 2000);
+					return true;
+				}
+			} else {
+				commentElement.scrollIntoView({ behavior: "smooth", block: "center" });
+				commentElement.style.backgroundColor = "#fef3c7";
+				setTimeout(() => {
+					commentElement.style.backgroundColor = "";
+				}, 2000);
+				return true;
+			}
+		}
+		return false;
+	};
+	
+	if (!tryHighlight()) {
+		setTimeout(() => {
+			if (!tryHighlight()) {
+				setTimeout(tryHighlight, 500);
+			}
+		}, 100);
+	}
+}
+
+function setupViewMoreCommentsButton(boardId, state, renderComment, setupCommentEventListeners, setupReplyEventListeners) {
+	if (!state.hasMore) return;
+	
+	const comments = document.getElementById("comments");
+	const viewMoreDiv = document.createElement("div");
+	viewMoreDiv.className = "mt-4 text-center";
+	viewMoreDiv.innerHTML = `
+		<button id="viewMoreCommentsBtn" class="text-sm text-gray-600 hover:text-gray-800 font-medium">
+			View More Comments
+		</button>
+	`;
+	comments.appendChild(viewMoreDiv);
+	
+	const viewMoreCommentsBtn = document.getElementById("viewMoreCommentsBtn");
+	if (viewMoreCommentsBtn) {
+		viewMoreCommentsBtn.addEventListener("click", () => handleViewMoreComments(viewMoreCommentsBtn, boardId, state, renderComment, setupCommentEventListeners, setupReplyEventListeners));
+	}
+}
+
+async function handleViewMoreComments(btn, boardId, state, renderComment, setupCommentEventListeners, setupReplyEventListeners) {
+	btn.disabled = true;
+	btn.textContent = "Loading...";
+	try {
+		const res = await fetch(`/api/coaching-boards/${boardId}/comments?skip=${state.skip}&limit=10`, {
+			credentials: "include"
+		});
+		if (res.ok) {
+			const data = await res.json();
+			const commentsContainer = document.getElementById("comments");
+			
+			btn.parentElement?.remove();
+			
+			data.comments.forEach(c => {
+				commentsContainer.appendChild(renderComment(c));
+			});
+
+			state.skip += data.comments.length;
+			state.hasMore = data.hasMore;
+
+			setupCommentEventListeners();
+			
+			data.comments.forEach(c => {
+				if (c.replies && c.replies.length > 0) {
+					setupReplyEventListeners(c.id || c._id);
+				}
+			});
+
+			if (state.hasMore) {
+				setupViewMoreCommentsButton(boardId, state, renderComment, setupCommentEventListeners, setupReplyEventListeners);
+			}
+		} else {
+			alert("Failed to load more comments");
+			btn.disabled = false;
+			btn.textContent = "View More Comments";
+		}
+	} catch (err) {
+		console.error("Error loading more comments:", err);
+		alert("Failed to load more comments");
+		btn.disabled = false;
+		btn.textContent = "View More Comments";
+	}
+}
+
+function setSubscribeIcon(btn, subscribed) {
+	btn.innerHTML = subscribed
+		? `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-7 w-7 fill-yellow-400 stroke-yellow-500"><path d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.702.663.321.988l-4.203 3.573a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.563.563 0 0 0-.586 0L6.984 20.51a.562.562 0 0 1-.84-.61l1.285-5.386a.563.563 0 0 0-.182-.557l-4.203-3.572a.563.563 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345l2.125-5.111Z"/></svg>`
+		: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-7 w-7 fill-stone-300 stroke-stone-400"><path d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.702.663.321.988l-4.203 3.573a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.563.563 0 0 0-.586 0L6.984 20.51a.562.562 0 0 1-.84-.61l1.285-5.386a.563.563 0 0 0-.182-.557l-4.203-3.572a.563.563 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345l2.125-5.111Z"/></svg>`;
+}
+
+function render(board) {
+	const currentUserId = String(window.__CURRENT_USER_ID__ || "");
+	const boardAuthorId = String(board.author || "");
+	const isAuthor = currentUserId === boardAuthorId;
+	
+	renderBoardHeader(board, isAuthor);
+	setupSubscriptionButton(board, currentUserId);
+	setupShareButton(board.id);
+	renderBoardContent(board);
 
 	function renderReplies(replies, commentId) {
 		return replies.map(r => {
@@ -179,8 +338,10 @@ function render(board) {
 	setupAutoResizeTextarea("commentText", 160);
 	setupCharCountListener("commentText", "charCount", 300, "number");
 
-	let commentsSkip = (board.comments || []).length;
-	let hasMoreComments = board.hasMoreComments || false;
+	const commentsState = {
+		skip: (board.comments || []).length,
+		hasMore: board.hasMoreComments || false
+	};
 	commentRepliesState = {};
 
 	function renderComment(c) {
@@ -267,155 +428,9 @@ function render(board) {
 	const highlightCommentId = urlParams.get("highlightComment");
 	const highlightReplyId = urlParams.get("highlightReply");
 	
-	if (highlightCommentId) {
-		const tryHighlight = () => {
-			const commentElement = document.querySelector(`[data-comment-id="${highlightCommentId}"]`);
-			if (commentElement) {
-				if (highlightReplyId) {
-					const replyElement = commentElement.querySelector(`[data-reply-id="${highlightReplyId}"]`);
-					if (replyElement) {
-						replyElement.scrollIntoView({ behavior: "smooth", block: "center" });
-						replyElement.style.backgroundColor = "#fef3c7";
-						setTimeout(() => {
-							replyElement.style.backgroundColor = "";
-						}, 2000);
-						return true;
-					}
-				} else {
-					commentElement.scrollIntoView({ behavior: "smooth", block: "center" });
-					commentElement.style.backgroundColor = "#fef3c7";
-					setTimeout(() => {
-						commentElement.style.backgroundColor = "";
-					}, 2000);
-					return true;
-				}
-			}
-			return false;
-		};
-		
-		if (!tryHighlight()) {
-			setTimeout(() => {
-				if (!tryHighlight()) {
-					setTimeout(tryHighlight, 500);
-				}
-			}, 100);
-		}
-	}
+	setupHighlighting(highlightCommentId, highlightReplyId);
 	
-	if (hasMoreComments) {
-		const viewMoreDiv = document.createElement("div");
-		viewMoreDiv.className = "mt-4 text-center";
-		viewMoreDiv.innerHTML = `
-			<button id="viewMoreCommentsBtn" class="text-sm text-gray-600 hover:text-gray-800 font-medium">
-				View More Comments
-			</button>
-		`;
-		comments.appendChild(viewMoreDiv);
-	}
-
-	const deleteModal = document.getElementById("deleteConfirmModal");
-	const deleteCancelBtn = document.getElementById("deleteCancelBtn");
-	const deleteConfirmBtn = document.getElementById("deleteConfirmBtn");
-	const deleteConfirmMessage = document.getElementById("deleteConfirmMessage");
-	
-	let pendingDeleteAction = null;
-	
-	function showDeleteModal(message, onConfirm) {
-		if (!deleteModal || !deleteConfirmMessage) return;
-		deleteConfirmMessage.textContent = message;
-		pendingDeleteAction = onConfirm;
-		deleteModal.classList.remove("hidden");
-		deleteModal.classList.add("flex");
-		deleteModal.setAttribute("aria-hidden", "false");
-	}
-	
-	function hideDeleteModal() {
-		if (!deleteModal) return;
-		deleteModal.classList.add("hidden");
-		deleteModal.classList.remove("flex");
-		deleteModal.setAttribute("aria-hidden", "true");
-		pendingDeleteAction = null;
-	}
-	
-	deleteCancelBtn?.addEventListener("click", () => {
-		hideDeleteModal();
-	});
-	
-	deleteConfirmBtn?.addEventListener("click", async () => {
-		if (pendingDeleteAction) {
-			await pendingDeleteAction();
-		}
-		hideDeleteModal();
-	});
-	
-	if (deleteModal) {
-		deleteModal.addEventListener("click", (e) => {
-			if (e.target === deleteModal) {
-			hideDeleteModal();
-			}
-		});
-	}
-
-	async function handleViewMoreComments(btn) {
-		btn.disabled = true;
-		btn.textContent = "Loading...";
-		try {
-			const res = await fetch(`/api/coaching-boards/${boardId}/comments?skip=${commentsSkip}&limit=10`, {
-				credentials: "include"
-			});
-			if (res.ok) {
-				const data = await res.json();
-				const commentsContainer = document.getElementById("comments");
-				
-				btn.parentElement?.remove();
-				
-				data.comments.forEach(c => {
-					commentsContainer.appendChild(renderComment(c));
-				});
-
-				commentsSkip += data.comments.length;
-				hasMoreComments = data.hasMore;
-
-				setupCommentEventListeners();
-				
-				data.comments.forEach(c => {
-					if (c.replies && c.replies.length > 0) {
-						setupReplyEventListeners(c.id || c._id);
-					}
-				});
-
-				if (hasMoreComments) {
-					const viewMoreDiv = document.createElement("div");
-					viewMoreDiv.className = "mt-4 text-center";
-					viewMoreDiv.innerHTML = `
-						<button id="viewMoreCommentsBtn" class="text-sm text-gray-600 hover:text-gray-800 font-medium">
-							View More Comments
-						</button>
-					`;
-					commentsContainer.appendChild(viewMoreDiv);
-					
-					const newBtn = document.getElementById("viewMoreCommentsBtn");
-					if (newBtn) {
-						newBtn.addEventListener("click", () => handleViewMoreComments(newBtn));
-					}
-				}
-			} else {
-				alert("Failed to load more comments");
-				btn.disabled = false;
-				btn.textContent = "View More Comments";
-			}
-		} catch (err) {
-			console.error("Error loading more comments:", err);
-			alert("Failed to load more comments");
-			btn.disabled = false;
-			btn.textContent = "View More Comments";
-		}
-	}
-
-	const viewMoreCommentsBtn = document.getElementById("viewMoreCommentsBtn");
-	if (viewMoreCommentsBtn) {
-		viewMoreCommentsBtn.addEventListener("click", () => handleViewMoreComments(viewMoreCommentsBtn));
-	}
+	const { showDeleteModal } = setupDeleteModal();
 
 	document.querySelectorAll(".view-more-replies-btn").forEach(btn => {
 		btn.addEventListener("click", async () => {
@@ -639,6 +654,8 @@ function render(board) {
 			setupReplyEventListeners(c.id || c._id);
 		}
 	});
+	
+	setupViewMoreCommentsButton(boardId, commentsState, renderComment, setupCommentEventListeners, setupReplyEventListeners);
 }
 
 function setupShareButton(boardId) {
@@ -835,263 +852,283 @@ function setupShareButton(boardId) {
 	}
 }
 
-(async function init() {
-	const data = await fetchBoard();
-	if (!data) {
-		alert("Board not found");
+function parseCommentText(commentText, targetId) {
+	let isReply = false;
+	let replyUsername = null;
+	let storedTargetId = null;
+	let processedText = commentText;
+	
+	if (targetId) {
+		const match = commentText.match(/^@([^:]+):\s*(.+)$/);
+		if (match) {
+			const [, username, text] = match;
+			processedText = `@${username}#${targetId}: ${text}`;
+			isReply = true;
+			replyUsername = username;
+			storedTargetId = targetId;
+			console.log("[detail.js] Reply with target ID:", { username, targetId, finalText: processedText });
+		} else {
+			console.warn("[detail.js] Target ID exists but text doesn't match reply pattern:", commentText);
+		}
+	} else {
+		const match = commentText.match(/^@([^:]+):\s*(.+)$/);
+		if (match) {
+			isReply = true;
+			replyUsername = match[1];
+		}
+	}
+	
+	return { isReply, replyUsername, storedTargetId, processedText };
+}
+
+async function findTargetComment(boardId, storedTargetId, isReplyToReply, targetReplyId, commentElement) {
+	const boardRes = await fetch(`/api/coaching-boards/${boardId}`, { credentials: "include" });
+	if (!boardRes.ok) {
+		return null;
+	}
+	
+	const updatedBoard = await boardRes.json();
+	let targetComment = null;
+	
+	if (isReplyToReply) {
+		let commentId = null;
+		if (commentElement) {
+			commentId = commentElement.getAttribute("data-comment-id");
+		}
+		
+		if (commentId) {
+			for (const c of updatedBoard.comments || []) {
+				if (String(c.id || c._id) === commentId) {
+					targetComment = c;
+					break;
+				}
+			}
+			
+			if (!targetComment) {
+				const commentRes = await fetch(`/api/coaching-boards/${boardId}?cid=${commentId}`, { credentials: "include" });
+				if (commentRes.ok) {
+					const commentData = await commentRes.json();
+					if (commentData.comments && commentData.comments.length > 0) {
+						targetComment = commentData.comments[0];
+					}
+				}
+			}
+		} else {
+			for (const c of updatedBoard.comments || []) {
+				if ((c.replies || []).some(r => String(r.id || r._id) === targetReplyId)) {
+					targetComment = c;
+					break;
+				}
+			}
+		}
+	} else {
+		targetComment = (updatedBoard.comments || []).find(c => String(c.id || c._id) === storedTargetId);
+	}
+	
+	return targetComment;
+}
+
+function findNewReply(targetComment, currentUserId) {
+	const now = Date.now();
+	
+	let newReply = (targetComment.replies || []).find(r => {
+		const timeDiff = Math.abs(new Date(r.timestamp).getTime() - now);
+		return String(r.author) === currentUserId && timeDiff < 10000;
+	});
+	
+	if (!newReply) {
+		newReply = (targetComment.replies || []).find(r => {
+			const timeDiff = Math.abs(new Date(r.timestamp).getTime() - now);
+			return String(r.author) === currentUserId && timeDiff < 30000;
+		});
+		if (!newReply) {
+			const userReplies = (targetComment.replies || []).filter(r => String(r.author) === currentUserId);
+			if (userReplies.length > 0) {
+				userReplies.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+				newReply = userReplies[0];
+			}
+		}
+	}
+	
+	return newReply;
+}
+
+async function addReplyToDOM(newReply, targetComment, commentElement, isReplyToReply, targetReplyId, boardId) {
+	if (!newReply.authorName) {
+		const authorNameRes = await fetch(`/api/users/${newReply.author}`, { credentials: "include" });
+		if (authorNameRes.ok) {
+			const authorData = await authorNameRes.json();
+			newReply.authorName = authorData.username || "Unknown";
+		}
+	}
+	
+	if (!commentElement) {
+		commentElement = document.querySelector(`[data-comment-id="${targetComment.id}"]`);
+	}
+	if (!commentElement) return;
+	
+	const actionsDiv = commentElement.querySelector(".mt-2.flex.items-center.gap-3");
+	if (!actionsDiv) {
 		return;
 	}
-	render(data);
-	const boardId = data.id;
-	const currentUserId = String(window.__CURRENT_USER_ID__ || "");
 	
-	document.getElementById("commentForm").addEventListener("submit", async (e) => {
+	let repliesContainer = commentElement.querySelector(`[data-replies-container="${targetComment.id}"]`);
+	
+	if (!repliesContainer) {
+		const repliesDiv = document.createElement("div");
+		repliesDiv.className = "mt-2 pl-4 border-l space-y-2";
+		repliesDiv.setAttribute("data-replies-container", targetComment.id);
+		actionsDiv.after(repliesDiv);
+		repliesContainer = repliesDiv;
+	}
+	
+	const replyId = newReply.id || newReply._id;
+	if (repliesContainer) {
+		const existingReply = repliesContainer.querySelector(`[data-reply-id="${replyId}"]`);
+		if (existingReply) {
+			console.log("[detail.js] Reply already exists, skipping local add:", replyId);
+			return;
+		}
+	}
+	
+	const newReplyHtml = renderRepliesFn([newReply], targetComment.id);
+	const tempDiv = document.createElement("div");
+	tempDiv.innerHTML = newReplyHtml.trim();
+	const newReplyElement = tempDiv.firstElementChild;
+	if (!newReplyElement) return;
+	
+	if (isReplyToReply && targetReplyId) {
+		const targetReplyElement = repliesContainer.querySelector(`[data-reply-id="${targetReplyId}"]`);
+		if (targetReplyElement) {
+			targetReplyElement.insertAdjacentElement("afterend", newReplyElement);
+		} else {
+			repliesContainer.insertBefore(newReplyElement, repliesContainer.firstChild);
+		}
+	} else {
+		repliesContainer.insertBefore(newReplyElement, repliesContainer.firstChild);
+	}
+	
+	setupReplyEventListenersFn(targetComment.id);
+	
+	setTimeout(() => {
+		newReplyElement.scrollIntoView({ behavior: "smooth", block: "center" });
+		newReplyElement.style.backgroundColor = "#fef3c7";
+		setTimeout(() => {
+			newReplyElement.style.backgroundColor = "";
+		}, 2000);
+	}, 100);
+}
+
+async function addCommentToDOM(newComment, boardId, shouldHighlight = true) {
+	if (!newComment.authorName) {
+		const authorNameRes = await fetch(`/api/users/${newComment.author}`, { credentials: "include" });
+		if (authorNameRes.ok) {
+			const authorData = await authorNameRes.json();
+			newComment.authorName = authorData.username || "Unknown";
+		}
+	}
+	
+	const commentsContainer = document.getElementById("comments");
+	if (renderCommentFn && setupCommentEventListenersFn && setupReplyEventListenersFn) {
+		const newCommentElement = renderCommentFn(newComment);
+		commentsContainer.insertBefore(newCommentElement, commentsContainer.firstChild);
+		
+		setupCommentEventListenersFn();
+		if (newComment.replies && newComment.replies.length > 0) {
+			setupReplyEventListenersFn(newComment.id || newComment._id);
+		}
+		
+		if (shouldHighlight) {
+			setTimeout(() => {
+				newCommentElement.scrollIntoView({ behavior: "smooth", block: "center" });
+				newCommentElement.style.backgroundColor = "#fef3c7";
+				setTimeout(() => {
+					newCommentElement.style.backgroundColor = "";
+				}, 2000);
+			}, 100);
+		}
+	}
+}
+
+function setupCommentFormHandler(boardId, currentUserId) {
+	const commentForm = document.getElementById("commentForm");
+	if (!commentForm) return;
+	
+	commentForm.addEventListener("submit", async (e) => {
 		e.preventDefault();
 		const txt = document.getElementById("commentText");
 		let commentText = txt.value.trim();
 		if (!commentText) return;
 		
-		const originalText = commentText;
-		let isReply = false;
-		let replyUsername = null;
-		let storedTargetId = null;
-		
 		const targetId = txt.dataset.targetId;
-		if (targetId) {
-			const match = commentText.match(/^@([^:]+):\s*(.+)$/);
-			if (match) {
-				const [, username, text] = match;
-				commentText = `@${username}#${targetId}: ${text}`;
-				isReply = true;
-				replyUsername = username;
-				storedTargetId = targetId;
-				console.log("[detail.js] Reply with target ID:", { username, targetId, finalText: commentText });
-			} else {
-				console.warn("[detail.js] Target ID exists but text doesn't match reply pattern:", commentText);
-			}
-			delete txt.dataset.targetId;
-		} else {
-			const match = commentText.match(/^@([^:]+):\s*(.+)$/);
-			if (match) {
-				isReply = true;
-				replyUsername = match[1];
-			}
-		}
+		const { isReply, replyUsername, storedTargetId, processedText } = parseCommentText(commentText, targetId);
+		delete txt.dataset.targetId;
 		
 		const res = await fetch(`/api/coaching-boards/${boardId}/comments`, {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			credentials: "include",
-			body: JSON.stringify({ comment: commentText })
+			body: JSON.stringify({ comment: processedText })
 		});
 		
 		if (res.ok) {
 			txt.value = "";
-			delete txt.dataset.targetId;
 			autoResizeTextarea(txt, 160);
 			updateCharCount("commentText", "charCount", 300, "number");
 			
 			if (isReply && storedTargetId) {
-				const isReplyToReply = storedTargetId.startsWith("reply:");
-				const targetReplyId = isReplyToReply ? storedTargetId.replace("reply:", "") : null;
-				
-				let commentElement = null;
-				if (isReplyToReply) {
-					const targetReplyElement = document.querySelector(`[data-reply-id="${targetReplyId}"]`);
-					if (targetReplyElement) {
-						commentElement = targetReplyElement.closest('[data-comment-id]');
-					}
-				}
-				
-				const boardRes = await fetch(`/api/coaching-boards/${boardId}`, { credentials: "include" });
-				if (!boardRes.ok) {
-					return;
-				}
-				
-				const updatedBoard = await boardRes.json();
-				
-				let targetComment = null;
-				if (isReplyToReply) {
-					let commentId = null;
-					if (commentElement) {
-						commentId = commentElement.getAttribute("data-comment-id");
-					}
-					
-					if (commentId) {
-						for (const c of updatedBoard.comments || []) {
-							if (String(c.id || c._id) === commentId) {
-								targetComment = c;
-								break;
-							}
-						}
-						
-						if (!targetComment) {
-							const commentRes = await fetch(`/api/coaching-boards/${boardId}?cid=${commentId}`, { credentials: "include" });
-							if (commentRes.ok) {
-								const commentData = await commentRes.json();
-								if (commentData.comments && commentData.comments.length > 0) {
-									targetComment = commentData.comments[0];
-								}
-							}
-						}
-					} else {
-						for (const c of updatedBoard.comments || []) {
-							if ((c.replies || []).some(r => String(r.id || r._id) === targetReplyId)) {
-								targetComment = c;
-								break;
-							}
-						}
-					}
-				} else {
-					targetComment = (updatedBoard.comments || []).find(c => String(c.id || c._id) === storedTargetId);
-				}
-				
-				if (!targetComment || !renderRepliesFn || !setupReplyEventListenersFn) return;
-				
-				const now = Date.now();
-				
-				(targetComment.replies || []).forEach((r, index) => {
-					const replyTime = new Date(r.timestamp).getTime();
-					const timeDiff = Math.abs(replyTime - now);
-					const authorMatch = String(r.author) === currentUserId;
-				});
-				
-				let newReply = (targetComment.replies || []).find(r => {
-					const timeDiff = Math.abs(new Date(r.timestamp).getTime() - now);
-					return String(r.author) === currentUserId && timeDiff < 10000;
-				});
-				
-				if (!newReply) {
-					newReply = (targetComment.replies || []).find(r => {
-						const timeDiff = Math.abs(new Date(r.timestamp).getTime() - now);
-						return String(r.author) === currentUserId && timeDiff < 30000;
-					});
-					if (!newReply) {
-						const userReplies = (targetComment.replies || []).filter(r => String(r.author) === currentUserId);
-						if (userReplies.length > 0) {
-							userReplies.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-							newReply = userReplies[0];
-						} else {
-							return;
-						}
-					}
-				}
-				const authorNameRes = await fetch(`/api/users/${newReply.author}`, { credentials: "include" });
-				if (authorNameRes.ok) {
-					const authorData = await authorNameRes.json();
-					newReply.authorName = authorData.username || "Unknown";
-				}
-
-				if (!commentElement) {
-					commentElement = document.querySelector(`[data-comment-id="${targetComment.id}"]`);
-				}
-				if (!commentElement) return;
-				
-				const actionsDiv = commentElement.querySelector(".mt-2.flex.items-center.gap-3");
-				if (!actionsDiv) {
-					return;
-				}
-				
-				let repliesContainer = commentElement.querySelector(`[data-replies-container="${targetComment.id}"]`);
-				
-				if (!repliesContainer) {
-					const repliesDiv = document.createElement("div");
-					repliesDiv.className = "mt-2 pl-4 border-l space-y-2";
-					repliesDiv.setAttribute("data-replies-container", targetComment.id);
-					actionsDiv.after(repliesDiv);
-					repliesContainer = repliesDiv;
-				}
-				
-				// Check if reply already exists to avoid duplicates
-				const replyId = newReply.id || newReply._id;
-				if (repliesContainer) {
-					const existingReply = repliesContainer.querySelector(`[data-reply-id="${replyId}"]`);
-					if (existingReply) {
-						console.log("[detail.js] Reply already exists, skipping local add:", replyId);
-						return;
-					}
-				}
-				
-				const newReplyHtml = renderRepliesFn([newReply], targetComment.id);
-				const tempDiv = document.createElement("div");
-				tempDiv.innerHTML = newReplyHtml.trim();
-				const newReplyElement = tempDiv.firstElementChild;
-				if (!newReplyElement) return;
-				
-				// Check if this is a reply to another reply
-				if (isReplyToReply && targetReplyId) {
-					const targetReplyElement = repliesContainer.querySelector(`[data-reply-id="${targetReplyId}"]`);
-					if (targetReplyElement) {
-						// Insert after the target reply
-						targetReplyElement.insertAdjacentElement("afterend", newReplyElement);
-					} else {
-						// Target reply not found, insert at the beginning
-						repliesContainer.insertBefore(newReplyElement, repliesContainer.firstChild);
-					}
-				} else {
-					// Not a reply to another reply, insert at the beginning (first reply under comment)
-					repliesContainer.insertBefore(newReplyElement, repliesContainer.firstChild);
-				}
-				
-				setupReplyEventListenersFn(targetComment.id);
-				
-				setTimeout(() => {
-					newReplyElement.scrollIntoView({ behavior: "smooth", block: "center" });
-					newReplyElement.style.backgroundColor = "#fef3c7";
-					setTimeout(() => {
-						newReplyElement.style.backgroundColor = "";
-					}, 2000);
-				}, 100);
-				return;
+				await handleReplySubmission(boardId, storedTargetId, currentUserId);
 			} else {
-				const boardRes = await fetch(`/api/coaching-boards/${boardId}`, { credentials: "include" });
-				if (boardRes.ok) {
-					const updatedBoard = await boardRes.json();
-					const newComment = (updatedBoard.comments || []).find(c => {
-						return String(c.author) === currentUserId &&
-							   new Date(c.timestamp).getTime() > Date.now() - 5000;
-					});
-					
-					if (newComment) {
-						const authorNameRes = await fetch(`/api/users/${newComment.author}`, { credentials: "include" });
-						if (authorNameRes.ok) {
-							const authorData = await authorNameRes.json();
-							newComment.authorName = authorData.username || "Unknown";
-						}
-						
-						const commentsContainer = document.getElementById("comments");
-						if (renderCommentFn && setupCommentEventListenersFn && setupReplyEventListenersFn) {
-							const newCommentElement = renderCommentFn(newComment);
-							commentsContainer.insertBefore(newCommentElement, commentsContainer.firstChild);
-							
-							setupCommentEventListenersFn();
-							if (newComment.replies && newComment.replies.length > 0) {
-								setupReplyEventListenersFn(newComment.id || newComment._id);
-							}
-							
-							setTimeout(() => {
-								newCommentElement.scrollIntoView({ behavior: "smooth", block: "center" });
-								newCommentElement.style.backgroundColor = "#fef3c7";
-								setTimeout(() => {
-									newCommentElement.style.backgroundColor = "";
-								}, 2000);
-							}, 100);
-						}
-					}
-				}
+				await handleCommentSubmission(boardId, currentUserId);
 			}
 		} else {
 			const err = await res.json().catch(() => ({}));
 			alert(err?.message || "Failed to add comment");
 		}
 	});
+}
 
-	const currentBoardId = data.id;
-	setTimeout(() => {
-		const socket = getSocket();
+async function handleReplySubmission(boardId, storedTargetId, currentUserId) {
+	const isReplyToReply = storedTargetId.startsWith("reply:");
+	const targetReplyId = isReplyToReply ? storedTargetId.replace("reply:", "") : null;
+	
+	let commentElement = null;
+	if (isReplyToReply) {
+		const targetReplyElement = document.querySelector(`[data-reply-id="${targetReplyId}"]`);
+		if (targetReplyElement) {
+			commentElement = targetReplyElement.closest('[data-comment-id]');
+		}
+	}
+	
+	const targetComment = await findTargetComment(boardId, storedTargetId, isReplyToReply, targetReplyId, commentElement);
+	if (!targetComment || !renderRepliesFn || !setupReplyEventListenersFn) return;
+	
+	const newReply = findNewReply(targetComment, currentUserId);
+	if (!newReply) return;
+	
+	await addReplyToDOM(newReply, targetComment, commentElement, isReplyToReply, targetReplyId, boardId);
+}
+
+async function handleCommentSubmission(boardId, currentUserId) {
+	const boardRes = await fetch(`/api/coaching-boards/${boardId}`, { credentials: "include" });
+	if (!boardRes.ok) return;
+	
+	const updatedBoard = await boardRes.json();
+	const newComment = (updatedBoard.comments || []).find(c => {
+		return String(c.author) === currentUserId &&
+			   new Date(c.timestamp).getTime() > Date.now() - 5000;
+	});
+	
+	if (newComment) {
+		await addCommentToDOM(newComment, boardId);
+	}
+}
+
+function setupSocketHandlers(boardId, currentUserId) {
+	const socket = getSocket();
 	
 	socket.on("coaching_board_comment", async (eventData) => {
-		if (eventData.boardId !== currentBoardId) return;
+		if (eventData.boardId !== boardId) return;
 		
 		const newComment = eventData.comment;
 		if (!newComment) return;
@@ -1101,34 +1138,16 @@ function setupShareButton(boardId) {
 		
 		if (String(newComment.author) === currentUserId) return;
 		
-		if (!newComment.authorName) {
-			const authorNameRes = await fetch(`/api/users/${newComment.author}`, { credentials: "include" });
-			if (authorNameRes.ok) {
-				const authorData = await authorNameRes.json();
-				newComment.authorName = authorData.username || "Unknown";
-			}
-		}
-		
-		const commentsContainer = document.getElementById("comments");
-		if (commentsContainer && renderCommentFn && setupCommentEventListenersFn && setupReplyEventListenersFn) {
-			const newCommentElement = renderCommentFn(newComment);
-			commentsContainer.insertBefore(newCommentElement, commentsContainer.firstChild);
-			
-			setupCommentEventListenersFn();
-			if (newComment.replies && newComment.replies.length > 0) {
-				setupReplyEventListenersFn(newComment.id || newComment._id);
-			}
-		}
+		await addCommentToDOM(newComment, boardId, false);
 	});
 	
 	socket.on("coaching_board_reply", async (eventData) => {
-		if (eventData.boardId !== currentBoardId) return;
+		if (eventData.boardId !== boardId) return;
 		
 		const newReply = eventData.reply;
 		const commentId = String(eventData.commentId || "");
 		if (!newReply || !commentId) return;
 		
-		// Find comment element by matching ID (support both id and _id formats)
 		const commentElement = Array.from(document.querySelectorAll("[data-comment-id]")).find(el => {
 			const elCommentId = el.getAttribute("data-comment-id");
 			return String(elCommentId) === commentId;
@@ -1175,32 +1194,19 @@ function setupShareButton(boardId) {
 			const newReplyElement = tempDiv.firstElementChild;
 			if (!newReplyElement) return;
 			
-			// Check if this is a reply to another reply
 			const replyToId = newReply.replyTo;
 			if (replyToId) {
 				const targetReplyElement = repliesContainer.querySelector(`[data-reply-id="${replyToId}"]`);
 				if (targetReplyElement) {
-					// Insert after the target reply
 					targetReplyElement.insertAdjacentElement("afterend", newReplyElement);
 				} else {
-					// Target reply not found, insert at the beginning
 					repliesContainer.insertBefore(newReplyElement, repliesContainer.firstChild);
 				}
 			} else {
-				// Not a reply to another reply, insert at the beginning (first reply under comment)
 				repliesContainer.insertBefore(newReplyElement, repliesContainer.firstChild);
 			}
 			
 			setupReplyEventListenersFn(commentId);
-			
-			// Scroll and highlight the new reply
-			setTimeout(() => {
-				newReplyElement.scrollIntoView({ behavior: "smooth", block: "center" });
-				newReplyElement.style.backgroundColor = "#fef3c7";
-				setTimeout(() => {
-					newReplyElement.style.backgroundColor = "";
-				}, 2000);
-			}, 100);
 			
 			if (!commentRepliesState[commentId]) {
 				commentRepliesState[commentId] = { skip: 0, hasMore: false };
@@ -1216,7 +1222,7 @@ function setupShareButton(boardId) {
 	});
 	
 	socket.on("coaching_board_comment_deleted", (eventData) => {
-		if (eventData.boardId !== currentBoardId) return;
+		if (eventData.boardId !== boardId) return;
 		
 		const commentId = eventData.commentId;
 		if (!commentId) return;
@@ -1228,7 +1234,7 @@ function setupShareButton(boardId) {
 	});
 	
 	socket.on("coaching_board_reply_deleted", (eventData) => {
-		if (eventData.boardId !== currentBoardId) return;
+		if (eventData.boardId !== boardId) return;
 		
 		const commentId = eventData.commentId;
 		const replyId = eventData.replyId;
@@ -1242,6 +1248,22 @@ function setupShareButton(boardId) {
 			replyElement.remove();
 		}
 	});
+}
+
+(async function init() {
+	const data = await fetchBoard();
+	if (!data) {
+		alert("Board not found");
+		return;
+	}
+	render(data);
+	const boardId = data.id;
+	const currentUserId = String(window.__CURRENT_USER_ID__ || "");
+	
+	setupCommentFormHandler(boardId, currentUserId);
+	
+	setTimeout(() => {
+		setupSocketHandlers(boardId, currentUserId);
 	}, 100);
 })(); 
 
