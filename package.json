@@ -18,7 +18,9 @@
     "test:integration:chat-privately": "npm test tests/privateChat.test.js",
     "test:integration:search-information": "npm test tests/searchInformation.test.js",
     "test:integration:update-status": "npm test tests/updateStatus.test.js",
-    "test:postAnnouncement": "npm test tests/postAnnouncement.test.js"
+    "test:postAnnouncement": "npm test tests/postAnnouncement.test.js",
+    "test:tasks": "cross-env NODE_OPTIONS=\"--experimental-vm-modules --no-warnings\" jest --detectOpenHandles --coverage tests/taskController.test.js tests/taskFrontendUtils.test.js",
+    "test:integration:tasks": "cross-env NODE_OPTIONS=\"--experimental-vm-modules --no-warnings\" jest --detectOpenHandles tests/taskIntegration.test.js"
   },
   "repository": {
     "type": "git",
