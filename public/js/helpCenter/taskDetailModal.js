@@ -98,7 +98,7 @@ if (overlay) {
       target: event.target,
       currentTarget: event.currentTarget,
     });
-    const target = event.Target;
+    const target = event.target;
     if (target === overlay) {
       closeModal();
     }
@@ -112,7 +112,7 @@ if (taskModalWrapper) {
       target: event.target,
       currentTarget: event.currentTarget,
     });
-    const target = event.Target;
+    const target = event.target;
     if (target === taskModalWrapper) {
       closeModal();
     }
@@ -129,13 +129,15 @@ document.querySelectorAll("[data-modal-cancel]").forEach((btn) => {
 
 // ----- Action button wiring -----
 
-if (btnJoinTask) {
+const hasModalTrigger = (el) => !!el?.dataset?.modalOpen;
+
+if (btnJoinTask && !hasModalTrigger(btnJoinTask)) {
   btnJoinTask.addEventListener("click", () => {
     openPanel(joinPanel);
   });
 }
 
-if (btnQuitTask) {
+if (btnQuitTask && !hasModalTrigger(btnQuitTask)) {
   btnQuitTask.addEventListener("click", () => {
     openPanel(quitPanel);
   });

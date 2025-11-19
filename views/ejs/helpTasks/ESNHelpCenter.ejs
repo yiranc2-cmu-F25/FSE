@@ -103,10 +103,18 @@
     <!-- Task Detail Modal-->
     <%- include('../partials/help-center/taskDetailModal', { task, viewer }) %>
 
+    <!-- Task action alerts -->
+    <%- include('../partials/help-tasks/modals/joinConfirmModal') %>
+    <%- include('../partials/help-tasks/modals/quitConfirmModal') %>
+    <%- include('../partials/help-tasks/modals/joinSuccessModal') %>
+    <%- include('../partials/help-tasks/modals/quitSuccessModal') %>
+
     <script>
       window.__TASK_DETAIL__ = <%- JSON.stringify(task || {}) %>;
       window.__TASK_VIEWER__ = <%- JSON.stringify(viewer || {}) %>;
     </script>
+
+    <script type="module" src="/js/ui/modalManager.js"></script>
     <script type="module" src="/js/helpCenter/taskDetailModal.js"></script>
     <script type="module" src="/js/helpCenter/clickTaskCard.js"></script>
 

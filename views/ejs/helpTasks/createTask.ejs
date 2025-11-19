@@ -377,6 +377,7 @@
               <button
                 type="submit"
                 class="inline-flex w-full items-center justify-center rounded-2xl bg-amber-700 px-4 py-3.5 text-sm font-semibold text-white shadow-md hover:bg-amber-800"
+                data-modal-open="publish-success-modal"
               >
                 Publish Task
               </button>
@@ -388,6 +389,9 @@
       </section>
     </main>
 
+    <%- include('../partials/help-tasks/modals/publishSuccessModal') %>
+
+    <script type="module" src="/js/ui/modalManager.js"></script>
     <script type="module" src="/js/helpCenter/createTask.js"></script>
   </body>
 </html>
