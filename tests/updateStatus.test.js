@@ -4,16 +4,26 @@ import UserDac from "../dacs/userDac.js";
 import StatusDac from "../dacs/statusDac.js";
 import { inMemoryUserDao } from "../daos/inMemoryUserDao.js";
 import { inMemoryStatusDao } from "../daos/inMemoryStatusDao.js";
+import { setupTestDb, cleanupTestDb } from "../config/testDbConfig.js";
 
-const PORT = 3000;
+const PORT = 3001;
 const BASE_URL = `http://127.0.0.1:${PORT}`;
 const AUTH_BASE = `${BASE_URL}/api/authentications`;
 
 let server;
 
 describe("Authentications REST API Integration Tests", () => {
-  beforeAll(() => {
-    server = app.listen(PORT);
+  beforeAll(async () => {
+    // Setup in-memory MongoDB
+    await setupTestDb();
+
+    // Set up in-memory DAOs
+    UserDac.DAO = new inMemoryUserDao();
+    StatusDac.DAO = new inMemoryStatusDao();
+    
+    await new Promise((resolve) => {
+      server = app.listen(PORT, resolve);
+    });
   });
 
   beforeEach(() => {
@@ -23,8 +33,18 @@ describe("Authentications REST API Integration Tests", () => {
 
   afterAll(async () => {
     if (server) {
-      await server.close();
+      await new Promise((resolve) => {
+        server.close(() => {
+          resolve();
+        });
+      });
     }
+    
+    // Cleanup test database
+    await cleanupTestDb();
+    
+    UserDac.DAO = null;
+    StatusDac.DAO = null;
   });
 
   const registerUser = async (agentClient, username) => {
@@ -75,6 +95,7 @@ describe("Authentications REST API Integration Tests", () => {
         },
       };
       app.set("socketInstance", mockSocket);
+      app.locals.socketInstance = mockSocket;
 
 
       try {

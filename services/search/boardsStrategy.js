@@ -1,7 +1,6 @@
-import mongoose from "mongoose";
+import CoachingBoard from "../../entities/CoachingBoard.js";
 import { parseQuery } from "../../utils/search/parseQuery.js";
 import { SearchStrategy } from "./SearchStrategy.js";
-import { buildSubstringRegex } from "../../utils/search/search.js";
 
 export class BoardsStrategy extends SearchStrategy {
   async execute({ req }) {
@@ -14,34 +13,12 @@ export class BoardsStrategy extends SearchStrategy {
       const cursor =
         typeof req.query.cursor === "string" ? req.query.cursor : "";
 
-      const Model = mongoose.connection.model("CoachingBoard");
-      const regex = buildSubstringRegex(nonStop, raw);
-
-      const query = {
-        publicationState: "published",
-        $or: [
-          { title: { $regex: regex } },
-          { category: { $regex: regex } },
-          { relatedSkills: { $elemMatch: { $regex: regex } } },
-        ],
-      };
-
-      const sort = { updatedAt: -1, _id: -1 };
-      const itemsPlusOne = await Model.find(query)
-        .sort(sort)
-        .limit(limit + 1)
-        .select({ title: 1, category: 1, updatedAt: 1 })
-        .lean();
-
-      const hasMore = itemsPlusOne.length > limit;
-      const items = hasMore ? itemsPlusOne.slice(0, limit) : itemsPlusOne;
-      const count = await Model.countDocuments(query);
-
-      let nextCursor = null;
-      if (hasMore && items.length > 0) {
-        const last = items[items.length - 1];
-        nextCursor = `${new Date(last.updatedAt).toISOString()}|${String(last._id)}`;
-      }
+      const { count, items, nextCursor } = await CoachingBoard.searchBoards({
+        terms: nonStop,
+        phrase: raw,
+        limit,
+        cursor,
+      });
 
       const results = items.map((b) => ({
         id: String(b._id),

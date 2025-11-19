@@ -24,16 +24,16 @@ class CoachingBoard {
 
 	getPayload() {
 		return {
-			title: this.title,
-			category: this.category,
-			description: this.description,
-			objective: this.objective,
-			steps: this.steps,
-			relatedSkills: this.relatedSkills,
-			tools: this.tools,
-			notes: this.notes
+				title: this.title,
+				category: this.category,
+				description: this.description,
+				objective: this.objective,
+				steps: this.steps,
+				relatedSkills: this.relatedSkills,
+				tools: this.tools,
+				notes: this.notes
 		};
-	}
+			}
 
 	async saveDraft() {
 		return await CoachingBoard.DAO.createDraftOrUpdate({
@@ -130,6 +130,10 @@ class CoachingBoard {
 
 	static async getPendingNotificationsForUser({ userId }) {
 		return await CoachingBoard.DAO.getPendingNotificationsForUser({ userId });
+	}
+
+	static async searchBoards(params) {
+		return await CoachingBoard.DAO.searchBoards(params);
 	}
 }
 

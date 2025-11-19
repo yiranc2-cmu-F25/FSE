@@ -72,14 +72,9 @@ export async function updatePresets(req, res) {
 
 export async function addCategory(req, res) {
 	try {
-		const { category } = req.body;
-		const validation = validateNonEmptyString(category, "Category");
-		if (!validation.valid) {
-			return res.status(400).json({ status: "error", message: validation.message });
-		}
-		const trimmedCategory = validation.trimmed;
-		
-		const { presets, categories } = await getPresetsWithArrays();
+		const data = await validateAndGetPresets(req, res, "Category", "category");
+		if (!data) return;
+		const { trimmed: trimmedCategory, presets, categories } = data;
 		
 		if (categories.includes(trimmedCategory)) {
 			return res.status(409).json({ status: "error", message: "Category already exists" });
@@ -94,14 +89,9 @@ export async function addCategory(req, res) {
 
 export async function deleteCategory(req, res) {
 	try {
-		const { category } = req.body;
-		const validation = validateNonEmptyString(category, "Category");
-		if (!validation.valid) {
-			return res.status(400).json({ status: "error", message: validation.message });
-		}
-		const trimmedCategory = validation.trimmed;
-		
-		const { presets, categories } = await getPresetsWithArrays();
+		const data = await validateAndGetPresets(req, res, "Category", "category");
+		if (!data) return;
+		const { trimmed: trimmedCategory, presets, categories } = data;
 		
 		if (!categories.includes(trimmedCategory)) {
 			return res.status(404).json({ status: "error", message: "Category not found" });

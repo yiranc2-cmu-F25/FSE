@@ -1,3 +1,6 @@
+import { buildSubstringRegex } from "../utils/search/search.js";
+import { parseCursor } from "../utils/search/cursor.js";
+
 export class CoachingBoardDao {
 	constructor({ CoachingBoardModel }) {
 		this.CoachingBoardModel = CoachingBoardModel;
@@ -51,6 +54,59 @@ export class CoachingBoardDao {
 			.select("-comments")
 			.lean();
 		return docs.map(d => this.#toBoard(d));
+	}
+
+	async searchBoards({ terms = [], phrase = "", limit = 10, cursor } = {}) {
+		const regex = buildSubstringRegex(terms, phrase);
+		const safeLimit = Math.min(Math.max(1, +limit || 10), 100);
+		const sort = { updatedAt: -1, _id: -1 };
+
+		const query = {
+			publicationState: "published",
+			$or: [
+				{ title: { $regex: regex } },
+				{ category: { $regex: regex } },
+				{ relatedSkills: { $elemMatch: { $regex: regex } } },
+			],
+		};
+
+		// Handle cursor for pagination
+		const parsed = parseCursor(cursor);
+		if (parsed) {
+			// For CoachingBoard, we use updatedAt instead of timestamp
+			const cursorClause = [
+				{ updatedAt: { $lt: parsed.ts } },
+				{ updatedAt: parsed.ts, _id: { $lt: parsed.idStr } }
+			];
+			query.$and = [{ $or: query.$or }, { $or: cursorClause }];
+			delete query.$or;
+		}
+
+		const itemsPlusOne = await this.CoachingBoardModel.find(query)
+			.sort(sort)
+			.limit(safeLimit + 1)
+			.select({ title: 1, category: 1, updatedAt: 1, _id: 1 })
+			.lean();
+
+		const hasMore = itemsPlusOne.length > safeLimit;
+		const items = hasMore ? itemsPlusOne.slice(0, safeLimit) : itemsPlusOne;
+
+		let nextCursor = null;
+		if (hasMore && items.length > 0) {
+			const last = items[items.length - 1];
+			nextCursor = `${new Date(last.updatedAt).toISOString()}|${String(last._id)}`;
+		}
+
+		const count = await this.CoachingBoardModel.countDocuments({
+			publicationState: "published",
+			$or: [
+				{ title: { $regex: regex } },
+				{ category: { $regex: regex } },
+				{ relatedSkills: { $elemMatch: { $regex: regex } } },
+			],
+		});
+
+		return { code: 200, count, items, nextCursor };
 	}
 
 	async findPublishedByTitleCategory({ title, category }) {
@@ -191,8 +247,8 @@ export class CoachingBoardDao {
 		} else {
 			likesArray.push(userId);
 		}
-	}
-
+		}
+		
 	async #saveAndReturnBoard(board) {
 		await board.save();
 		return this.#toBoard(board.toObject());
@@ -225,7 +281,7 @@ export class CoachingBoardDao {
 		if (!result) return null;
 		const { board, reply } = result;
 		
-		if (!reply.likes) reply.likes = [];
+			if (!reply.likes) reply.likes = [];
 		this.#toggleLike(reply.likes, userId);
 		
 		return await this.#saveAndReturnBoard(board);
@@ -291,23 +347,52 @@ export class CoachingBoardDao {
 	}
 
 	async getPendingNotificationsForUser({ userId }) {
-		const boards = await this.CoachingBoardModel.find({
+		// Find subscribed boards for board_updated and new_comment notifications
+		const subscribedBoards = await this.CoachingBoardModel.find({
 			publicationState: "published",
 			subscribers: userId
 		}).lean();
 		
-		console.log("[getPendingNotificationsForUser] User subscribed to", boards.length, "boards");
+		// Find all boards where user has comments/replies (for reply notifications)
+		// This is independent of subscription status
+		const boardsWithUserActivity = await this.CoachingBoardModel.find({
+			publicationState: "published",
+			$or: [
+				{ "comments.author": userId },
+				{ "comments.replies.author": userId }
+			]
+		}).lean();
+		
+		// Merge and deduplicate boards by _id
+		const boardMap = new Map();
+		subscribedBoards.forEach(board => {
+			boardMap.set(String(board._id), board);
+		});
+		boardsWithUserActivity.forEach(board => {
+			if (!boardMap.has(String(board._id))) {
+				boardMap.set(String(board._id), board);
+			}
+		});
+		const boards = Array.from(boardMap.values());
+		
+		console.log("[getPendingNotificationsForUser] Total boards to check:", boards.length, "(subscribed:", subscribedBoards.length, ", with user activity:", boardsWithUserActivity.length, ")");
 		
 		const pendingNotifications = [];
+		const subscribedBoardIds = new Set(subscribedBoards.map(b => String(b._id)));
 		
 		for (const board of boards) {
+			const isSubscribed = subscribedBoardIds.has(String(board._id));
 			const seenEntry = (board.notificationSeenAt || []).find(
 				entry => String(entry.userId) === String(userId)
 			);
+			// lastSeenAt is the timestamp when user last viewed notifications for this board
+			// This acts as a filter: only show notifications newer than this timestamp
 			const lastSeenAt = seenEntry ? new Date(seenEntry.timestamp) : null;
 			
 			const contentUpdatedAt = board.contentUpdatedAt ? new Date(board.contentUpdatedAt) : null;
 			
+			// Board updated and new_comment notifications only for subscribed boards
+			if (isSubscribed) {
 			if (contentUpdatedAt) {
 				const timeBuffer = 1000;
 				const isNewerThanLastSeen = !lastSeenAt || (contentUpdatedAt.getTime() > lastSeenAt.getTime() + timeBuffer);
@@ -339,9 +424,15 @@ export class CoachingBoardDao {
 								timestamp: commentTime
 							});
 							break;
+							}
+						}
+					}
 						}
 					}
 					
+			// Reply notifications for all boards where user has comments/replies (independent of subscription)
+			if (board.comments && Array.isArray(board.comments)) {
+				for (const comment of board.comments) {
 					if (comment.replies && Array.isArray(comment.replies)) {
 						const isUserComment = String(comment.author) === String(userId);
 						
@@ -361,7 +452,14 @@ export class CoachingBoardDao {
 							return false;
 						};
 						
-						for (const reply of comment.replies) {
+						// Sort replies by timestamp to get the most recent one
+						const sortedReplies = [...comment.replies].sort((a, b) => {
+							const timeA = new Date(a.timestamp || 0).getTime();
+							const timeB = new Date(b.timestamp || 0).getTime();
+							return timeB - timeA; // Most recent first
+						});
+						
+						for (const reply of sortedReplies) {
 							const replyTime = new Date(reply.timestamp || 0);
 							
 							if (isReplyToUser(reply) && (!lastSeenAt || replyTime > lastSeenAt)) {
@@ -374,7 +472,7 @@ export class CoachingBoardDao {
 										replyId: String(reply._id),
 										timestamp: replyTime
 									});
-									break;
+									break; // Only notify about the most recent reply to avoid spam
 								}
 							}
 						}

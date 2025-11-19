@@ -15,3 +15,24 @@ export function openModal(modal) {
 	modal.setAttribute("aria-hidden", "false");
 }
 
+export function setupModalCloseWithRedirect(modal, closeBtn, redirectUrl) {
+	if (!modal || !closeBtn) return;
+	
+	closeBtn.addEventListener("click", () => {
+		closeModal(modal);
+		window.location.href = redirectUrl;
+	});
+
+	modal.addEventListener("click", (e) => {
+		if (e.target === modal) {
+			closeModal(modal);
+		}
+	});
+}
+
+function closeModal(modal) {
+	modal.classList.add("hidden");
+	modal.classList.remove("flex");
+	modal.setAttribute("aria-hidden", "true");
+}
+

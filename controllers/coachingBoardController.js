@@ -687,20 +687,26 @@ export async function addComment(req, res) {
 						const authorName = await User.getUsernameById(requesterId).catch(() => "Unknown");
 						const updatedBoard = await CoachingBoard.getById({ id });
 						
-						const comment = (updatedBoard.comments || []).find(c => c.id === targetComment.id);
+						const comment = (updatedBoard.comments || []).find(c => {
+							const cId = c.id || c._id;
+							return String(cId) === String(targetComment.id);
+						});
 						const newReply = comment ? (comment.replies || []).find(r => 
 							String(r.author) === requesterId && 
 							r.reply === fullReplyText &&
 							Math.abs(new Date(r.timestamp).getTime() - Date.now()) < 5000
 						) : null;
 						
+						const commentIdStr = String(targetComment.id || targetComment._id || "");
+						const replyIdStr = newReply ? String(newReply.id || newReply._id || "") : null;
+						
 						socketInstance.emitCoachingBoardNotification([notifyUserId], {
 							type: "new_reply",
 							boardId: id,
 							boardTitle: updatedBoard.title,
 							authorName: authorName || "Unknown",
-							commentId: targetComment.id,
-							replyId: newReply ? (newReply.id || newReply._id) : null,
+							commentId: commentIdStr,
+							replyId: replyIdStr,
 							timestamp: new Date()
 						});
 					}
@@ -971,8 +977,12 @@ export async function getPendingNotifications(req, res) {
 				const board = await CoachingBoard.getById({ id: notif.boardId });
 				if (board && board.comments) {
 					for (const comment of board.comments) {
-						if (String(comment.id) === notif.commentId && comment.replies) {
-							const reply = comment.replies.find(r => String(r.id) === notif.replyId);
+						const commentId = String(comment.id || comment._id || "");
+						if (commentId === String(notif.commentId) && comment.replies) {
+							const reply = comment.replies.find(r => {
+								const rId = r.id || r._id;
+								return String(rId) === String(notif.replyId);
+							});
 							if (reply) {
 								try {
 									notif.authorName = await User.getUsernameById(reply.author) || "Unknown";

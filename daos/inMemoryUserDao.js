@@ -77,7 +77,12 @@ export class inMemoryUserDao extends iUserDao {
 
   async getUsernameById(id) {
     // Use == to handle both string and number IDs (e.g., "5" == 5)
-    const user = this.users.find((u) => id == u.id);
+    // Also handle ObjectId hex strings that can be parsed back to numbers
+    let user = this.users.find((u) => id == u.id || id == u._id);
+    if (!user && typeof id === "string" && /^[0-9a-fA-F]{24}$/.test(id)) {
+      const parsedId = parseInt(id, 16);
+      user = this.users.find((u) => parsedId === u.id);
+    }
     return user ? user.username : null;
   }
 

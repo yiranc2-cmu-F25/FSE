@@ -29,7 +29,7 @@ function showModal(userId, modalId, checkboxId, okBtnId) {
 		if (checkbox.checked && userId) {
 			const key = getDontShowKey(userId);
 			if (key) {
-				localStorage.setItem(key, "true");
+			localStorage.setItem(key, "true");
 			}
 		}
 		modal.classList.add("hidden");

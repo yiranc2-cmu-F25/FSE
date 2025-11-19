@@ -3,6 +3,17 @@ import { el } from "../utils/domHelpers.js";
 import { setupModalEventListeners, openModal } from "../utils/modalHelpers.js";
 import { fetchCategorySkillPresets } from "../utils/presets.js";
 import { createSkillTag } from "../utils/skillTags.js";
+import { setupSkillSelectHandler } from "../utils/skillSelect.js";
+import { autoResizeTextarea } from "../utils/autoResizeTextarea.js";
+import { countCharacters, updateCharCount as updateCharCountUtil, setupCharCountListener } from "../utils/charCount.js";
+
+const CHAR_LIMITS = {
+	title: 50,
+	description: 300,
+	objective: 300,
+	notes: 500,
+	step: 100
+};
 
 let CATEGORY_PRESET = [];
 let SKILL_PRESET = [];
@@ -65,7 +76,7 @@ async function saveDraft(payload) {
 }
 
 function readForm() {
-	const steps = Array.from(document.querySelectorAll("[data-role='step-row'] input.step-input")).map(i => i.value).filter(Boolean);
+	const steps = Array.from(document.querySelectorAll("[data-role='step-row'] textarea.step-input")).map(i => i.value).filter(Boolean);
 	const tools = Array.from(document.querySelectorAll("[data-role='tool-row'] input.tool-input")).map(i => i.value).filter(Boolean);
 	return {
 		title: document.getElementById("title").value.trim(),
@@ -94,6 +105,12 @@ function applyDraft(d) {
 	selectedSkills = Array.from(new Set(d.relatedSkills || []));
 	renderSkillTags();
 	document.getElementById("notes").value = d.notes ?? "";
+	
+	// Update character counts
+	updateCharCountUtil("title", "titleCharCount", CHAR_LIMITS.title);
+	updateCharCountUtil("description", "descriptionCharCount", CHAR_LIMITS.description);
+	updateCharCountUtil("objective", "objectiveCharCount", CHAR_LIMITS.objective);
+	updateCharCountUtil("notes", "notesCharCount", CHAR_LIMITS.notes);
 }
 
 function applyBoardData(board) {
@@ -111,6 +128,12 @@ function applyBoardData(board) {
 	selectedSkills = Array.from(new Set(board.relatedSkills || []));
 	renderSkillTags();
 	document.getElementById("notes").value = board.notes ?? "";
+	
+	// Update character counts
+	updateCharCountUtil("title", "titleCharCount", CHAR_LIMITS.title);
+	updateCharCountUtil("description", "descriptionCharCount", CHAR_LIMITS.description);
+	updateCharCountUtil("objective", "objectiveCharCount", CHAR_LIMITS.objective);
+	updateCharCountUtil("notes", "notesCharCount", CHAR_LIMITS.notes);
 }
 
 function setupCategoryOptions() {
@@ -163,16 +186,22 @@ function setupSkills() {
 		}
 		select.appendChild(option);
 	});
-	select.addEventListener("change", () => {
-		const val = select.value;
-		if (!val) return;
-		if (!selectedSkills.includes(val)) {
-			selectedSkills.push(val);
-			renderSkillTags();
-		}
-		select.value = "";
-	});
+	setupSkillSelectHandler(select, selectedSkills, renderSkillTags);
 	renderSkillTags();
+}
+
+function updateStepCharCount(textarea, countEl) {
+	if (!textarea || !countEl) return;
+	
+	const count = countCharacters(textarea.value);
+	countEl.textContent = `${count}/${CHAR_LIMITS.step}`;
+	if (count > CHAR_LIMITS.step) {
+		countEl.classList.add("text-red-600");
+		countEl.classList.remove("text-gray-500");
+	} else {
+		countEl.classList.remove("text-red-600");
+		countEl.classList.add("text-gray-500");
+	}
 }
 
 function ensureAtLeastOneInput(containerId, className) {
@@ -183,16 +212,43 @@ function ensureAtLeastOneInput(containerId, className) {
 }
 
 function createStepRow(value = "") {
-	const row = el("div", { className: "mt-2 flex items-center gap-2", dataset: { role: "step-row" } });
-	const handle = el("span", { className: "inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-stone-500 select-none cursor-grab", text: "≡" });
-	const input = el("input", { type: "text", className: "step-input flex-1 rounded-md border-gray-300 px-3 py-2 shadow-sm focus:outline-none cursor-text", value });
-	const delBtn = el("button", { type: "button", className: "inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-red-600" });
+	const row = el("div", { className: "mt-2", dataset: { role: "step-row" } });
+	const stepWrapper = el("div", { className: "flex items-start gap-2" });
+	const handle = el("span", { className: "inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-stone-500 select-none cursor-grab mt-2", text: "≡" });
+	const textareaWrapper = el("div", { className: "flex-1" });
+	const textarea = el("textarea", { 
+		className: "step-input w-full rounded-md border-gray-300 px-3 py-2 shadow-sm focus:outline-none cursor-text resize-none overflow-hidden min-w-0", 
+		rows: 1,
+		maxlength: CHAR_LIMITS.step
+	});
+	textarea.value = value;
+	
+	const charCountEl = el("div", { className: "mt-1 flex justify-end" });
+	const countSpan = el("span", { className: "text-xs text-gray-500" });
+	charCountEl.appendChild(countSpan);
+	
+	textarea.addEventListener("input", () => {
+		autoResizeTextarea(textarea, 160);
+		updateStepCharCount(textarea, countSpan);
+	});
+	
+	const delBtn = el("button", { type: "button", className: "inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-red-600 mt-2" });
 	delBtn.innerHTML = "×";
 	delBtn.addEventListener("click", () => removeRow(row, "stepsContainer", createStepRow));
+	
 	attachDragBehavior(row, "stepsContainer", handle);
-	row.appendChild(handle);
-	row.appendChild(input);
-	row.appendChild(delBtn);
+	textareaWrapper.appendChild(textarea);
+	textareaWrapper.appendChild(charCountEl);
+	stepWrapper.appendChild(handle);
+	stepWrapper.appendChild(textareaWrapper);
+	stepWrapper.appendChild(delBtn);
+	row.appendChild(stepWrapper);
+	
+	// Call autoResizeTextarea after DOM insertion to ensure proper width calculation
+	setTimeout(() => {
+		autoResizeTextarea(textarea, 160);
+		updateStepCharCount(textarea, countSpan);
+	}, 0);
 	return row;
 }
 
@@ -645,6 +701,13 @@ function showStepErrorModal(message) {
 	showErrorModal(message, "stepErrorModal", "stepErrorMessage", "stepErrorOkBtn");
 }
 
+function setupCharCountListeners() {
+	setupCharCountListener("title", "titleCharCount", CHAR_LIMITS.title);
+	setupCharCountListener("description", "descriptionCharCount", CHAR_LIMITS.description);
+	setupCharCountListener("objective", "objectiveCharCount", CHAR_LIMITS.objective);
+	setupCharCountListener("notes", "notesCharCount", CHAR_LIMITS.notes);
+}
+
 (async function init() {
 	const boardId = window.__BOARD_ID__ || null;
 	const isEditMode = !!boardId;
@@ -654,6 +717,7 @@ function showStepErrorModal(message) {
 	setupCategoryOptions();
 	setupSkills();
 	setupDynamicFields();
+	setupCharCountListeners();
 	setupRealtimeTitleCheck(boardId);
 	
 	if (isEditMode) {

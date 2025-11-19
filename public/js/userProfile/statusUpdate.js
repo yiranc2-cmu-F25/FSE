@@ -1,8 +1,8 @@
 //displayname, avatar, status
 //loadinfo from backend
-import {loadInfo} from "../utils/loadUserInfo.js";
-import { getInitialsSafe,getAvatarColor } from "../utils/avatars.js";
 import { getSocket } from "../utils/socket.js";
+import { setupUserInfoRenderer } from "../utils/userInfoRenderer.js";
+import { setupModalCloseWithRedirect, openModal as openModalUtil } from "../utils/modalHelpers.js";
 
 function connectSocket() {
   const sock = getSocket();
@@ -18,22 +18,7 @@ function connectSocket() {
 }
 
 function renderInfo() {
-  document.addEventListener("DOMContentLoaded", async () => {
-    try {
-      const user = await loadInfo();
-      const name = (user.username || "").trim();
-
-      const displayInput = document.querySelector('input[name="displayName"]');
-      const avatarInit = document.getElementById("avatar-initials");
-      const avatarColor = document.getElementById("avatar");
-
-      if (avatarColor) avatarColor.style.backgroundColor = getAvatarColor(name);;
-      if (avatarInit) avatarInit.textContent = getInitialsSafe(name);
-      if (displayInput) displayInput.value = name || "Guest";
-    } catch (err) {
-      console.error("Failed to load user info:", err);
-    }
-  });
+  setupUserInfoRenderer();
 }
 
 const root = document.querySelector("#esn-status");
@@ -106,28 +91,11 @@ const modal = document.getElementById("status-modal");
 const modalClose = document.getElementById("status-modal-close");
 
 function openModal() {
-  modal.classList.remove("hidden");
-  modal.classList.add("flex");
-  modal.setAttribute("aria-hidden", "false");
-}
-
-function closeModal() {
-  modal.classList.add("hidden");
-  modal.classList.remove("flex");
-  modal.setAttribute("aria-hidden", "true");
+  openModalUtil(modal);
 }
 
 function closeModalHandler() {
-  if (modal && modalClose) {
-    modalClose.addEventListener("click", () => {
-      closeModal();
-      window.location.href = "/members";
-    });
-
-    modal.addEventListener("click", (e) => {
-      if (e.target === modal) closeModal();
-    });
-  }
+  setupModalCloseWithRedirect(modal, modalClose, "/members");
 }
 
 // kick off

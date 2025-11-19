@@ -10,8 +10,9 @@ import UserDac from "../dacs/userDac.js";
 import MsgDac from "../dacs/msgDac.js";
 import { inMemoryUserDao } from "../daos/inMemoryUserDao.js";
 import { inMemoryMsgDao } from "../daos/inMemoryMsgDao.js";
+import { setupTestDb, cleanupTestDb } from "../config/testDbConfig.js";
 
-const PORT = 3000;
+const PORT = 3001;
 const BASE_URL = `http://127.0.0.1:${PORT}`;
 const AUTH_BASE = `${BASE_URL}/api/authentications`;
 const MSG_BASE = `${BASE_URL}/api/messages`;
@@ -21,6 +22,13 @@ let alice, bob;
 let aliceAgent, bobAgent;
 
 beforeAll(async () => {
+  // Setup in-memory MongoDB
+  await setupTestDb();
+
+  // Set up in-memory DAOs
+  UserDac.DAO = new inMemoryUserDao();
+  MsgDac.DAO = new inMemoryMsgDao();
+  
   const fakeSocket = {
     emitMessageFromAndTo() {
       console.log("[TEST] emitMessageFromAndTo called");
@@ -46,6 +54,13 @@ afterAll(async () => {
     await new Promise((resolve) => server.close(resolve));
     console.log("[TEST] Server closed");
   }
+  
+  // Cleanup test database
+  await cleanupTestDb();
+  
+  // Reset DAO to prevent affecting production
+  UserDac.DAO = null;
+  MsgDac.DAO = null;
 });
 
 beforeEach(async () => {

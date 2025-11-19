@@ -2,6 +2,7 @@ import { showSubscriptionModal, shouldShowSubscriptionModal, showUnsubscriptionM
 import { getSocket } from "../utils/socket.js";
 import { autoResizeTextarea, setupAutoResizeTextarea } from "../utils/autoResizeTextarea.js";
 import { updateLikeButtonUI } from "../utils/likeButton.js";
+import { setupCharCountListener, updateCharCount } from "../utils/charCount.js";
 
 function badge(text) {
 	const li = document.createElement("li");
@@ -47,26 +48,6 @@ function escapeHtml(text) {
 	return div.innerHTML;
 }
 
-function countCharacters(text) {
-	return text ? text.length : 0;
-}
-
-function updateCharCount() {
-	const commentInput = document.getElementById("commentText");
-	const charCountEl = document.getElementById("charCount");
-	if (!commentInput || !charCountEl) return;
-	
-	const text = commentInput.value;
-	const charCount = countCharacters(text);
-	charCountEl.textContent = charCount;
-	if (charCount > 300) {
-		charCountEl.classList.add("text-red-600");
-		charCountEl.classList.remove("text-gray-500");
-	} else {
-		charCountEl.classList.remove("text-red-600");
-		charCountEl.classList.add("text-gray-500");
-	}
-}
 
 function setSubscribeIcon(btn, subscribed) {
 	btn.innerHTML = subscribed
@@ -194,17 +175,9 @@ function render(board) {
 	}
 
 	const boardId = board.id;
-	const commentInput = document.getElementById("commentText");
 	
 	setupAutoResizeTextarea("commentText", 160);
-	
-	if (commentInput) {
-		commentInput.addEventListener("input", () => {
-			updateCharCount();
-		});
-		
-		updateCharCount();
-	}
+	setupCharCountListener("commentText", "charCount", 300, "number");
 
 	let commentsSkip = (board.comments || []).length;
 	let hasMoreComments = board.hasMoreComments || false;
@@ -511,6 +484,42 @@ function render(board) {
 		});
 	}
 
+	async function updateLikeButtonAfterToggle(commentId, replyId, likeCountSpan, btn, svg, currentUserId) {
+		const boardRes = await fetch(`/api/coaching-boards/${boardId}`, { credentials: "include" });
+		if (!boardRes.ok) return;
+		
+		const updatedBoard = await boardRes.json();
+		if (replyId) {
+			const comment = (updatedBoard.comments || []).find(c => {
+				const cId = c.id || c._id;
+				return String(cId) === String(commentId);
+			});
+			if (comment) {
+				const updatedReply = (comment.replies || []).find(r => {
+					const rId = r.id || r._id;
+					return String(rId) === String(replyId);
+				});
+				if (updatedReply) {
+					const likes = updatedReply.likes || [];
+					updateLikeButtonUI(likes, currentUserId, likeCountSpan, btn, svg);
+				} else {
+					console.warn("Reply not found after like toggle:", { replyId, commentId, replies: comment.replies });
+				}
+			} else {
+				console.warn("Comment not found after like toggle:", { commentId, comments: updatedBoard.comments });
+			}
+		} else {
+			const updatedComment = (updatedBoard.comments || []).find(c => {
+				const cId = c.id || c._id;
+				return String(cId) === String(commentId);
+			});
+			if (updatedComment) {
+				const likes = updatedComment.likes || [];
+				updateLikeButtonUI(likes, currentUserId, likeCountSpan, btn, svg);
+			}
+		}
+	}
+
 	function setupCommentEventListeners() {
 		document.querySelectorAll(".comment-reply-btn").forEach(btn => {
 			btn.addEventListener("click", () => {
@@ -538,15 +547,7 @@ function render(board) {
 				});
 				
 				if (res.ok) {
-					const boardRes = await fetch(`/api/coaching-boards/${boardId}`, { credentials: "include" });
-					if (boardRes.ok) {
-						const updatedBoard = await boardRes.json();
-						const updatedComment = (updatedBoard.comments || []).find(c => c.id === commentId || String(c._id) === commentId);
-						if (updatedComment) {
-							const likes = updatedComment.likes || [];
-							updateLikeButtonUI(likes, currentUserId, likeCountSpan, btn, svg);
-						}
-					}
+					await updateLikeButtonAfterToggle(commentId, null, likeCountSpan, btn, svg, currentUserId);
 				}
 			});
 		});
@@ -601,18 +602,7 @@ function render(board) {
 				});
 				
 				if (res.ok) {
-					const boardRes = await fetch(`/api/coaching-boards/${boardId}`, { credentials: "include" });
-					if (boardRes.ok) {
-						const updatedBoard = await boardRes.json();
-						const comment = (updatedBoard.comments || []).find(c => c.id === replyCommentId || String(c._id) === replyCommentId);
-						if (comment) {
-							const updatedReply = (comment.replies || []).find(r => r.id === replyId || String(r._id) === replyId);
-							if (updatedReply) {
-								const likes = updatedReply.likes || [];
-								updateLikeButtonUI(likes, currentUserId, likeCountSpan, btn, svg);
-							}
-						}
-					}
+					await updateLikeButtonAfterToggle(replyCommentId, replyId, likeCountSpan, btn, svg, currentUserId);
 				}
 			});
 		});
@@ -887,7 +877,7 @@ function setupShareButton(boardId) {
 			txt.value = "";
 			delete txt.dataset.targetId;
 			autoResizeTextarea(txt, 160);
-			updateCharCount();
+			updateCharCount("commentText", "charCount", 300, "number");
 			
 			if (isReply && storedTargetId) {
 				const isReplyToReply = storedTargetId.startsWith("reply:");
@@ -1000,26 +990,36 @@ function setupShareButton(boardId) {
 					repliesContainer = repliesDiv;
 				}
 				
+				// Check if reply already exists to avoid duplicates
+				const replyId = newReply.id || newReply._id;
+				if (repliesContainer) {
+					const existingReply = repliesContainer.querySelector(`[data-reply-id="${replyId}"]`);
+					if (existingReply) {
+						console.log("[detail.js] Reply already exists, skipping local add:", replyId);
+						return;
+					}
+				}
+				
 				const newReplyHtml = renderRepliesFn([newReply], targetComment.id);
 				const tempDiv = document.createElement("div");
 				tempDiv.innerHTML = newReplyHtml.trim();
 				const newReplyElement = tempDiv.firstElementChild;
 				if (!newReplyElement) return;
 				
-				const beforeInsert = Array.from(repliesContainer.children).map(el => el.getAttribute("data-reply-id")).filter(Boolean);
-				
+				// Check if this is a reply to another reply
 				if (isReplyToReply && targetReplyId) {
 					const targetReplyElement = repliesContainer.querySelector(`[data-reply-id="${targetReplyId}"]`);
 					if (targetReplyElement) {
+						// Insert after the target reply
 						targetReplyElement.insertAdjacentElement("afterend", newReplyElement);
 					} else {
+						// Target reply not found, insert at the beginning
 						repliesContainer.insertBefore(newReplyElement, repliesContainer.firstChild);
 					}
 				} else {
+					// Not a reply to another reply, insert at the beginning (first reply under comment)
 					repliesContainer.insertBefore(newReplyElement, repliesContainer.firstChild);
 				}
-				
-				const afterInsert = Array.from(repliesContainer.children).map(el => el.getAttribute("data-reply-id")).filter(Boolean);
 				
 				setupReplyEventListenersFn(targetComment.id);
 				
@@ -1113,18 +1113,27 @@ function setupShareButton(boardId) {
 		if (eventData.boardId !== currentBoardId) return;
 		
 		const newReply = eventData.reply;
-		const commentId = eventData.commentId;
+		const commentId = String(eventData.commentId || "");
 		if (!newReply || !commentId) return;
 		
-		if (String(newReply.author) === currentUserId) return;
-		
-		const commentElement = document.querySelector(`[data-comment-id="${commentId}"]`);
-		if (!commentElement) return;
+		// Find comment element by matching ID (support both id and _id formats)
+		const commentElement = Array.from(document.querySelectorAll("[data-comment-id]")).find(el => {
+			const elCommentId = el.getAttribute("data-comment-id");
+			return String(elCommentId) === commentId;
+		});
+		if (!commentElement) {
+			console.log("[detail.js] Comment not found for reply socket event, commentId:", commentId);
+			return;
+		}
 		
 		const repliesContainer = commentElement.querySelector(`[data-replies-container="${commentId}"]`);
 		if (repliesContainer) {
-			const existingReply = repliesContainer.querySelector(`[data-reply-id="${newReply.id || newReply._id}"]`);
-			if (existingReply) return;
+			const replyId = newReply.id || newReply._id;
+			const existingReply = repliesContainer.querySelector(`[data-reply-id="${replyId}"]`);
+			if (existingReply) {
+				console.log("[detail.js] Reply already exists in socket event, skipping:", replyId);
+				return;
+			}
 		}
 		
 		if (!newReply.authorName) {
@@ -1149,9 +1158,37 @@ function setupShareButton(boardId) {
 			}
 			
 			const newReplyHtml = renderRepliesFn([newReply], commentId);
-			repliesContainer.insertAdjacentHTML("afterbegin", newReplyHtml);
+			const tempDiv = document.createElement("div");
+			tempDiv.innerHTML = newReplyHtml.trim();
+			const newReplyElement = tempDiv.firstElementChild;
+			if (!newReplyElement) return;
+			
+			// Check if this is a reply to another reply
+			const replyToId = newReply.replyTo;
+			if (replyToId) {
+				const targetReplyElement = repliesContainer.querySelector(`[data-reply-id="${replyToId}"]`);
+				if (targetReplyElement) {
+					// Insert after the target reply
+					targetReplyElement.insertAdjacentElement("afterend", newReplyElement);
+				} else {
+					// Target reply not found, insert at the beginning
+					repliesContainer.insertBefore(newReplyElement, repliesContainer.firstChild);
+				}
+			} else {
+				// Not a reply to another reply, insert at the beginning (first reply under comment)
+				repliesContainer.insertBefore(newReplyElement, repliesContainer.firstChild);
+			}
 			
 			setupReplyEventListenersFn(commentId);
+			
+			// Scroll and highlight the new reply
+			setTimeout(() => {
+				newReplyElement.scrollIntoView({ behavior: "smooth", block: "center" });
+				newReplyElement.style.backgroundColor = "#fef3c7";
+				setTimeout(() => {
+					newReplyElement.style.backgroundColor = "";
+				}, 2000);
+			}, 100);
 			
 			if (!commentRepliesState[commentId]) {
 				commentRepliesState[commentId] = { skip: 0, hasMore: false };

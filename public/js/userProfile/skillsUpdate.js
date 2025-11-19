@@ -1,8 +1,9 @@
-import { loadInfo } from "../utils/loadUserInfo.js";
-import { getInitialsSafe, getAvatarColor } from "../utils/avatars.js";
 import { el } from "../utils/domHelpers.js";
 import { fetchCategorySkillPresets } from "../utils/presets.js";
 import { createSkillTag } from "../utils/skillTags.js";
+import { setupModalCloseWithRedirect, openModal as openModalUtil } from "../utils/modalHelpers.js";
+import { loadInfo } from "../utils/loadUserInfo.js";
+import { getInitialsSafe, getAvatarColor } from "../utils/avatars.js";
 
 let SKILL_PRESET = [];
 let selectedSkills = [];
@@ -50,31 +51,29 @@ async function updateUserSkills(userId, skills) {
   }
 }
 
-function renderUserInfo() {
-  document.addEventListener("DOMContentLoaded", async () => {
-    try {
-      const user = await loadInfo();
-      const name = (user.username || "").trim();
+async function renderUserInfo() {
+  try {
+    const user = await loadInfo();
+    const name = (user.username || "").trim();
 
-      const displayInput = document.querySelector('input[name="displayName"]');
-      const avatarInit = document.getElementById("avatar-initials");
-      const avatarColor = document.getElementById("avatar");
+    const displayInput = document.querySelector('input[name="displayName"]');
+    const avatarInit = document.getElementById("avatar-initials");
+    const avatarColor = document.getElementById("avatar");
 
-      if (avatarColor) avatarColor.style.backgroundColor = getAvatarColor(name);
-      if (avatarInit) avatarInit.textContent = getInitialsSafe(name);
-      if (displayInput) displayInput.value = name || "Guest";
+    if (avatarColor) avatarColor.style.backgroundColor = getAvatarColor(name);
+    if (avatarInit) avatarInit.textContent = getInitialsSafe(name);
+    if (displayInput) displayInput.value = name || "Guest";
 
-      const userId = user.id ?? user._id ?? user.userId;
-      if (userId) {
-        const currentSkills = await fetchUserSkills(userId);
-        selectedSkills = Array.from(new Set(currentSkills));
-        initialSkills = Array.from(new Set(currentSkills));
-        renderSkillTags();
-      }
-    } catch (err) {
-      console.error("Failed to load user info:", err);
+    const userId = user.id ?? user._id ?? user.userId;
+    if (userId) {
+      const currentSkills = await fetchUserSkills(userId);
+      selectedSkills = Array.from(new Set(currentSkills));
+      initialSkills = Array.from(new Set(currentSkills));
+      renderSkillTags();
     }
-  });
+  } catch (err) {
+    console.error("Failed to load user info:", err);
+  }
 }
 
 function renderSkillTags() {
@@ -104,9 +103,16 @@ function renderSkillTags() {
   }
 }
 
+let skillSelectHandler = null;
+
 function setupSkills() {
   const select = document.getElementById("skillSelect");
   if (!select) return;
+
+  // Remove old event listener if it exists
+  if (skillSelectHandler) {
+    select.removeEventListener("change", skillSelectHandler);
+  }
 
   select.innerHTML = "";
   select.appendChild(el("option", { value: "", text: "Select a skill to add" }));
@@ -119,7 +125,8 @@ function setupSkills() {
     select.appendChild(el("option", { value: s, text: s }))
   );
 
-  select.addEventListener("change", () => {
+  // Create new handler function
+  skillSelectHandler = () => {
     const val = select.value;
     if (!val) return;
     if (!selectedSkills.includes(val)) {
@@ -128,30 +135,30 @@ function setupSkills() {
       setupSkills();
     }
     select.value = "";
-  });
+  };
+
+  select.addEventListener("change", skillSelectHandler);
 }
 
 function setupFormSubmission() {
-  document.addEventListener("DOMContentLoaded", () => {
-    const form = document.getElementById("skills-form");
-    form?.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      try {
-        const user = await loadInfo();
-        const userId = user?.id ?? user?._id ?? user?.userId;
-        if (!userId) {
-          alert("User ID not found. Please try again.");
-          return;
-        }
-
-        await updateUserSkills(userId, selectedSkills);
-        initialSkills = Array.from(new Set(selectedSkills));
-        openModal();
-      } catch (err) {
-        console.error("Failed to update skills:", err);
-        alert("Failed to update skills. Please try again later.");
+  const form = document.getElementById("skills-form");
+  form?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    try {
+      const user = await loadInfo();
+      const userId = user?.id ?? user?._id ?? user?.userId;
+      if (!userId) {
+        alert("User ID not found. Please try again.");
+        return;
       }
-    });
+
+      await updateUserSkills(userId, selectedSkills);
+      initialSkills = Array.from(new Set(selectedSkills));
+      openModal();
+    } catch (err) {
+      console.error("Failed to update skills:", err);
+      alert("Failed to update skills. Please try again later.");
+    }
   });
 }
 
@@ -159,32 +166,11 @@ const modal = document.getElementById("skills-modal");
 const modalClose = document.getElementById("skills-modal-close");
 
 function openModal() {
-  if (modal) {
-    modal.classList.remove("hidden");
-    modal.classList.add("flex");
-    modal.setAttribute("aria-hidden", "false");
-  }
-}
-
-function closeModal() {
-  if (modal) {
-    modal.classList.add("hidden");
-    modal.classList.remove("flex");
-    modal.setAttribute("aria-hidden", "true");
-  }
+  openModalUtil(modal);
 }
 
 function setupModalHandlers() {
-  if (modal && modalClose) {
-    modalClose.addEventListener("click", () => {
-      closeModal();
-      window.location.href = "/members";
-    });
-
-    modal.addEventListener("click", (e) => {
-      if (e.target === modal) closeModal();
-    });
-  }
+  setupModalCloseWithRedirect(modal, modalClose, "/members");
 }
 
 function hasUnsavedChanges() {
@@ -194,17 +180,15 @@ function hasUnsavedChanges() {
 }
 
 function setupBackButton() {
-  document.addEventListener("DOMContentLoaded", () => {
-    const backButton = document.getElementById("back-link");
-    if (backButton) {
-      backButton.addEventListener("click", (e) => {
-        if (hasUnsavedChanges()) {
-          e.preventDefault();
-          openExitConfirmModal();
-        }
-      });
-    }
-  });
+  const backButton = document.getElementById("back-link");
+  if (backButton) {
+    backButton.addEventListener("click", (e) => {
+      if (hasUnsavedChanges()) {
+        e.preventDefault();
+        openExitConfirmModal();
+      }
+    });
+  }
 }
 
 const exitConfirmModal = document.getElementById("exit-confirm-modal");
@@ -250,10 +234,11 @@ function setupExitConfirmModal() {
   }
 }
 
-fetchPresets();
-renderUserInfo();
-setupFormSubmission();
-setupModalHandlers();
-setupBackButton();
-setupExitConfirmModal();
-
+document.addEventListener("DOMContentLoaded", async () => {
+  await fetchPresets();
+  await renderUserInfo();
+  setupFormSubmission();
+  setupModalHandlers();
+  setupBackButton();
+  setupExitConfirmModal();
+});
