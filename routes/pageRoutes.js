@@ -81,15 +81,9 @@ function setupAnnouncementRoutes() {
     });
   });
 }
-function setupMyTasksRoutes() {
-  router.get("/my-tasks", authView, (req, res) => {
-    res.render("helpTasks/myHelpCenter.ejs", {
-      username: req.username || "",
-    });
-  });
-}
 
 function setupESNHelpCenterRoutes() {
+  console.log("Setting up ESN Help Center Routes...");
   router.get("/esn-help-center", (req, res) => {
     const allTasks = Array.isArray(helpCenterConfig.highlightedTasks)
       ? helpCenterConfig.highlightedTasks
@@ -106,24 +100,24 @@ function setupESNHelpCenterRoutes() {
       username: req.username || "",
       tasks: allTasks,
       taskListMeta,
-      // you can also pass req.user, users etc if needed
     });
   });
 }
 
 function setupMyHelpCenterRoutes() {
+  console.log("Setting up My Help Center Routes...");
   router.get("/my-tasks", (req, res) => {
     const allTasks = Array.isArray(myHelpCenterConfig.tasks)
       ? myHelpCenterConfig.tasks
       : [];
-
+    console.log("All tasks for myHelpCenter: ", allTasks);
     const openTasks = allTasks.filter(
       (t) => (t.status || "").toUpperCase() === "OPEN",
     );
     const closedTasks = allTasks.filter(
       (t) => (t.status || "").toUpperCase() === "CLOSED",
     );
-
+    console.log("Hero Meta data for myHelpCenter: ", myHelpCenterConfig.hero);
     res.render("helpTasks/myHelpCenter.ejs", {
       hero: myHelpCenterConfig.hero,
       taskListMeta: myHelpCenterConfig.taskList,
@@ -134,14 +128,13 @@ function setupMyHelpCenterRoutes() {
     });
   });
 }
-
+console.log("Setting up routes...");
 setupJoinCommunityRoutes();
 setupPublicChatRoutes();
 setupLoginRoutes();
 setupUpdateStatusRoutes();
 setupPrivateChatRoutes();
 setupAnnouncementRoutes();
-setupMyTasksRoutes();
 setupESNHelpCenterRoutes();
 setupMyHelpCenterRoutes();
 
