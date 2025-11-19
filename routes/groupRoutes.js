@@ -5,6 +5,7 @@ import {
   removeGroupMembers,
   deleteGroup,
   getGroupsList,
+  getGroupDetails,
   getGroupMessages,
   sendGroupMessage,
 } from "../controllers/groupChatController.js";
@@ -331,6 +332,110 @@ router.delete("/:groupId/members", auth, removeGroupMembers);
  *                 message: { type: string, example: "Server error" }
  */
 router.delete("/:groupId", auth, deleteGroup);
+
+/**
+ * @openapi
+ * /api/groups/{groupId}:
+ *   get:
+ *     tags: [Groups]
+ *     summary: Get group details
+ *     description: Retrieves detailed information about a specific group including group name, total member count, owner details, and all member details
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: groupId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID of the group to retrieve
+ *         example: "67890"
+ *     responses:
+ *       200:
+ *         description: Group details retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 groupId:
+ *                   type: string
+ *                   example: "67890"
+ *                 groupName:
+ *                   type: string
+ *                   example: "Project Team Alpha"
+ *                 totalCount:
+ *                   type: number
+ *                   description: Total number of people in the group (owner + members)
+ *                   example: 4
+ *                 owner:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                       example: "123"
+ *                     name:
+ *                       type: string
+ *                       example: "alice"
+ *                     status:
+ *                       type: string
+ *                       example: "OK"
+ *                 members:
+ *                   type: array
+ *                   description: Array of all group members (not including owner)
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                         example: "456"
+ *                       name:
+ *                         type: string
+ *                         example: "bob"
+ *                       status:
+ *                         type: string
+ *                         example: "HELP"
+ *                 isOwner:
+ *                   type: boolean
+ *                   description: Whether the authenticated user is the owner of this group
+ *                   example: true
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error: { type: string, example: "Unauthorized" }
+ *       403:
+ *         description: Forbidden - user is not a member of this group
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status: { type: string, example: "error" }
+ *                 message: { type: string, example: "You are not a member of this group" }
+ *       404:
+ *         description: Group not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status: { type: string, example: "error" }
+ *                 message: { type: string, example: "Group not found" }
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status: { type: string, example: "error" }
+ *                 message: { type: string, example: "Server error" }
+ */
+router.get("/:groupId", auth, getGroupDetails);
 
 /**
  * @openapi

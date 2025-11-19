@@ -107,6 +107,26 @@ class Socket {
     this.io.to(receiverRoom).emit("private_message", { ...base, isOwn: false });
   }
 
+  emitGroupMessage(senderUsername, groupMembers, base) {
+    // groupMembers is an array of usernames (including owner and all members)
+    const senderRoom = this.roomFor(senderUsername);
+
+    // Emit to sender with isOwn: true
+    this.io.to(senderRoom).emit("group_message", { ...base, isOwn: true });
+
+    // Emit to all other group members with isOwn: false
+    groupMembers.forEach((memberUsername) => {
+      const normMember = this.normUsername(memberUsername);
+      const normSender = this.normUsername(senderUsername);
+
+      // Skip the sender
+      if (normMember !== normSender) {
+        const memberRoom = this.roomFor(memberUsername);
+        this.io.to(memberRoom).emit("group_message", { ...base, isOwn: false });
+      }
+    });
+  }
+
   broadcastUserJoin(username) {
     this.io.emit("user_join", { username, timestamp: new Date() });
   }

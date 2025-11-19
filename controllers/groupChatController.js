@@ -173,9 +173,11 @@ export async function removeGroupMembers(req, res) {
       });
     }
 
-    // Check if user is owner
+    // Check if user is owner or trying to leave themselves
     const isOwner = await Group.isUserOwner(groupId, userId);
-    if (!isOwner && !(userIds.length === 1 && userIds.at(0) === userId)) {
+    const isLeavingThemselves = userIds.length === 1 && normId(userIds[0]) === userId;
+
+    if (!isOwner && !isLeavingThemselves) {
       return res.status(403).json({
         status: "error",
         message: "Only group owner can remove members"
@@ -197,6 +199,18 @@ export async function removeGroupMembers(req, res) {
     const currentMemberCount = group.members.length;
     const newMemberCount = currentMemberCount - userIds.length;
 
+    // Special case: if the last member is leaving (and they're the only member), delete the group
+    if (isLeavingThemselves && currentMemberCount === 1) {
+      // Delete all group messages first
+      await GroupMessage.deleteByGroupId(groupId);
+      // Delete the group
+      await Group.deleteGroup(groupId);
+
+      return res.status(200).json({
+        message: "Left group successfully (group deleted as last member)"
+      });
+    }
+
     if (newMemberCount < MIN_MEMBERS) {
       return res.status(400).json({
         status: "error",
@@ -211,6 +225,75 @@ export async function removeGroupMembers(req, res) {
     });
   } catch (err) {
     console.error("Error removing group members:", err);
+    return res.status(500).json({
+      status: "error",
+      message: "Server error"
+    });
+  }
+}
+
+/**
+ * Get group details
+ * @route GET /api/groups/:groupId
+ */
+export async function getGroupDetails(req, res) {
+  try {
+    const { groupId } = req.params;
+    const userId = normId(req.user?.id ?? req.userId);
+
+    const group = await Group.findById(groupId);
+    if (!group) {
+      return res.status(404).json({
+        status: "error",
+        message: "Group not found"
+      });
+    }
+
+    // Check if user is member or owner
+    const isOwner = await Group.isUserOwner(groupId, userId);
+    const isMember = group.members.some(memberId => normId(memberId) === userId);
+
+    if (!isMember && !isOwner) {
+      return res.status(403).json({
+        status: "error",
+        message: "You are not a member of this group"
+      });
+    }
+
+    // Get owner details
+    const owner = await User.findById(normId(group.owner));
+    const ownerInfo = owner ? {
+      id: String(owner._id),
+      name: owner.username || "Unknown",
+      status: owner.status || "UNDEFINED"
+    } : null;
+
+    // Get all member details
+    const memberDetails = [];
+    for (const memberId of group.members) {
+      const member = await User.findById(normId(memberId));
+      if (member) {
+        memberDetails.push({
+          id: String(member._id),
+          name: member.username || "Unknown",
+          status: member.status || "UNDEFINED"
+        });
+      }
+    }
+
+    // Calculate total number (owner + members)
+    const totalCount = 1 + group.members.length;
+
+    return res.status(200).json({
+      groupId: String(group._id),
+      groupName: group.groupName,
+      totalCount,
+      owner: ownerInfo,
+      members: memberDetails,
+      isOwner
+    });
+  } catch (err) {
+    console.error("Error getting group details:", err);
     return res.status(500).json({
       status: "error",
       message: "Server error"
@@ -397,6 +480,36 @@ export async function sendGroupMessage(req, res) {
 
     // Update group's timestamp to latest message timestamp
     await Group.updateTimestamp(groupId, msgTimestamp);
+
+    // Emit socket event to all group members
+    const socketInstance = req.app?.get("socketInstance");
+    if (socketInstance) {
+      // Get sender info
+      const sender = await User.findById(senderId);
+      const senderUsername = sender?.username || "Unknown";
+
+      // Get all group member usernames (owner + members)
+      const owner = await User.findById(normId(group.owner));
+      const ownerUsername = owner?.username;
+
+      const memberUsernames = [];
+      for (const memberId of group.members) {
+        const member = await User.findById(normId(memberId));
+        if (member) {
+          memberUsernames.push(member.username);
+        }
+      }
+
+      const allGroupUsernames = ownerUsername ? [ownerUsername, ...memberUsernames] : memberUsernames;
+
+      socketInstance.emitGroupMessage(senderUsername, allGroupUsernames, {
+        groupId: String(groupId),
+        sender: senderUsername,
+        content: messageText.trim(),
+        status: status,
+        timestamp: msgTimestamp,
+      });
+    }
 
     return res.status(201).json({
       message: "Message sent successfully",

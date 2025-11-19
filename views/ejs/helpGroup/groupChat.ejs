@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Group Chat</title>
+    <%- include('../partials/head') %>
+    <script>window.__CURRENT_USER__ = "<%= username %>";</script>
+    <script>window.__CURRENT_USER_ID__ = "<%= currentUserId %>";</script>
+    <script type="module" src="/js/notify/notify-bootstrap.js"></script>
+    <script type="module" src="/js/notify/notify-listener.js"></script>
+    <script type="module" src="/js/helpGroup/groupChat.js"></script>
+  </head>
+  <body class="min-h-screen bg-white">
+    <div
+      class="relative mx-auto flex h-screen w-full max-w-md flex-col items-center"
+    >
+      <header
+        id="group-chat-header"
+        data-group-id="<%= groupId %>"
+        class="flex w-full items-center justify-between border-b-2 border-slate-200 pb-4 pt-12 px-4"
+      >
+        <div class="flex items-center min-w-0 flex-1">
+          <figure
+            class="cursor-pointer rounded-xl border border-gray-200 p-3 mr-4"
+            id="back-btn-container"
+          >
+            <a href="/groups">
+              <img
+                id="back-btn"
+                src="/images/chat-privately/keyboard_arrow_left.svg"
+                alt="Back"
+                class="h-6 w-6"
+              />
+            </a>
+          </figure>
+          <div class="flex min-w-0 flex-col flex-1">
+            <h1 id="group-name" class="font-poppins text-lg font-semibold text-black truncate">
+              Loading...
+            </h1>
+            <p id="group-members-count" class="font-poppins text-xs text-gray-500 truncate">
+              Loading...
+            </p>
+          </div>
+        </div>
+
+        <button
+          id="action-btn"
+          type="button"
+          class="flex items-center justify-center rounded-lg bg-[#D65841] px-3 py-3 hover:brightness-95 ml-2"
+        >
+          <img id="action-icon" src="/images/help-group/icon-leave.svg" alt="Leave Group" class="h-5 w-5" />
+        </button>
+      </header>
+
+      <main
+        id="msg-container"
+        class="relative flex w-full flex-grow flex-col overflow-y-auto bg-slate-50"
+      >
+        <div
+          class="pointer-events-none absolute left-0 right-0 top-0 z-10 h-full"
+          style="box-shadow: inset 0 20px 20px -5px #f8fafc"
+        ></div>
+
+        <ul id="msg-list" class="flex flex-col gap-2 overflow-y-auto p-4">
+          <!-- Group messages will be loaded here -->
+        </ul>
+
+        <div
+          class="pointer-events-none absolute bottom-0 left-0 right-0 z-10 h-full"
+          style="box-shadow: inset 0 -30px 20px -5px #f8fafc"
+        ></div>
+
+        <!-- FABs (conditionally shown based on user role) -->
+        <div id="fab-container">
+          <!-- FABs will be inserted here dynamically -->
+        </div>
+      </main>
+
+      <div class="w-full border-t-2 border-slate-200 bg-white px-6 pt-4 pb-16">
+        <form
+          id="msg-form"
+          class="flex w-full items-end justify-center gap-2 rounded-xl border border-gray-200 p-2"
+        >
+          <textarea
+            id="msg-input"
+            type="text"
+            placeholder="Type your message..."
+            class="font-poppins flex-grow resize-none overflow-y-auto rounded px-4 py-2 leading-normal text-gray-700 focus:outline-none"
+            rows="1"
+          ></textarea>
+          <button
+            id="send-btn"
+            type="submit"
+            disabled
+            class="bg-theme active:text-theme flex h-10 w-10 items-center justify-center rounded-full text-white transition active:bg-white disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-500"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="1.5"
+              class="size-6 stroke-current"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5"
+              />
+            </svg>
+          </button>
+        </form>
+      </div>
+
+      <%- include('../partials/confirmModal.ejs') %>
+      <%- include('../partials/viewGroupMembersModal.ejs') %>
+      <%- include('../partials/manageGroupMembersModal.ejs') %>
+      <%- include('../partials/addGroupMemberModal.ejs') %>
+    </div>
+
+    <template id="chat-message">
+      <li class="message mb-4 flex items-start gap-3">
+        <figure
+          class="avatar flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
+        >
+          <span class="initials font-poppins font-semibold text-white"></span>
+        </figure>
+
+        <div class="content flex min-w-0 flex-col items-start">
+          <div class="header flex items-center gap-4">
+            <span class="name font-poppins font-bold"></span>
+            <span
+              class="status-badge font-poppins min-w-16 rounded-md px-1 text-center text-xs font-semibold"
+            ></span>
+          </div>
+          <p class="time font-poppins text-xs text-gray-400"></p>
+          <p
+            class="bubble font-poppins mt-1 inline-block max-w-full break-words rounded-lg bg-white p-3 shadow"
+          ></p>
+        </div>
+
+        <figure
+          class="pad flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-transparent"
+        ></figure>
+      </li>
+    </template>
+  </body>
+</html>
