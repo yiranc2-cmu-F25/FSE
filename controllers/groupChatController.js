@@ -14,7 +14,7 @@ const normId = (idLike) => {
   return idLike.toString ? idLike.toString() : String(idLike);
 };
 
-const MIN_MEMBERS = 0;
+const MIN_MEMBERS = 1;
 const MAX_MEMBERS = 9;
 
 async function validateGroupMemberCount(groupId) {
