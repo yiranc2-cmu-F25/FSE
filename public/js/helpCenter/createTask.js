@@ -169,17 +169,146 @@ if (emergencyChips && emergencyHiddenInput) {
   });
 }
 
-// ---- back button (placeholder behavior) ----
+// ---- back button ----
 if (backBtn) {
   backBtn.addEventListener("click", () => {
-    // simple default: go back in history if possible
-    if (window.history.length > 1) {
-      window.history.back();
-    } else {
-      window.location.href = "/help-center";
+    window.location.href = "/esn-help-center";
+  });
+}
+
+// ---- form submission ----
+const form = document.querySelector("#create-task-form");
+if (form) {
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    // Map frontend category values to backend format
+    const categoryMap = {
+      debris: "debris_removal_and_cleanup",
+      "temp-repair": "temporary_repair",
+      "animal-care": "animal_care",
+      other: "others",
+    };
+
+    // Get form data
+    const formData = new FormData(form);
+    const title = formData.get("title")?.trim();
+    const description = formData.get("description")?.trim();
+    const dueDate = formData.get("dueDate");
+    const helpersNeeded = formData.get("helpersNeeded");
+    const location = formData.get("location")?.trim();
+    const categoryFrontend = categoryHiddenInput?.value || "";
+    const emergencyLevel = emergencyHiddenInput?.value || "";
+    const skillsJson = skillHiddenInput?.value || "[]";
+
+    // Validation
+    if (!title) {
+      alert("Please enter a task title");
+      return;
+    }
+    if (!description) {
+      alert("Please enter a task description");
+      return;
+    }
+    if (!helpersNeeded || parseInt(helpersNeeded) < 1) {
+      alert("Please enter a valid number of helpers (at least 1)");
+      return;
+    }
+    if (!categoryFrontend) {
+      alert("Please select a task category");
+      return;
+    }
+    if (!emergencyLevel) {
+      alert("Please select an emergency level");
+      return;
+    }
+
+    // Map category to backend format
+    const category = categoryMap[categoryFrontend] || categoryFrontend;
+
+    // Parse skills
+    let skillsRequired = [];
+    try {
+      skillsRequired = JSON.parse(skillsJson);
+      if (!Array.isArray(skillsRequired)) {
+        skillsRequired = [];
+      }
+    } catch (e) {
+      console.warn("Failed to parse skills:", e);
+      skillsRequired = [];
+    }
+
+    // Prepare request body
+    const requestBody = {
+      title,
+      description,
+      category,
+      helpers: parseInt(helpersNeeded),
+      emergencyLevel,
+      taskType: "normal", // Default to "normal" for now
+      skillsRequired,
+    };
+
+    // Add optional fields
+    if (dueDate) {
+      // Convert date to ISO string
+      const dateObj = new Date(dueDate);
+      if (!isNaN(dateObj.getTime())) {
+        requestBody.dueDate = dateObj.toISOString();
+      }
+    }
+    if (location) {
+      requestBody.location = location;
+    }
+
+    // Submit to API
+    try {
+      const response = await fetch("/api/tasks", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include", // Include cookies for auth
+        body: JSON.stringify(requestBody),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to create task");
+      }
+
+      // Success: show modal using ModalManager
+      if (window.ModalManager) {
+        window.ModalManager.open("publish-success-modal");
+      } else {
+        // Fallback if ModalManager not loaded
+        const modal = document.querySelector('[data-modal="publish-success-modal"]');
+        if (modal) {
+          modal.classList.remove("hidden");
+          document.body.style.overflow = "hidden";
+        }
+      }
+    } catch (error) {
+      console.error("Error creating task:", error);
+      alert(`Failed to create task: ${error.message}`);
     }
   });
 }
+
+// ---- success modal redirect ----
+// Listen for modal close event and redirect to help center
+document.addEventListener("click", (event) => {
+  const target = event.target;
+  const modal = target?.closest('[data-modal="publish-success-modal"]');
+  
+  if (modal && target?.hasAttribute("data-modal-close")) {
+    // Small delay to allow modal close animation
+    setTimeout(() => {
+      window.location.href = "/esn-help-center";
+    }, 200);
+  }
+});
 
 // initial state
 updateSkillHiddenInput();

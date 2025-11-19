@@ -133,7 +133,7 @@ function setupMyHelpCenterRoutes() {
 }
 
 function setupCreateTaskRoutes() {
-  router.get("/task-creation", (req, res) => {
+  router.get("/task-creation", authView, (req, res) => {
     res.render("helpTasks/createTask.ejs", {
       username: req.username || "",
     });

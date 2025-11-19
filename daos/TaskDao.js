@@ -60,9 +60,7 @@ export default class TaskDao extends iTaskDao {
       taskType: doc.taskType,
       dueDate: doc.dueDate,
       location: doc.location,
-      resourcesNeeded: doc.resourcesNeeded
-        ? Object.fromEntries(doc.resourcesNeeded)
-        : {},
+      resourcesNeeded: doc.resourcesNeeded || {},
       skillsRequired: doc.skillsRequired || [],
       isOpen: doc.isOpen,
       creator: doc.creator,
@@ -129,6 +127,8 @@ export default class TaskDao extends iTaskDao {
 
     const docs = await query.lean();
 
+    console.log("All tasks: ", docs);
+
     return docs.map((doc) => ({
       id: doc._id,
       title: doc.title,
@@ -139,9 +139,7 @@ export default class TaskDao extends iTaskDao {
       taskType: doc.taskType,
       dueDate: doc.dueDate,
       location: doc.location,
-      resourcesNeeded: doc.resourcesNeeded
-        ? Object.fromEntries(doc.resourcesNeeded)
-        : {},
+      resourcesNeeded: doc.resourcesNeeded || {},
       skillsRequired: doc.skillsRequired || [],
       isOpen: doc.isOpen,
       creator: doc.creator,
@@ -219,9 +217,7 @@ export default class TaskDao extends iTaskDao {
       taskType: doc.taskType,
       dueDate: doc.dueDate,
       location: doc.location,
-      resourcesNeeded: doc.resourcesNeeded
-        ? Object.fromEntries(doc.resourcesNeeded)
-        : {},
+      resourcesNeeded: doc.resourcesNeeded || {},
       skillsRequired: doc.skillsRequired || [],
       isOpen: doc.isOpen,
       creator: doc.creator,
@@ -270,9 +266,7 @@ export default class TaskDao extends iTaskDao {
       taskType: doc.taskType,
       dueDate: doc.dueDate,
       location: doc.location,
-      resourcesNeeded: doc.resourcesNeeded
-        ? Object.fromEntries(doc.resourcesNeeded)
-        : {},
+      resourcesNeeded: doc.resourcesNeeded || {},
       skillsRequired: doc.skillsRequired || [],
       isOpen: doc.isOpen,
       creator: doc.creator,

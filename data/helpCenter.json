@@ -77,7 +77,7 @@
     "navButtons": {
       "pageTitle": "ESN Help Center",
       "createTask": {
-        "href": "/tasks/new",
+        "href": "/task-creation",
         "label": "Create A New Task"
       },
       "joinedTasks": {
