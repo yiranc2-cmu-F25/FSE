@@ -178,7 +178,8 @@ if (backBtn) {
 
 // ---- form submission ----
 const form = document.querySelector("#create-task-form");
-if (form) {
+// Skip form submission handler if we're in edit mode (editTask.js will handle it)
+if (form && !window.__EDIT_TASK_DATA__) {
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
 

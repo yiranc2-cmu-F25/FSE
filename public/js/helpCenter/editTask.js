@@ -109,9 +109,11 @@ function overrideFormSubmission() {
     return;
   }
 
-  // Override form submission
+  // Override form submission with PUT method
+  // Note: createTask.js is prevented from attaching its handler when __EDIT_TASK_DATA__ exists
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
+    event.stopImmediatePropagation(); // Prevent any other handlers from running
 
     // Get form values (same as createTask.js)
     const title = document.querySelector("#task-title")?.value?.trim() || "";
@@ -209,8 +211,12 @@ function overrideFormSubmission() {
     }
 
     // Submit to API using PUT method
+    const apiUrl = `/api/tasks/single/${encodeURIComponent(taskId)}`;
+    console.log("[Edit Task] Submitting update to:", apiUrl, "with method: PUT");
+    console.log("[Edit Task] Request body:", requestBody);
+    
     try {
-      const response = await fetch(`/api/tasks/single/${encodeURIComponent(taskId)}`, {
+      const response = await fetch(apiUrl, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
