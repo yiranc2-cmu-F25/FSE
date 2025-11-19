@@ -30,8 +30,6 @@ function mountNotify() {
       <button class="rounded-full px-3 py-1.5 text-sm ring-1 ring-zinc-300 text-zinc-700 hover:bg-zinc-50" data-dismiss>Dismiss</button>
       <button
         data-view
-      <button
-        data-view
         class="rounded-full px-3 py-1.5 bg-[#C35F49] text-center text-sm text-white shadow hover:brightness-95"
       >
         View

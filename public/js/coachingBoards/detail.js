@@ -521,6 +521,12 @@ function render(board) {
 	}
 
 	function setupCommentEventListeners() {
+		const commentInput = document.getElementById("commentText");
+		if (!commentInput) {
+			console.error("[detail.js] commentText element not found");
+			return;
+		}
+		
 		document.querySelectorAll(".comment-reply-btn").forEach(btn => {
 			btn.addEventListener("click", () => {
 				const username = btn.dataset.username;
@@ -570,6 +576,12 @@ function render(board) {
 		if (!repliesContainer) return;
 		const currentUserId = String(window.__CURRENT_USER_ID__ || "");
 
+		const commentInput = document.getElementById("commentText");
+		if (!commentInput) {
+			console.error("[detail.js] commentText element not found");
+			return;
+		}
+		
 		repliesContainer.querySelectorAll(".reply-reply-btn").forEach(btn => {
 			btn.addEventListener("click", () => {
 				const username = btn.dataset.username;
