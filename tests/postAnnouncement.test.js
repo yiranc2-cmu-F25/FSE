@@ -1,32 +1,25 @@
 import { jest } from '@jest/globals' 
-import mongoose from "mongoose";
 import request from "supertest";
-import { MongoMemoryServer } from "mongodb-memory-server";
 import app from "../app.js";
 
-import { makeAnnouncementModel } from "../db/AnnouncementSchema.js";
-import { AnnouncementDao } from "../daos/AnnouncementDao.js";
+import { inMemoryAnnouncementDao } from "../daos/inMemoryAnnouncementDao.js";
 import AnnouncementDac from "../dacs/announcementDac.js";
+import Announcement from "../entities/Announcement.js";
 
-import { makeUserModel } from "../db/UserSchema.js";
-import { UserDao } from "../daos/UserDao.js";
+import { inMemoryUserDao } from "../daos/inMemoryUserDao.js";
 import UserDac from "../dacs/userDac.js";
+import { setupTestDb, cleanupTestDb } from "../config/testDbConfig.js";
 
 describe("Announcements Test", () => {
-    let mongod, conn, AnnouncementModel, UserModel, mockSocket;
+    let mockSocket;
 
     beforeAll(async () => {
-        mongod = await MongoMemoryServer.create();
-        const uri = mongod.getUri();
+        // Setup in-memory MongoDB
+        await setupTestDb();
 
-        await mongoose.disconnect();
-        conn = await mongoose.createConnection(uri);
-
-        AnnouncementModel = makeAnnouncementModel(conn);
-        UserModel = makeUserModel(conn);
-
-        AnnouncementDac.DAO = new AnnouncementDao({ AnnouncementModel });
-        UserDac.DAO = new UserDao({ UserModel });
+        // Set up in-memory DAOs
+        AnnouncementDac.DAO = new inMemoryAnnouncementDao();
+        UserDac.DAO = new inMemoryUserDao();
 
         mockSocket = {
             // jest.fn() so we can assert calls
@@ -41,19 +34,20 @@ describe("Announcements Test", () => {
     });
 
     afterAll(async () => {
-        await conn.close();
-        await mongod.stop();
+        // Cleanup test database
+        await cleanupTestDb();
+        
+        AnnouncementDac.DAO = null;
+        UserDac.DAO = null;
     });
 
-    afterEach(async () => {
-        const collections = conn.collections;
-        for (const key in collections) {
-            await collections[key].deleteMany({});
-        }
+    beforeEach(async () => {
+        // Reset in-memory DAOs for test isolation
+        AnnouncementDac.DAO = new inMemoryAnnouncementDao();
+        UserDac.DAO = new inMemoryUserDao();
     });
 
     test("should post a new announcement", async () => {
-
         const agent = request.agent(app);
 
         const registerRes = await agent
@@ -67,11 +61,19 @@ describe("Announcements Test", () => {
         expect(registerRes.headers['set-cookie']).toBeDefined();
 
         const user = await UserDac.DAO.findByUsername("testUser");
-
+        if (!user) {
+            throw new Error("User not found");
+        }
+        
+        const userId = user._id || user.id;
+        if (!userId) {
+            throw new Error("User ID not found");
+        }
+        
         const postAnnouncementRes = await agent
             .post("/api/announcements")
             .send({
-                sender: user._id,
+                sender: String(userId),
                 content: "This is a test announcement",
                 status: "ok"
             })
@@ -79,17 +81,19 @@ describe("Announcements Test", () => {
 
         expect(postAnnouncementRes.body).toHaveProperty("message", "Announcement posted");
 
-        const docs = await AnnouncementModel.find({}).lean();
-        expect(docs).toHaveLength(1);
+        // Verify announcement was created using the entity class
+        const announcements = await Announcement.getAnnouncement();
+        expect(announcements).toHaveLength(1);
 
-        const doc = docs[0];
-        expect(String(doc.sender)).toBe(String(user._id));
-        expect(doc.content).toBe("This is a test announcement");
-        expect(doc.status).toBe("ok");               // ensure it’s stored normalized
+        const announcement = announcements[0];
+        expect(announcement.content).toBe("This is a test announcement");
+        expect(announcement.status).toBe("ok");
+        
+        // Verify socket was called
+        expect(mockSocket.emitMessageFrom).toHaveBeenCalled();
     });
 
     test("should retrieve all announcements", async () => {
-
         const agent = request.agent(app);
 
         const registerRes = await agent
@@ -100,11 +104,31 @@ describe("Announcements Test", () => {
         expect(registerRes.headers["set-cookie"]).toBeDefined();
 
         const user = await UserDac.DAO.findByUsername("testUser2");
+        if (!user) {
+            throw new Error("User not found");
+        }
+        
+        const userId = user._id || user.id;
+        if (!userId) {
+            throw new Error("User ID not found");
+        }
 
-        await AnnouncementModel.insertMany([
-            { sender: user._id, content: "Announcement 1", status: "ok", timestamp: new Date() },
-            { sender: user._id, content: "Announcement 2", status: "ok", timestamp: new Date() },
-        ]);
+        // Create announcements using the entity class
+        const announcement1 = new Announcement({
+            sender: String(userId),
+            content: "Announcement 1",
+            status: "ok",
+            timestamp: new Date(),
+        });
+        await announcement1.create();
+
+        const announcement2 = new Announcement({
+            sender: String(userId),
+            content: "Announcement 2",
+            status: "ok",
+            timestamp: new Date(),
+        });
+        await announcement2.create();
 
         const getRes = await agent
             .get("/api/announcements")
@@ -115,6 +139,5 @@ describe("Announcements Test", () => {
 
         const contents = getRes.body.map(a => a.content);
         expect(contents).toEqual(expect.arrayContaining(["Announcement 1", "Announcement 2"]));
-
     });
 });
