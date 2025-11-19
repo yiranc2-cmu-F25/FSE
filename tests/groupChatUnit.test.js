@@ -117,7 +117,7 @@ describe("Group static methods", () => {
       buildGroupProps({
         groupName: "Group 1",
         owner: "user1",
-        members: [],
+        members: ["dummy1"],
       })
     );
     await group1.create();
@@ -242,7 +242,7 @@ describe("Group static methods", () => {
     const group = new Group(
       buildGroupProps({
         owner: "user1",
-        members: [],
+        members: ["user2"],
       })
     );
     const created = await group.create();
@@ -444,11 +444,16 @@ describe("Group Chat API", () => {
 
       let statusCode = null;
       let jsonBody = null;
+      const user2Props = buildUserProps({ username: `member_${Date.now()}` });
+      const user2 = new User(user2Props);
+      await user2.create();
+      const found2 = await User.findByUsername(user2Props.username);
+
       const req = {
         user: { id: found1.id },
         body: {
           groupName: "Test Group",
-          memberIds: [],
+          memberIds: [found2.id],
         },
       };
       const res = {
@@ -476,7 +481,7 @@ describe("Group Chat API", () => {
       const req = {
         user: { id: "1" },
         body: {
-          memberIds: [],
+          memberIds: ["dummy_member_id"],
         },
       };
       const res = {
@@ -533,7 +538,7 @@ describe("Group Chat API", () => {
         buildGroupProps({
           groupName: "Duplicate Group Name",
           owner: "1",
-          members: [],
+          members: ["2"],
         })
       );
       await group.create();
@@ -545,7 +550,7 @@ describe("Group Chat API", () => {
         user: { id: "2" },
         body: {
           groupName: "Duplicate Group Name",
-          memberIds: [],
+          memberIds: ["3"],
         },
       };
       const res = {
@@ -574,7 +579,7 @@ describe("Group Chat API", () => {
         buildGroupProps({
           groupName: "My Group",
           owner: "1",
-          members: [],
+          members: ["2"],
         })
       );
       await group.create();
@@ -586,7 +591,7 @@ describe("Group Chat API", () => {
         user: { id: "2" },
         body: {
           groupName: "  My Group  ",
-          memberIds: [],
+          memberIds: ["3"],
         },
       };
       const res = {
@@ -617,10 +622,15 @@ describe("Group Chat API", () => {
       await user1.create();
       const found1 = await User.findByUsername(user1Props.username);
 
+      const user2Props = buildUserProps({ username: `member_add_${Date.now()}` });
+      const user2 = new User(user2Props);
+      await user2.create();
+      const found2 = await User.findByUsername(user2Props.username);
+
       const group = new Group(
         buildGroupProps({
           owner: found1.id,
-          members: [],
+          members: [found2.id],
         })
       );
       const created = await group.create();
@@ -826,7 +836,7 @@ describe("Group Chat API", () => {
       const group = new Group(
         buildGroupProps({
           owner: "1",
-          members: [],
+          members: ["2"],
         })
       );
       const created = await group.create();
@@ -1023,7 +1033,7 @@ describe("Group Chat API", () => {
       const group = new Group(
         buildGroupProps({
           owner: "1",
-          members: [],
+          members: ["2"],
         })
       );
       const created = await group.create();
@@ -1088,7 +1098,7 @@ describe("Group Chat API", () => {
       const group = new Group(
         buildGroupProps({
           owner: "1",
-          members: [],
+          members: ["2"],
         })
       );
       const created = await group.create();

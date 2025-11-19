@@ -17,21 +17,6 @@ const normId = (idLike) => {
 const MIN_MEMBERS = 1;
 const MAX_MEMBERS = 9;
 
-async function validateGroupMemberCount(groupId) {
-  const group = await Group.findById(groupId);
-  if (!group) return { valid: false, error: "Group not found" };
-
-  const memberCount = group.members.length;
-  if (memberCount < MIN_MEMBERS || memberCount > MAX_MEMBERS) {
-    return {
-      valid: false,
-      error: `Group must have between ${MIN_MEMBERS} and ${MAX_MEMBERS} members (excluding owner)`
-    };
-  }
-
-  return { valid: true };
-}
-
 /**
  * Create a new group
  * @route POST /api/groups
