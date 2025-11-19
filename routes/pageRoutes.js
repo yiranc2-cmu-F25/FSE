@@ -8,6 +8,7 @@ import { setup } from "swagger-ui-express";
 import helpCenterConfig from "../data/helpCenter.json" with { type: "json" };
 
 import myHelpCenterConfig from "../data/myHelpCenter.json" with { type: "json" };
+import { set } from "mongoose";
 
 const router = express.Router();
 const JOIN_PATH = "joinCommunity/";
@@ -105,7 +106,6 @@ function setupESNHelpCenterRoutes() {
 }
 
 function setupMyHelpCenterRoutes() {
-  console.log("Setting up My Help Center Routes...");
   router.get("/my-tasks", (req, res) => {
     const allTasks = Array.isArray(myHelpCenterConfig.tasks)
       ? myHelpCenterConfig.tasks
@@ -117,13 +117,20 @@ function setupMyHelpCenterRoutes() {
     const closedTasks = allTasks.filter(
       (t) => (t.status || "").toUpperCase() === "CLOSED",
     );
-    console.log("Hero Meta data for myHelpCenter: ", myHelpCenterConfig.hero);
     res.render("helpTasks/myHelpCenter.ejs", {
       hero: myHelpCenterConfig.hero,
       taskListMeta: myHelpCenterConfig.taskList,
       tasks: allTasks,
       openTasks,
       closedTasks,
+      username: req.username || "",
+    });
+  });
+}
+
+function setupCreateTaskRoutes() {
+  router.get("/task-creation", (req, res) => {
+    res.render("helpTasks/createTask.ejs", {
       username: req.username || "",
     });
   });
@@ -137,5 +144,6 @@ setupPrivateChatRoutes();
 setupAnnouncementRoutes();
 setupESNHelpCenterRoutes();
 setupMyHelpCenterRoutes();
+setupCreateTaskRoutes();
 
 export default router;

@@ -24,9 +24,9 @@
       <header
         class="sticky top-0 z-10 overflow-x-hidden rounded-2xl bg-stone-50/80 ring-1 ring-stone-200 backdrop-blur supports-[backdrop-filter]:bg-stone-50/60"
       >
-        <div class="px-8 sm:px-10">
+        <div class="">
           <div
-            class="relative left-1/2 w-[110vw] -translate-x-1/2 rounded-3xl border border-stone-200 bg-white px-6 py-6 shadow-sm sm:w-[108vw] sm:px-12 sm:py-8"
+            class="relative px-10 left-1/2 w-[110vw] -translate-x-1/2 rounded-3xl border border-stone-200 bg-white  py-6 shadow-sm sm:w-[108vw]  sm:py-8"
           >
             <%- include('../partials/help-center/headerBar') %>
 
@@ -45,7 +45,7 @@
       </header>
 
       <!-- Tasks card -->
-      <section class="px-8 pt-6 sm:px-10">
+      <section class="">
         <%- include('../partials/help-center/myTaskList', {
           taskListMeta: __taskListMeta,
           openTasks: __openTasks,

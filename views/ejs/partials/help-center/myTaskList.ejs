@@ -76,13 +76,10 @@
     class="rounded-3xl border border-stone-200 bg-white px-4 py-5 shadow-sm sm:px-6 sm:py-6"
   >
     <!-- Title + controls -->
-    <div class="flex items-center justify-between">
-      <h2 class="text-xl font-semibold tracking-tight text-stone-900">
+    <div class="flex items-center justify-between gap-1">
+      <h2 class="text-xl font-semibold tracking-tight text-stone-900 pr-4">
         <%= meta.title %>
       </h2>
-    </div>
-
-    <div class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
       <!-- Search -->
       <label class="relative flex-1">
         <span class="sr-only"><%= meta.searchPlaceholder %></span>
@@ -111,7 +108,6 @@
       </label>
 
       <!-- Filter controls -->
-      <div class="mt-1 flex items-center gap-3 sm:mt-0 sm:w-auto">
         <!-- Sort direction toggle -->
         <button
           type="button"
@@ -155,8 +151,9 @@
             </svg>
           </span>
         </div>
-      </div>
+      
     </div>
+
 
     <!-- OPEN + CLOSED lists -->
     <div class="mt-5 space-y-5">
