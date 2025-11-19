@@ -101,6 +101,12 @@
     "filterLabel": "Select option",
     "filterOptions": ["All", "Critical", "Urgent", "Scheduled", "Standard"]
   },
+  "taskListMeta": {
+    "title": "Tasks",
+    "searchPlaceholder": "Search tasks",
+    "filterLabel": "Select option",
+    "filterOptions": ["All", "Critical", "Urgent", "Scheduled", "Standard"]
+  },
   "tasks": [
     {
       "id": "remove-fallen-trees",

@@ -83,7 +83,7 @@
       </header>
 
       <!-- Tasks list section -->
-      <section class="px-8 pt-6 sm:px-10">
+      <section class="">
         <%- include('../partials/help-center/taskList', { taskListMeta:
         __taskListMeta, tasks: __tasks }) %>
       </section>
@@ -92,6 +92,10 @@
       <%- include('../partials/featureModal.ejs') %> <%-
       include('../partials/nav-bar/absNavBar.ejs') %>
     </main>
+    <script>
+      window.__TASKS__ = <%- JSON.stringify(__tasks || []) %>;
+    </script>
+    <script type="module" src="/js/helpCenter/taskList.js"></script>
 
     <script type="module" src="/js/extensionFeatures/featureModal.js"></script>
     <script type="module" src="/js/nav-bar/nav-bar.js"></script>

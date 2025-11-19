@@ -7,6 +7,8 @@ import { setup } from "swagger-ui-express";
 
 import helpCenterConfig from "../data/helpCenter.json" with { type: "json" };
 
+import myHelpCenterConfig from "../data/myHelpCenter.json" with { type: "json" };
+
 const router = express.Router();
 const JOIN_PATH = "joinCommunity/";
 const PUB_CHAT_PATH = "publicChat/";
@@ -86,13 +88,6 @@ function setupMyTasksRoutes() {
     });
   });
 }
-// function setupESNTaskCenterRoutes() {
-//   router.get("/esn-help-center", authView, (req, res) => {
-//     res.render("helpTasks/ESNHelpCenter.ejs", {
-//       username: req.username || "",
-//     });
-//   });
-// }
 
 function setupESNHelpCenterRoutes() {
   router.get("/esn-help-center", (req, res) => {
@@ -104,13 +99,38 @@ function setupESNHelpCenterRoutes() {
     const highlightedTasks = allTasks
       .filter((t) => t.joinedCount < t.capacity)
       .slice(0, 5);
-
+    const taskListMeta = helpCenterConfig.taskListMeta || {};
     res.render("helpTasks/ESNHelpCenter.ejs", {
       hero: helpCenterConfig.hero,
       highlightedTasks,
       username: req.username || "",
       tasks: allTasks,
+      taskListMeta,
       // you can also pass req.user, users etc if needed
+    });
+  });
+}
+
+function setupMyHelpCenterRoutes() {
+  router.get("/my-tasks", (req, res) => {
+    const allTasks = Array.isArray(myHelpCenterConfig.tasks)
+      ? myHelpCenterConfig.tasks
+      : [];
+
+    const openTasks = allTasks.filter(
+      (t) => (t.status || "").toUpperCase() === "OPEN",
+    );
+    const closedTasks = allTasks.filter(
+      (t) => (t.status || "").toUpperCase() === "CLOSED",
+    );
+
+    res.render("helpTasks/myHelpCenter.ejs", {
+      hero: myHelpCenterConfig.hero,
+      taskListMeta: myHelpCenterConfig.taskList,
+      tasks: allTasks,
+      openTasks,
+      closedTasks,
+      username: req.username || "",
     });
   });
 }
@@ -123,5 +143,6 @@ setupPrivateChatRoutes();
 setupAnnouncementRoutes();
 setupMyTasksRoutes();
 setupESNHelpCenterRoutes();
+setupMyHelpCenterRoutes();
 
 export default router;
