@@ -57,6 +57,25 @@
     <script>
       window.__TASKS__ = <%- JSON.stringify(__tasks || []) %>;
       window.__CURRENT_USER_ID__ = <%- JSON.stringify(currentUserId || null) %>;
+      window.__CURRENT_USER__ = "<%= username || '' %>";
+    </script>
+    <script type="module">
+      // Initialize header avatar
+      import { initHeaderAvatar } from "/js/utils/initHeaderAvatar.js";
+      initHeaderAvatar();
+
+      // Maintain websocket connection
+      import { getSocket } from "/js/utils/socket.js";
+      const socket = getSocket();
+      if (socket && !socket.connected) {
+        try {
+          socket.connect();
+          socket.on?.("connect", () => console.log("[My Help Center] socket connected", socket.id));
+          socket.on?.("connect_error", (e) => console.warn("[My Help Center] connect_error", e?.message || e));
+        } catch (e) {
+          console.error("[My Help Center] socket connect() failed", e);
+        }
+      }
     </script>
     <script type="module" src="/js/helpCenter/myTasks.js"></script>
 

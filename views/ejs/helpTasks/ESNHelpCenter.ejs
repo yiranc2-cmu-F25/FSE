@@ -66,9 +66,8 @@
               <div
                 class="grid h-12 w-12 place-content-center rounded-full text-base font-bold text-white shadow-md ring-2 ring-white"
                 id="header-avatar"
-                style="background-color: #3b6a95"
               >
-                <span id="header-avatar-initials"> </span>
+                <span id="header-avatar-initials"></span>
               </div>
             </div>
 
@@ -95,6 +94,25 @@
     <script>
       window.__TASKS__ = <%- JSON.stringify(__tasks || []) %>;
       window.__CURRENT_USER_ID__ = <%- JSON.stringify(currentUserId || null) %>;
+      window.__CURRENT_USER__ = "<%= username || '' %>";
+    </script>
+    <script type="module">
+      // Initialize header avatar
+      import { initHeaderAvatar } from "/js/utils/initHeaderAvatar.js";
+      initHeaderAvatar();
+
+      // Maintain websocket connection
+      import { getSocket } from "/js/utils/socket.js";
+      const socket = getSocket();
+      if (socket && !socket.connected) {
+        try {
+          socket.connect();
+          socket.on?.("connect", () => console.log("[ESN Help Center] socket connected", socket.id));
+          socket.on?.("connect_error", (e) => console.warn("[ESN Help Center] connect_error", e?.message || e));
+        } catch (e) {
+          console.error("[ESN Help Center] socket connect() failed", e);
+        }
+      }
     </script>
     <script type="module" src="/js/helpCenter/taskList.js"></script>
 

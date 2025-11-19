@@ -464,6 +464,21 @@
     <script>
       // Pass task data to JavaScript for pre-population
       window.__EDIT_TASK_DATA__ = <%- JSON.stringify(task || {}) %>;
+      window.__CURRENT_USER__ = "<%= username || '' %>";
+    </script>
+    <script type="module">
+      // Maintain websocket connection
+      import { getSocket } from "/js/utils/socket.js";
+      const socket = getSocket();
+      if (socket && !socket.connected) {
+        try {
+          socket.connect();
+          socket.on?.("connect", () => console.log("[Edit Task] socket connected", socket.id));
+          socket.on?.("connect_error", (e) => console.warn("[Edit Task] connect_error", e?.message || e));
+        } catch (e) {
+          console.error("[Edit Task] socket connect() failed", e);
+        }
+      }
     </script>
     <script type="module" src="/js/ui/modalManager.js"></script>
     <script type="module" src="/js/helpCenter/createTask.js"></script>

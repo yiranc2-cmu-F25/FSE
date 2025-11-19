@@ -390,6 +390,23 @@
 
     <%- include('../partials/help-tasks/modals/publishSuccessModal') %>
 
+    <script>
+      window.__CURRENT_USER__ = "<%= username || '' %>";
+    </script>
+    <script type="module">
+      // Maintain websocket connection
+      import { getSocket } from "/js/utils/socket.js";
+      const socket = getSocket();
+      if (socket && !socket.connected) {
+        try {
+          socket.connect();
+          socket.on?.("connect", () => console.log("[Create Task] socket connected", socket.id));
+          socket.on?.("connect_error", (e) => console.warn("[Create Task] connect_error", e?.message || e));
+        } catch (e) {
+          console.error("[Create Task] socket connect() failed", e);
+        }
+      }
+    </script>
     <script type="module" src="/js/ui/modalManager.js"></script>
     <script type="module" src="/js/helpCenter/createTask.js"></script>
   </body>
