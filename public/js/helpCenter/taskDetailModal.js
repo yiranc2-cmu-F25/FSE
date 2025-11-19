@@ -470,30 +470,51 @@ function populateModal(task) {
 
 function setDetailButtonsVisibility(isParticipant, isOwner) {
   console.log("[setDetailButtonsVisibility] Setting buttons:", { isParticipant, isOwner });
+  
+  // Check if task is CLOSED
+  const isTaskClosed = currentTaskData && currentTaskData.status === "CLOSED";
+  
   const anyButtons = [];
 
-  if (!isParticipant) {
-    // can join
-    anyButtons.push(btnJoinTask);
-    showElement(btnJoinTask);
+  // For CLOSED tasks, only show Edit Task button to owner
+  if (isTaskClosed) {
+    if (isOwner) {
+      anyButtons.push(btnEditTask);
+      showElement(btnEditTask);
+      console.log("[setDetailButtonsVisibility] Task is CLOSED - showing Edit Task button for owner");
+    }
+    // Hide all other buttons for closed tasks
+    hideElement(btnJoinTask);
     hideElement(btnQuitTask);
     hideElement(btnUploadLog);
-    console.log("[setDetailButtonsVisibility] Showing Join Task button");
+    if (!isOwner) {
+      hideElement(btnEditTask);
+    }
   } else {
-    // participant: can quit and upload log
-    anyButtons.push(btnQuitTask, btnUploadLog);
-    showElement(btnQuitTask);
-    showElement(btnUploadLog);
-    hideElement(btnJoinTask);
-    console.log("[setDetailButtonsVisibility] Showing Quit Task + Upload Log buttons");
-  }
+    // For OPEN tasks, show buttons based on participation and ownership
+    if (!isParticipant) {
+      // can join
+      anyButtons.push(btnJoinTask);
+      showElement(btnJoinTask);
+      hideElement(btnQuitTask);
+      hideElement(btnUploadLog);
+      console.log("[setDetailButtonsVisibility] Showing Join Task button");
+    } else {
+      // participant: can quit and upload log
+      anyButtons.push(btnQuitTask, btnUploadLog);
+      showElement(btnQuitTask);
+      showElement(btnUploadLog);
+      hideElement(btnJoinTask);
+      console.log("[setDetailButtonsVisibility] Showing Quit Task + Upload Log buttons");
+    }
 
-  if (isOwner) {
-    anyButtons.push(btnEditTask);
-    showElement(btnEditTask);
-    console.log("[setDetailButtonsVisibility] Showing Edit Task button");
-  } else {
-    hideElement(btnEditTask);
+    if (isOwner) {
+      anyButtons.push(btnEditTask);
+      showElement(btnEditTask);
+      console.log("[setDetailButtonsVisibility] Showing Edit Task button");
+    } else {
+      hideElement(btnEditTask);
+    }
   }
 
   if (anyButtons.length > 0) {
@@ -606,6 +627,13 @@ document.addEventListener("click", (e) => {
   if (joinBtn) {
     e.preventDefault();
     e.stopPropagation();
+    
+    // Check if task is CLOSED
+    if (currentTaskData && currentTaskData.status === "CLOSED") {
+      alert("This task is CLOSED. You cannot join closed tasks.");
+      return;
+    }
+    
     console.log("[Join Task] Button clicked, opening join panel");
     
     // Remove any existing data-modal-open attribute to prevent ModalManager interference
@@ -638,6 +666,13 @@ document.addEventListener("click", (e) => {
   if (quitBtn) {
     e.preventDefault();
     e.stopPropagation();
+    
+    // Check if task is CLOSED
+    if (currentTaskData && currentTaskData.status === "CLOSED") {
+      alert("This task is CLOSED. You cannot quit closed tasks.");
+      return;
+    }
+    
     console.log("[Quit Task] Button clicked, opening quit panel");
     
     // Remove any existing data-modal-open attribute to prevent ModalManager interference
@@ -665,6 +700,12 @@ document.addEventListener("click", (e) => {
 
 if (btnUploadLog) {
   btnUploadLog.addEventListener("click", () => {
+    // Check if task is CLOSED
+    if (currentTaskData && currentTaskData.status === "CLOSED") {
+      alert("This task is CLOSED. You cannot add task logs to closed tasks.");
+      return;
+    }
+    
     // Clear log textarea when opening
     const logTextarea = document.querySelector("#task-log-text");
     if (logTextarea) {
@@ -790,6 +831,18 @@ document.addEventListener("click", async (event) => {
     const originalText = target.textContent;
     target.textContent = "Joining...";
 
+    // Check if task is CLOSED before attempting to join
+    if (currentTaskData && currentTaskData.status === "CLOSED") {
+      alert("This task is CLOSED. You cannot join closed tasks.");
+      // Close confirm modal
+      if (window.ModalManager) {
+        window.ModalManager.close("join-confirm-modal");
+      }
+      // Return to detail panel
+      openDetail();
+      return;
+    }
+    
     try {
       await joinTask(currentTaskData.id, note);
       
@@ -820,6 +873,25 @@ document.addEventListener("click", async (event) => {
     }
   }
 }, true); // Use capture phase to run before ModalManager
+
+// Handle join confirm modal cancel button - close modal and return to detail panel
+document.addEventListener("click", (event) => {
+  const target = event.target;
+  const confirmModal = target?.closest('[data-modal="join-confirm-modal"]');
+  
+  if (confirmModal && target?.hasAttribute("data-modal-close") && target.textContent.trim() === "Cancel") {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    // Close confirm modal
+    if (window.ModalManager) {
+      window.ModalManager.close("join-confirm-modal");
+    }
+    
+    // Return to detail panel
+    openDetail();
+  }
+});
 
 // Handle join success modal close - navigate back to ESN Help Center page
 document.addEventListener("click", (event) => {
@@ -886,6 +958,14 @@ if (quitConfirmBtn) {
       return;
     }
 
+    // Check if task is CLOSED
+    if (currentTaskData && currentTaskData.status === "CLOSED") {
+      alert("This task is CLOSED. You cannot quit closed tasks.");
+      // Return to detail panel
+      openDetail();
+      return;
+    }
+
     const originalText = quitConfirmBtn.textContent;
     quitConfirmBtn.disabled = true;
     quitConfirmBtn.textContent = "Quitting...";
@@ -931,6 +1011,18 @@ document.addEventListener("click", async (event) => {
       return;
     }
 
+    // Check if task is CLOSED
+    if (currentTaskData && currentTaskData.status === "CLOSED") {
+      alert("This task is CLOSED. You cannot quit closed tasks.");
+      // Close confirm modal
+      if (window.ModalManager) {
+        window.ModalManager.close("quit-confirm-modal");
+      }
+      // Return to detail panel
+      openDetail();
+      return;
+    }
+
     // Disable button during submission
     target.disabled = true;
     target.textContent = "Quitting...";
@@ -960,6 +1052,20 @@ document.addEventListener("click", async (event) => {
       target.disabled = false;
       target.textContent = "Confirm";
     }
+  }
+});
+
+// Handle log success modal close - stay on detail panel
+document.addEventListener("click", (event) => {
+  const target = event.target;
+  const successModal = target?.closest('[data-modal="log-success-modal"]');
+  
+  if (successModal && target?.hasAttribute("data-modal-close")) {
+    // Close success modal
+    if (window.ModalManager) {
+      window.ModalManager.close("log-success-modal");
+    }
+    // Stay on detail panel (already open)
   }
 });
 
@@ -1081,6 +1187,14 @@ if (logSubmitBtn) {
       return;
     }
 
+    // Check if task is CLOSED
+    if (currentTaskData && currentTaskData.status === "CLOSED") {
+      alert("This task is CLOSED. You cannot add task logs to closed tasks.");
+      // Return to detail panel
+      openDetail();
+      return;
+    }
+
     const logTextarea = document.querySelector("#task-log-text");
     const logText = logTextarea ? logTextarea.value.trim() : "";
 
@@ -1121,8 +1235,17 @@ if (logSubmitBtn) {
         }
       }
       
-      // Show success message
-      alert("Task log uploaded successfully!");
+      // Show success modal
+      if (window.ModalManager) {
+        window.ModalManager.open("log-success-modal");
+      } else {
+        // Fallback if ModalManager not loaded
+        const modal = document.querySelector('[data-modal="log-success-modal"]');
+        if (modal) {
+          modal.classList.remove("hidden");
+          document.body.style.overflow = "hidden";
+        }
+      }
       
       // Return to detail panel
       openDetail();

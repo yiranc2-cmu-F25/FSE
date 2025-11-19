@@ -77,6 +77,64 @@
               />
             </div>
 
+            <!-- Task Status -->
+            <div class="space-y-2">
+              <div class="flex items-center justify-between">
+                <label
+                  class="flex items-center gap-2 text-sm font-semibold text-stone-900"
+                >
+                  Task Status
+                  <span
+                    class="inline-flex h-4 w-4 items-center justify-center rounded-full bg-stone-100 text-[10px] text-stone-400"
+                  >
+                    ⚠
+                  </span>
+                </label>
+                <!-- Tooltip button -->
+                <button
+                  type="button"
+                  id="task-status-info-btn"
+                  class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-stone-100 text-xs text-stone-400 hover:bg-stone-200 relative group"
+                  aria-label="Task status info"
+                >
+                  !
+                  <!-- Tooltip -->
+                  <span
+                    class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden w-64 rounded-lg bg-stone-800 px-3 py-2 text-xs text-white shadow-lg group-hover:block z-50"
+                    role="tooltip"
+                  >
+                    <strong>OPEN:</strong> Task is open to join and add task log.<br />
+                    <strong>CLOSED:</strong> Task does not support join and add task log activities, but still visible to all members and owner can edit the task as usual (change fields except for logs and maybe toggle the task status).
+                    <span class="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-full border-4 border-transparent border-t-stone-800"></span>
+                  </span>
+                </button>
+              </div>
+              <div class="flex gap-3">
+                <button
+                  type="button"
+                  id="task-status-open-btn"
+                  data-status="open"
+                  class="task-status-btn flex-1 rounded-2xl border px-4 py-2.5 text-sm font-semibold <%= task?.isOpen !== false ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-stone-200 bg-stone-50 text-stone-500' %>"
+                >
+                  OPEN
+                </button>
+                <button
+                  type="button"
+                  id="task-status-closed-btn"
+                  data-status="closed"
+                  class="task-status-btn flex-1 rounded-2xl border px-4 py-2.5 text-sm font-semibold <%= task?.isOpen === false ? 'border-amber-200 bg-amber-50 text-amber-600' : 'border-stone-200 bg-stone-50 text-stone-500' %>"
+                >
+                  CLOSED
+                </button>
+              </div>
+              <input
+                type="hidden"
+                name="isOpen"
+                id="task-status-input"
+                value="<%= task?.isOpen !== false ? 'true' : 'false' %>"
+              />
+            </div>
+
             <!-- Due Date -->
             <div class="space-y-2">
               <label
@@ -122,6 +180,13 @@
                 value="<%= task?.helpers || '' %>"
                 class="w-full rounded-none border-b border-stone-200 bg-transparent pb-2 text-sm text-stone-900 placeholder:text-stone-300 focus:border-amber-400 focus:outline-none focus:ring-0"
               />
+              <!-- Error message for helper validation -->
+              <p
+                id="helpers-error-msg"
+                class="hidden text-xs text-rose-600"
+              >
+                Number of helpers cannot be below the current number of participants (<%= task?.helpersJoined || 0 %>).
+              </p>
             </div>
 
             <!-- Location -->

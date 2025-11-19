@@ -33,8 +33,89 @@ if (!taskData) {
   initializeEditMode();
 }
 
+// Initialize task status toggle buttons
+function initializeTaskStatusToggle() {
+  const openBtn = document.querySelector("#task-status-open-btn");
+  const closedBtn = document.querySelector("#task-status-closed-btn");
+  const statusInput = document.querySelector("#task-status-input");
+  
+  if (!openBtn || !closedBtn || !statusInput) {
+    console.warn("[Edit Task] Task status elements not found");
+    return;
+  }
+  
+  function updateStatusButtons(isOpen) {
+    // Update hidden input
+    statusInput.value = isOpen ? "true" : "false";
+    
+    // Update button styles
+    if (isOpen) {
+      openBtn.className = "task-status-btn flex-1 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-700";
+      closedBtn.className = "task-status-btn flex-1 rounded-2xl border border-stone-200 bg-stone-50 px-4 py-2.5 text-sm font-semibold text-stone-500";
+    } else {
+      openBtn.className = "task-status-btn flex-1 rounded-2xl border border-stone-200 bg-stone-50 px-4 py-2.5 text-sm font-semibold text-stone-500";
+      closedBtn.className = "task-status-btn flex-1 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm font-semibold text-amber-600";
+    }
+  }
+  
+  openBtn.addEventListener("click", () => {
+    updateStatusButtons(true);
+  });
+  
+  closedBtn.addEventListener("click", () => {
+    updateStatusButtons(false);
+  });
+  
+  // Initialize based on current value
+  const currentValue = statusInput.value === "true";
+  updateStatusButtons(currentValue);
+}
+
+// Initialize helper number validation
+function initializeHelperValidation() {
+  const helpersInput = document.querySelector("#task-helpers");
+  const errorMsg = document.querySelector("#helpers-error-msg");
+  
+  if (!helpersInput || !errorMsg) {
+    console.warn("[Edit Task] Helper validation elements not found");
+    return;
+  }
+  
+  // Get current number of participants from task data
+  const currentParticipants = taskData?.helpersJoined || 0;
+  
+  function validateHelpers() {
+    const value = parseInt(helpersInput.value);
+    const isValid = !isNaN(value) && value >= currentParticipants;
+    
+    if (helpersInput.value && !isValid) {
+      errorMsg.textContent = `Number of helpers cannot be below the current number of participants (${currentParticipants}).`;
+      errorMsg.classList.remove("hidden");
+      helpersInput.classList.add("border-rose-500");
+    } else {
+      errorMsg.classList.add("hidden");
+      helpersInput.classList.remove("border-rose-500");
+    }
+    
+    return isValid;
+  }
+  
+  // Validate on input change
+  helpersInput.addEventListener("input", validateHelpers);
+  helpersInput.addEventListener("blur", validateHelpers);
+  
+  // Store validation function for form submission
+  window.__VALIDATE_HELPERS__ = validateHelpers;
+}
+
 function populateEditForm() {
   console.log("[Edit Task] Starting form pre-population");
+  
+  // Initialize task status toggle
+  initializeTaskStatusToggle();
+  
+  // Initialize helper validation
+  initializeHelperValidation();
   
   // Pre-populate category
   if (taskData.category) {
@@ -126,10 +207,12 @@ function overrideFormSubmission() {
     const categoryHiddenInput = document.querySelector("#task-category-input");
     const emergencyHiddenInput = document.querySelector("#task-emergency-input");
     const skillHiddenInput = document.querySelector("#skill-hidden-input");
+    const statusInput = document.querySelector("#task-status-input");
 
     const categoryFrontend = categoryHiddenInput?.value || "";
     const emergencyLevel = emergencyHiddenInput?.value || "";
     const skillsJson = skillHiddenInput?.value || "[]";
+    const isOpenValue = statusInput?.value || "true";
 
     // Validation
     if (!title) {
@@ -142,6 +225,19 @@ function overrideFormSubmission() {
     }
     if (!helpersNeeded || parseInt(helpersNeeded) < 1) {
       alert("Please enter a valid number of helpers (at least 1)");
+      return;
+    }
+    
+    // Validate helpers against current participants
+    const currentParticipants = taskData?.helpersJoined || 0;
+    const helpersNum = parseInt(helpersNeeded);
+    if (helpersNum < currentParticipants) {
+      const errorMsg = document.querySelector("#helpers-error-msg");
+      if (errorMsg) {
+        errorMsg.textContent = `Number of helpers cannot be below the current number of participants (${currentParticipants}).`;
+        errorMsg.classList.remove("hidden");
+      }
+      alert(`Number of helpers cannot be below the current number of participants (${currentParticipants}).`);
       return;
     }
     if (!categoryFrontend) {
@@ -197,10 +293,9 @@ function overrideFormSubmission() {
       requestBody.location = location;
     }
 
-    // Preserve isOpen status
-    if (taskData.isOpen !== undefined) {
-      requestBody.isOpen = taskData.isOpen;
-    }
+    // Get isOpen status from form input
+    const isOpen = isOpenValue === "true";
+    requestBody.isOpen = isOpen;
 
     // Get submit button and disable during submission
     const submitBtn = document.querySelector("#update-task-btn");
