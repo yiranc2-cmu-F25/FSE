@@ -233,7 +233,7 @@ function renderList(helpCenters) {
         console.warn("Help center missing _id:", hc);
         return;
       }
-      window.location.href = `/help-centers/edit/${hc._id}`;
+      window.location.href = `/help-centers/manage/edit/${hc._id}`;
     });
 
     listEl.appendChild(card);

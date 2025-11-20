@@ -17,10 +17,10 @@ document.addEventListener("DOMContentLoaded", () => {
   // Update OK button destination
   const okBtn = document.getElementById("confirm-ok-btn");
   if (okBtn) {
-    let target = "/help-centers"; // default
+    let target = "/help-centers/manage"; // default
 
     if (action === "updated" || action === "deleted") {
-      target = "/help-centers/edit";
+      target = "/help-centers/manage/edit";
     }
 
     okBtn.href = target;

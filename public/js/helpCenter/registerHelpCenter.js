@@ -218,7 +218,7 @@ if (registerBtn) {
       });
 
       if (res.ok) {
-        window.location.href = "/help-centers/confirmation?action=registered";
+        window.location.href = "/help-centers/confirm?action=registered";
         return;
       }
 

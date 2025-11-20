@@ -281,7 +281,7 @@ if (confirmBtn) {
 
       if (res.ok) {
         // redirect to confirmation page with updated action
-        window.location.href = "/help-centers/confirmation?action=updated";
+        window.location.href = "/help-centers/confirm?action=updated";
         return;
       }
 
@@ -344,7 +344,7 @@ async function deleteHelpCenter() {
     });
 
     if (res.ok) {
-      window.location.href = "/help-centers/confirmation?action=deleted";
+      window.location.href = "/help-centers/confirm?action=deleted";
       return;
     }
 

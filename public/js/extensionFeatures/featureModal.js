@@ -17,6 +17,8 @@ const ui = {
   statusButton: $("#status-button"),
   speedTestButton: $("#speed-test-button"),
   announcementButton: $("#post-public-announcement-button"),
+  manageHelpCenterBtn: $('#manage-help-center-btn'),
+  viewHelpCenterBtn: $('#view-help-center-btn')
 };
 const body = document.body;
 ui.body = body;
@@ -122,6 +124,12 @@ function setupSidebarSelection() {
     ui.announcementButton?.addEventListener("click", () => {
       window.location.href = "/postPublicAnnouncements";
     });
+    ui.manageHelpCenterBtn?.addEventListener('click', () => {
+      window.location.href = "/help-centers/manage"
+    })
+    ui.viewHelpCenterBtn?.addEventListener('click', () => {
+      window.location.href = "/help-centers/view"
+    })
   });
 }
 
