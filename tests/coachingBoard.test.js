@@ -205,6 +205,8 @@ describe("Coaching Board REST API Integration Tests", () => {
 				.ok((res) => true);
 
 			expect(firstResponse.status).toBe(201);
+			expect(firstResponse.body.message).toBe("Board published successfully");
+			expect(firstResponse.body.boardId).toBeTruthy();
 
 			// Try to create duplicate
 			const duplicateResponse = await agentClient
@@ -361,6 +363,9 @@ describe("Coaching Board REST API Integration Tests", () => {
 				.ok((res) => true);
 
 			expect(getBeforeResponse.status).toBe(200);
+			expect(getBeforeResponse.body.id).toBe(boardId);
+			expect(getBeforeResponse.body.title).toBe(createData.title);
+			expect(getBeforeResponse.body.publicationState).toBe("published");
 
 			// Delete board
 			const deleteResponse = await agentClient
@@ -478,6 +483,10 @@ describe("Coaching Board REST API Integration Tests", () => {
 			expect(getResponse.body.comments[0].comment).toBe(commentText);
 			expect(String(getResponse.body.comments[0].author)).toBe(String(author.id));
 			expect(getResponse.body.comments[0].authorName).toBe(author.username);
+			expect(getResponse.body.comments[0].id).toBeTruthy();
+			expect(getResponse.body.comments[0].timestamp).toBeTruthy();
+			expect(Array.isArray(getResponse.body.comments[0].likes)).toBe(true);
+			expect(Array.isArray(getResponse.body.comments[0].replies)).toBe(true);
 		});
 
 		test("should reject comment when board does not exist (negative test)", async () => {
@@ -536,6 +545,9 @@ describe("Coaching Board REST API Integration Tests", () => {
 				})
 				.ok((res) => true);
 
+			expect(commentResponse.status).toBe(201);
+			expect(commentResponse.body.message).toBe("Comment added successfully");
+
 			// Get commentId from the board
 			const getBoardResponse = await authorAgent
 				.get(`${BOARD_BASE}/${boardId}`)
@@ -543,8 +555,12 @@ describe("Coaching Board REST API Integration Tests", () => {
 				.ok((res) => true);
 			
 			expect(getBoardResponse.status).toBe(200);
+			expect(getBoardResponse.body.comments).toBeDefined();
 			expect(getBoardResponse.body.comments.length).toBe(1);
+			expect(getBoardResponse.body.comments[0].comment).toBe("Original comment");
+			expect(String(getBoardResponse.body.comments[0].author)).toBe(String(author.id));
 			const commentId = getBoardResponse.body.comments[0].id;
+			expect(commentId).toBeTruthy();
 
 			// Add reply
 			const replyText = "This is a reply";
@@ -574,6 +590,8 @@ describe("Coaching Board REST API Integration Tests", () => {
 			expect(comment.replies.length).toBe(1);
 			expect(comment.replies[0].reply).toBe(replyText);
 			expect(String(comment.replies[0].author)).toBe(String(author.id));
+			expect(comment.replies[0].id).toBeTruthy();
+			expect(comment.replies[0].timestamp).toBeTruthy();
 		});
 	});
 
@@ -611,6 +629,9 @@ describe("Coaching Board REST API Integration Tests", () => {
 				})
 				.ok((res) => true);
 
+			expect(commentResponse.status).toBe(201);
+			expect(commentResponse.body.message).toBe("Comment added successfully");
+
 			// Get commentId from the board
 			const getBoardForCommentId = await authorAgent
 				.get(`${BOARD_BASE}/${boardId}`)
@@ -618,8 +639,12 @@ describe("Coaching Board REST API Integration Tests", () => {
 				.ok((res) => true);
 			
 			expect(getBoardForCommentId.status).toBe(200);
+			expect(getBoardForCommentId.body.comments).toBeDefined();
 			expect(getBoardForCommentId.body.comments.length).toBe(1);
+			expect(getBoardForCommentId.body.comments[0].comment).toBe("Comment to like");
+			expect(String(getBoardForCommentId.body.comments[0].author)).toBe(String(author.id));
 			const commentId = getBoardForCommentId.body.comments[0].id;
+			expect(commentId).toBeTruthy();
 
 			// Get initial state
 			const getBeforeResponse = await authorAgent
@@ -648,6 +673,8 @@ describe("Coaching Board REST API Integration Tests", () => {
 			expect(afterLikes).toBe(initialLikes + 1);
 			const likesArray = getAfterResponse.body.comments[0].likes || [];
 			expect(likesArray.some(likeId => String(likeId) === String(author.id))).toBe(true);
+			expect(getAfterResponse.body.comments[0].comment).toBe("Comment to like");
+			expect(Array.isArray(getAfterResponse.body.comments[0].likes)).toBe(true);
 		});
 	});
 
@@ -708,10 +735,17 @@ describe("Coaching Board REST API Integration Tests", () => {
 			expect(board1.description).toBe(board1Data.description);
 			expect(board1.objective).toBe(board1Data.objective);
 			expect(board1.relatedSkills).toEqual(board1Data.relatedSkills);
+			expect(board1.publicationState).toBe("published");
+			expect(board1.steps).toEqual(board1Data.steps);
 
 			expect(board2).toBeDefined();
 			expect(board2.id).toBeTruthy();
 			expect(board2.title).toBe(board2Data.title);
+			expect(board2.category).toBe(board2Data.category);
+			expect(board2.description).toBe(board2Data.description);
+			expect(board2.objective).toBe(board2Data.objective);
+			expect(board2.relatedSkills).toEqual(board2Data.relatedSkills);
+			expect(board2.publicationState).toBe("published");
 		});
 	});
 });

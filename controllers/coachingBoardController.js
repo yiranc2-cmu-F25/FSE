@@ -847,6 +847,38 @@ export async function deleteReply(req, res) {
 		if (!id || !commentId || !replyId) {
 			return res.status(400).json({ status: "error", message: "Missing required fields" });
 		}
+
+		// Get board before deletion to find all replies that will be deleted (including cascaded)
+		const boardBefore = await CoachingBoard.getById({ id });
+		if (!boardBefore) {
+			return res.status(404).json({ status: "error", message: "Board not found" });
+		}
+
+		const comment = (boardBefore.comments || []).find(c => {
+			const cId = c.id || c._id;
+			return String(cId) === String(commentId);
+		});
+		if (!comment) {
+			return res.status(404).json({ status: "error", message: "Comment not found" });
+		}
+
+		// Find all replies that will be deleted (including cascaded children)
+		const repliesToDelete = new Set([String(replyId)]);
+		let foundNew = true;
+		while (foundNew) {
+			foundNew = false;
+			for (const r of (comment.replies || [])) {
+				const rId = String(r.id || r._id);
+				if (repliesToDelete.has(rId)) continue;
+				
+				const rReplyTo = r.replyTo ? String(r.replyTo) : null;
+				if (rReplyTo && repliesToDelete.has(rReplyTo)) {
+					repliesToDelete.add(rId);
+					foundNew = true;
+				}
+			}
+		}
+
 		const deleted = await CoachingBoard.deleteReply({ id, commentId, replyId, author: requesterId });
 		if (!deleted) {
 			return res.status(403).json({ status: "error", message: "You do not have permission to delete this reply or the reply does not exist" });
@@ -855,7 +887,10 @@ export async function deleteReply(req, res) {
 		try {
 			const socketInstance = req.app.get("socketInstance");
 			if (socketInstance) {
-				socketInstance.emitCoachingBoardReplyDeleted(id, commentId, replyId);
+				// Emit socket notification for all deleted replies (including cascaded children)
+				for (const deletedReplyId of repliesToDelete) {
+					socketInstance.emitCoachingBoardReplyDeleted(id, commentId, deletedReplyId);
+				}
 			}
 		} catch (e) {
 			// Ignore error if socket emission fails

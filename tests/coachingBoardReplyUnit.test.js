@@ -1,438 +1,261 @@
-import {
-	addComment,
-	getMoreReplies,
-	toggleReplyLike,
-	deleteReply
-} from "../controllers/coachingBoardController.js";
-import CoachingBoard from "../entities/CoachingBoard.js";
-import User from "../entities/User.js";
+import { CoachingBoardDao } from "../daos/CoachingBoardDao.js";
 
-describe("Coaching Board Controller - Unit Tests (Replies)", () => {
-	let originalGetById;
-	let originalAddReply;
-	let originalToggleReplyLike;
-	let originalDeleteReply;
-	let originalGetUsernameById;
+describe("Coaching Board Reply DAO - Unit Tests", () => {
+	let dao;
+	let mockModel;
 
 	beforeEach(() => {
-		originalGetById = CoachingBoard.getById;
-		originalAddReply = CoachingBoard.addReply;
-		originalToggleReplyLike = CoachingBoard.toggleReplyLike;
-		originalDeleteReply = CoachingBoard.deleteReply;
-		originalGetUsernameById = User.getUsernameById;
+		mockModel = {
+			findOneAndUpdate: () => ({ lean: () => Promise.resolve(null) }),
+			findOne: () => null
+		};
+		dao = new CoachingBoardDao({ CoachingBoardModel: mockModel });
 	});
 
-	afterEach(() => {
-		CoachingBoard.getById = originalGetById;
-		CoachingBoard.addReply = originalAddReply;
-		CoachingBoard.toggleReplyLike = originalToggleReplyLike;
-		CoachingBoard.deleteReply = originalDeleteReply;
-		User.getUsernameById = originalGetUsernameById;
-	});
-
-	describe("addComment - Replies", () => {
-		test("successfully adds reply to comment with comment ID (positive test)", async () => {
-			const mockBoard = {
-				id: "board123",
-				title: "Test Board",
+	describe("addReply", () => {
+		test("adds reply to comment (positive test)", async () => {
+			const mockDoc = {
+				_id: "board123",
 				comments: [
-					{ id: "comment123", author: "user1", comment: "Original comment", replies: [] }
-				]
-			};
-
-			CoachingBoard.getById = async () => mockBoard;
-			CoachingBoard.addReply = async () => mockBoard;
-
-			const mockSocket = {
-				emitCoachingBoardReply: () => {},
-				emitCoachingBoardNotification: () => {}
-			};
-			const mockApp = {
-				get: (key) => key === "socketInstance" ? mockSocket : null
-			};
-
-			User.getUsernameById = async () => "testuser";
-
-			let statusCode = null;
-			let jsonBody = null;
-			const req = {
-				params: { bid: "board123" },
-				body: { comment: "@username#comment123: This is a reply" },
-				user: { id: "user123" },
-				userId: "user123",
-				app: mockApp
-			};
-			const res = {
-				status(code) {
-					statusCode = code;
-					return this;
-				},
-				json(body) {
-					jsonBody = body;
-					return this;
-				}
-			};
-
-			await addComment(req, res);
-
-			expect(statusCode).toBe(201);
-			expect(jsonBody.message).toBe("Reply added successfully");
-		});
-
-		test("successfully adds reply to reply with reply ID (positive test)", async () => {
-			const mockBoard = {
-				id: "board123",
-				title: "Test Board",
-				comments: [
-					{ 
-						id: "comment123", 
-						author: "user1", 
-						comment: "Original comment", 
+					{
+						_id: "comment123",
 						replies: [
-							{ id: "reply123", author: "user2", reply: "First reply" }
+							{
+								_id: "reply123",
+								reply: "I agree!",
+								author: "user3",
+								timestamp: new Date()
+							}
 						]
 					}
 				]
 			};
+			mockModel.findOneAndUpdate = () => ({ lean: () => Promise.resolve(mockDoc) });
 
-			CoachingBoard.getById = async () => mockBoard;
-			CoachingBoard.addReply = async () => mockBoard;
+			const result = await dao.addReply({
+				id: "board123",
+				commentId: "comment123",
+				author: "user3",
+				reply: "I agree!",
+				timestamp: new Date()
+			});
 
-			const mockSocket = {
-				emitCoachingBoardReply: () => {},
-				emitCoachingBoardNotification: () => {}
-			};
-			const mockApp = {
-				get: (key) => key === "socketInstance" ? mockSocket : null
-			};
-
-			User.getUsernameById = async () => "testuser";
-
-			let statusCode = null;
-			let jsonBody = null;
-			const req = {
-				params: { bid: "board123" },
-				body: { comment: "@username#reply:reply123: This is a nested reply" },
-				user: { id: "user123" },
-				userId: "user123",
-				app: mockApp
-			};
-			const res = {
-				status(code) {
-					statusCode = code;
-					return this;
-				},
-				json(body) {
-					jsonBody = body;
-					return this;
-				}
-			};
-
-			await addComment(req, res);
-
-			expect(statusCode).toBe(201);
-			expect(jsonBody.message).toBe("Reply added successfully");
+			expect(result).not.toBeNull();
+			expect(result.comments[0].replies.length).toBe(1);
+			expect(result.comments[0].replies[0].reply).toBe("I agree!");
 		});
 
-		test("successfully adds reply by username lookup (positive test)", async () => {
-			const mockBoard = {
-				id: "board123",
-				title: "Test Board",
+		test("returns null when board does not exist (negative test)", async () => {
+			mockModel.findOneAndUpdate = () => ({ lean: () => Promise.resolve(null) });
+
+			const result = await dao.addReply({
+				id: "nonexistent",
+				commentId: "comment123",
+				author: "user3",
+				reply: "I agree!",
+				timestamp: new Date()
+			});
+
+			expect(result).toBeNull();
+		});
+
+		test("sets replyTo when provided (positive test)", async () => {
+			const mockDoc = {
+				_id: "board123",
 				comments: [
-					{ 
-						id: "comment123", 
-						author: "user1", 
-						comment: "Original comment", 
-						replies: []
+					{
+						_id: "comment123",
+						replies: [
+							{
+								_id: "reply123",
+								reply: "I agree!",
+								replyTo: "reply1"
+							}
+						]
 					}
 				]
 			};
+			mockModel.findOneAndUpdate = () => ({ lean: () => Promise.resolve(mockDoc) });
 
-			CoachingBoard.getById = async () => mockBoard;
-			CoachingBoard.addReply = async () => mockBoard;
+			const result = await dao.addReply({
+				id: "board123",
+				commentId: "comment123",
+				author: "user3",
+				reply: "I agree!",
+				timestamp: new Date(),
+				replyTo: "reply1"
+			});
 
-			const mockSocket = {
-				emitCoachingBoardReply: () => {},
-				emitCoachingBoardNotification: () => {}
-			};
-			const mockApp = {
-				get: (key) => key === "socketInstance" ? mockSocket : null
-			};
-
-			User.getUsernameById = async (id) => {
-				if (id === "user1") return "targetuser";
-				return "testuser";
-			};
-
-			let statusCode = null;
-			let jsonBody = null;
-			const req = {
-				params: { bid: "board123" },
-				body: { comment: "@targetuser: This is a reply" },
-				user: { id: "user123" },
-				userId: "user123",
-				app: mockApp
-			};
-			const res = {
-				status(code) {
-					statusCode = code;
-					return this;
-				},
-				json(body) {
-					jsonBody = body;
-					return this;
-				}
-			};
-
-			await addComment(req, res);
-
-			expect(statusCode).toBe(201);
-			expect(jsonBody.message).toBe("Reply added successfully");
-		});
-
-		test("returns 404 when board not found for reply (negative test)", async () => {
-			CoachingBoard.getById = async () => null;
-
-			let statusCode = null;
-			let jsonBody = null;
-			const req = {
-				params: { bid: "nonexistent" },
-				body: { comment: "@username: Reply text" },
-				user: { id: "user123" },
-				userId: "user123",
-				app: {}
-			};
-			const res = {
-				status(code) {
-					statusCode = code;
-					return this;
-				},
-				json(body) {
-					jsonBody = body;
-					return this;
-				}
-			};
-
-			await addComment(req, res);
-
-			expect(statusCode).toBe(404);
-			expect(jsonBody.status).toBe("error");
-			expect(jsonBody.message).toBe("Board not found");
-		});
-	});
-
-	describe("getMoreReplies", () => {
-		test("returns 400 when board id or comment id is missing (negative test)", async () => {
-			let statusCode = null;
-			let jsonBody = null;
-			const req = {
-				params: { bid: "board123" },
-				query: {},
-				app: {}
-			};
-			const res = {
-				status(code) {
-					statusCode = code;
-					return this;
-				},
-				json(body) {
-					jsonBody = body;
-					return this;
-				}
-			};
-
-			await getMoreReplies(req, res);
-
-			expect(statusCode).toBe(400);
-			expect(jsonBody.status).toBe("error");
-			expect(jsonBody.message).toContain("Missing board id or comment id");
+			expect(result.comments[0].replies[0].replyTo).toBe("reply1");
 		});
 	});
 
 	describe("toggleReplyLike", () => {
-		test("returns 400 when missing required fields (negative test)", async () => {
-			let statusCode = null;
-			let jsonBody = null;
-			const req = {
-				params: { bid: "board123", cid: "comment123" },
-				user: { id: "user123" },
-				userId: "user123",
-				app: {}
+		test("toggles like on reply (positive test)", async () => {
+			const mockReply = {
+				_id: "reply123",
+				likes: []
 			};
-			const res = {
-				status(code) {
-					statusCode = code;
-					return this;
-				},
-				json(body) {
-					jsonBody = body;
-					return this;
+			const mockComment = {
+				_id: "comment123",
+				replies: {
+					id: () => mockReply
 				}
 			};
+			const mockBoard = {
+				_id: "board123",
+				comments: {
+					id: () => mockComment
+				},
+				save: async () => {},
+				toObject: () => ({
+					_id: "board123",
+					comments: [
+						{
+							_id: "comment123",
+							replies: [
+								{
+									_id: "reply123",
+									likes: ["user4"]
+								}
+							]
+						}
+					]
+				})
+			};
+			mockModel.findOne = async () => mockBoard;
+			mockBoard.comments.id = () => mockComment;
+			mockComment.replies.id = () => mockReply;
 
-			await toggleReplyLike(req, res);
+			const result = await dao.toggleReplyLike({
+				id: "board123",
+				commentId: "comment123",
+				replyId: "reply123",
+				userId: "user4"
+			});
 
-			expect(statusCode).toBe(400);
-			expect(jsonBody.status).toBe("error");
-			expect(jsonBody.message).toContain("Missing required fields");
+			expect(result).not.toBeNull();
 		});
 
-		test("successfully toggles reply like (positive test)", async () => {
-			const mockBoard = { id: "board123" };
-			CoachingBoard.toggleReplyLike = async () => mockBoard;
+		test("returns null when board does not exist (negative test)", async () => {
+			mockModel.findOne = () => null;
 
-			let statusCode = null;
-			let jsonBody = null;
-			const req = {
-				params: { bid: "board123", cid: "comment123", rid: "reply123" },
-				user: { id: "user123" },
-				userId: "user123",
-				app: {}
-			};
-			const res = {
-				status(code) {
-					statusCode = code;
-					return this;
-				},
-				json(body) {
-					jsonBody = body;
-					return this;
-				}
-			};
+			const result = await dao.toggleReplyLike({
+				id: "nonexistent",
+				commentId: "comment123",
+				replyId: "reply123",
+				userId: "user4"
+			});
 
-			await toggleReplyLike(req, res);
-
-			expect(statusCode).toBe(200);
-			expect(jsonBody.message).toBe("Like toggled successfully");
+			expect(result).toBeNull();
 		});
 
-		test("handles database error (negative test)", async () => {
-			CoachingBoard.toggleReplyLike = async () => {
-				throw new Error("Database error");
-			};
-
-			let statusCode = null;
-			let jsonBody = null;
-			const req = {
-				params: { bid: "board123", cid: "comment123", rid: "reply123" },
-				user: { id: "user123" },
-				userId: "user123",
-				app: {}
-			};
-			const res = {
-				status(code) {
-					statusCode = code;
-					return this;
-				},
-				json(body) {
-					jsonBody = body;
-					return this;
+		test("returns null when reply does not exist (negative test)", async () => {
+			const mockComment = {
+				_id: "comment123",
+				replies: {
+					id: () => null
 				}
 			};
+			const mockBoard = {
+				_id: "board123",
+				comments: {
+					id: () => mockComment
+				}
+			};
+			mockModel.findOne = async () => mockBoard;
+			mockBoard.comments.id = () => mockComment;
 
-			await toggleReplyLike(req, res);
+			const result = await dao.toggleReplyLike({
+				id: "board123",
+				commentId: "comment123",
+				replyId: "nonexistent",
+				userId: "user4"
+			});
 
-			expect(statusCode).toBe(500);
-			expect(jsonBody.status).toBe("error");
-			expect(jsonBody.message).toBe("Server error");
+			expect(result).toBeNull();
 		});
 	});
 
 	describe("deleteReply", () => {
-		test("returns 400 when missing required fields (negative test)", async () => {
-			let statusCode = null;
-			let jsonBody = null;
-			const req = {
-				params: { bid: "board123", cid: "comment123" },
-				user: { id: "user123" },
-				userId: "user123",
-				app: {}
+		test("deletes reply when author matches (positive test)", async () => {
+			const mockReply = {
+				_id: "reply123",
+				author: "user3",
+				replyTo: null
 			};
-			const res = {
-				status(code) {
-					statusCode = code;
-					return this;
+			const mockRepliesArray = [mockReply];
+			mockRepliesArray.id = (id) => {
+				if (String(id) === String(mockReply._id)) return mockReply;
+				return null;
+			};
+			mockRepliesArray.pull = (id) => {
+				const index = mockRepliesArray.findIndex(r => String(r._id) === String(id));
+				if (index !== -1) mockRepliesArray.splice(index, 1);
+			};
+			
+			const mockComment = {
+				_id: "comment123",
+				replies: mockRepliesArray
+			};
+			const mockBoard = {
+				_id: "board123",
+				comments: {
+					id: () => mockComment
 				},
-				json(body) {
-					jsonBody = body;
-					return this;
-				}
+				save: async () => {},
+				toObject: () => ({
+					_id: "board123",
+					comments: [
+						{
+							_id: "comment123",
+							replies: []
+						}
+					]
+				})
 			};
+			mockModel.findOne = () => Promise.resolve(mockBoard);
+			mockBoard.comments.id = () => mockComment;
 
-			await deleteReply(req, res);
+			const result = await dao.deleteReply({
+				id: "board123",
+				commentId: "comment123",
+				replyId: "reply123",
+				author: "user3"
+			});
 
-			expect(statusCode).toBe(400);
-			expect(jsonBody.status).toBe("error");
-			expect(jsonBody.message).toContain("Missing required fields");
+			expect(result).not.toBeNull();
 		});
 
-		test("handles socket notification error gracefully (negative test)", async () => {
-			CoachingBoard.deleteReply = async () => ({ id: "board123" });
-
-			const mockSocket = {
-				emitCoachingBoardReplyDeleted: () => {
-					throw new Error("Socket error");
+		test("returns null when author does not match (negative test)", async () => {
+			const mockReply = {
+				_id: "reply123",
+				author: "user3"
+			};
+			const mockComment = {
+				_id: "comment123",
+				replies: {
+					id: () => mockReply
 				}
 			};
-			const mockApp = {
-				get: (key) => key === "socketInstance" ? mockSocket : null
-			};
-
-			let statusCode = null;
-			let jsonBody = null;
-			const req = {
-				params: { bid: "board123", cid: "comment123", rid: "reply123" },
-				user: { id: "user123" },
-				userId: "user123",
-				app: mockApp
-			};
-			const res = {
-				status(code) {
-					statusCode = code;
-					return this;
-				},
-				json(body) {
-					jsonBody = body;
-					return this;
+			const mockBoard = {
+				_id: "board123",
+				comments: {
+					id: () => mockComment
 				}
 			};
+			mockModel.findOne = async () => mockBoard;
+			mockBoard.comments.id = () => mockComment;
+			mockComment.replies.id = () => mockReply;
 
-			await deleteReply(req, res);
+			const result = await dao.deleteReply({
+				id: "board123",
+				commentId: "comment123",
+				replyId: "reply123",
+				author: "user4"
+			});
 
-			expect(statusCode).toBe(200);
-			expect(jsonBody.message).toBe("Reply deleted successfully");
-		});
-
-		test("handles database error (negative test)", async () => {
-			CoachingBoard.deleteReply = async () => {
-				throw new Error("Database error");
-			};
-
-			let statusCode = null;
-			let jsonBody = null;
-			const req = {
-				params: { bid: "board123", cid: "comment123", rid: "reply123" },
-				user: { id: "user123" },
-				userId: "user123",
-				app: {}
-			};
-			const res = {
-				status(code) {
-					statusCode = code;
-					return this;
-				},
-				json(body) {
-					jsonBody = body;
-					return this;
-				}
-			};
-
-			await deleteReply(req, res);
-
-			expect(statusCode).toBe(500);
-			expect(jsonBody.status).toBe("error");
-			expect(jsonBody.message).toBe("Server error");
+			expect(result).toBeNull();
 		});
 	});
 });
-

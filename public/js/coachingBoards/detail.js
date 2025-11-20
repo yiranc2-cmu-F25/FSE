@@ -501,7 +501,11 @@ function render(board) {
 
 	async function updateLikeButtonAfterToggle(commentId, replyId, likeCountSpan, btn, svg, currentUserId) {
 		const boardRes = await fetch(`/api/coaching-boards/${boardId}`, { credentials: "include" });
-		if (!boardRes.ok) return;
+		if (!boardRes.ok) {
+			// If API call fails, fallback to DOM-based toggle
+			toggleLikeButtonFromDOM(likeCountSpan, btn, svg);
+			return;
+		}
 		
 		const updatedBoard = await boardRes.json();
 		if (replyId) {
@@ -518,10 +522,12 @@ function render(board) {
 					const likes = updatedReply.likes || [];
 					updateLikeButtonUI(likes, currentUserId, likeCountSpan, btn, svg);
 				} else {
-					console.warn("Reply not found after like toggle:", { replyId, commentId, replies: comment.replies });
+					// Reply not found (likely in "show more" section), fallback to DOM-based toggle
+					toggleLikeButtonFromDOM(likeCountSpan, btn, svg);
 				}
 			} else {
-				console.warn("Comment not found after like toggle:", { commentId, comments: updatedBoard.comments });
+				// Comment not found, fallback to DOM-based toggle
+				toggleLikeButtonFromDOM(likeCountSpan, btn, svg);
 			}
 		} else {
 			const updatedComment = (updatedBoard.comments || []).find(c => {
@@ -531,7 +537,33 @@ function render(board) {
 			if (updatedComment) {
 				const likes = updatedComment.likes || [];
 				updateLikeButtonUI(likes, currentUserId, likeCountSpan, btn, svg);
+			} else {
+				// Comment not found, fallback to DOM-based toggle
+				toggleLikeButtonFromDOM(likeCountSpan, btn, svg);
 			}
+		}
+	}
+
+	function toggleLikeButtonFromDOM(likeCountSpan, btn, svg) {
+		// Read current state from DOM and toggle it
+		const currentCount = parseInt(likeCountSpan.textContent) || 0;
+		const isCurrentlyLiked = btn.classList.contains("text-red-600");
+		
+		// Toggle the like state
+		const newCount = isCurrentlyLiked ? currentCount - 1 : currentCount + 1;
+		
+		likeCountSpan.textContent = newCount;
+		
+		if (isCurrentlyLiked) {
+			// Unlike: change from liked to unliked
+			btn.classList.remove("text-red-600");
+			btn.classList.add("text-gray-600", "hover:text-red-600");
+			svg.setAttribute("fill", "none");
+		} else {
+			// Like: change from unliked to liked
+			btn.classList.remove("text-gray-600", "hover:text-red-600");
+			btn.classList.add("text-red-600");
+			svg.setAttribute("fill", "currentColor");
 		}
 	}
 

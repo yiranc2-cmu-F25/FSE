@@ -1,902 +1,403 @@
-import {
-	publishBoard,
-	updateBoard,
-	deleteBoard
-} from "../controllers/coachingBoardController.js";
-import CoachingBoard from "../entities/CoachingBoard.js";
-import User from "../entities/User.js";
-import CoachingBoardDac from "../dacs/coachingBoardDac.js";
-import CategorySkillPresetDac from "../dacs/categorySkillPresetDac.js";
-import UserDac from "../dacs/userDac.js";
-import AnnouncementDac from "../dacs/announcementDac.js";
-import { inMemoryCoachingBoardDao } from "../daos/inMemoryCoachingBoardDao.js";
-import { inMemoryCategorySkillPresetDao } from "../daos/inMemoryCategorySkillPresetDao.js";
-import { inMemoryUserDao } from "../daos/inMemoryUserDao.js";
-import { inMemoryAnnouncementDao } from "../daos/inMemoryAnnouncementDao.js";
+import { CoachingBoardDao } from "../daos/CoachingBoardDao.js";
 
-describe("Coaching Board Controller - Unit Tests (Board Management)", () => {
-	let originalCoachingBoardDao;
-	let originalCategorySkillPresetDao;
-	let originalUserDao;
-	let originalAnnouncementDao;
+describe("Coaching Board DAO - Unit Tests", () => {
+	let dao;
+	let mockModel;
 
 	beforeEach(() => {
-		try {
-			originalCoachingBoardDao = CoachingBoardDac.DAO;
-		} catch {
-			originalCoachingBoardDao = null;
-		}
-		try {
-			originalCategorySkillPresetDao = CategorySkillPresetDac.DAO;
-		} catch {
-			originalCategorySkillPresetDao = null;
-		}
-		try {
-			originalUserDao = UserDac.DAO;
-		} catch {
-			originalUserDao = null;
-		}
-		try {
-			originalAnnouncementDao = AnnouncementDac.DAO;
-		} catch {
-			originalAnnouncementDao = null;
-		}
+		const createChainableMock = (result) => ({
+			lean: () => Promise.resolve(result),
+			select: () => createChainableMock(result),
+			sort: () => createChainableMock(result)
+		});
 
-		// Inject fresh in-memory DAOs for each test
-		CoachingBoardDac.DAO = new inMemoryCoachingBoardDao();
-		CategorySkillPresetDac.DAO = new inMemoryCategorySkillPresetDao();
-		UserDac.DAO = new inMemoryUserDao();
-		AnnouncementDac.DAO = new inMemoryAnnouncementDao();
+		mockModel = {
+			exists: async () => false,
+			findOneAndUpdate: () => createChainableMock(null),
+			findOne: () => createChainableMock(null),
+			create: async () => ({ toObject: () => ({ _id: "123", title: "Test" }) }),
+			deleteOne: async () => ({ deletedCount: 0 }),
+			find: () => createChainableMock([]),
+			countDocuments: async () => 0,
+			findById: () => createChainableMock(null),
+			updateOne: async () => {}
+		};
+		dao = new CoachingBoardDao({ CoachingBoardModel: mockModel });
 	});
 
-	afterEach(() => {
-		// Restore original DAOs (or set to null if they weren't set)
-		if (originalCoachingBoardDao !== null) {
-			CoachingBoardDac.DAO = originalCoachingBoardDao;
-		} else {
-			CoachingBoardDac.DAO = null;
-		}
-		if (originalCategorySkillPresetDao !== null) {
-			CategorySkillPresetDac.DAO = originalCategorySkillPresetDao;
-		} else {
-			CategorySkillPresetDac.DAO = null;
-		}
-		if (originalUserDao !== null) {
-			UserDac.DAO = originalUserDao;
-		} else {
-			UserDac.DAO = null;
-		}
-		if (originalAnnouncementDao !== null) {
-			AnnouncementDac.DAO = originalAnnouncementDao;
-		} else {
-			AnnouncementDac.DAO = null;
-		}
+	describe("checkDuplicateTitle", () => {
+		test("returns false when no duplicate exists (positive test)", async () => {
+			mockModel.exists = async () => false;
+
+			const result = await dao.checkDuplicateTitle({ title: "New Title", category: "Technical" });
+
+			expect(result).toBe(false);
+		});
+
+		test("returns true when duplicate exists (positive test)", async () => {
+			mockModel.exists = async () => true;
+
+			const result = await dao.checkDuplicateTitle({ title: "Existing Title", category: "Technical" });
+
+			expect(result).toBe(true);
+		});
+
+		test("calls Model.exists with correct parameters (positive test)", async () => {
+			let calledWith = null;
+			mockModel.exists = async (query) => {
+				calledWith = query;
+				return false;
+			};
+
+			await dao.checkDuplicateTitle({ title: "Test Title", category: "Technical" });
+
+			expect(calledWith.publicationState).toBe("published");
+			expect(calledWith.category).toBe("Technical");
+		});
 	});
 
-	describe("publishBoard", () => {
-		test("returns 401 when user is not authenticated (negative test)", async () => {
-			let statusCode = null;
-			let jsonBody = null;
-			const req = {
-				body: { title: "Test" },
-				app: {}
-			};
-			const res = {
-				status(code) {
-					statusCode = code;
-					return this;
-				},
-				json(body) {
-					jsonBody = body;
-					return this;
-				}
-			};
-
-			await publishBoard(req, res);
-
-			expect(statusCode).toBe(401);
-			expect(jsonBody.error).toBe("Unauthorized");
-		});
-
-		test("returns 400 when validation fails (negative test)", async () => {
-			// Setup presets
-			await CategorySkillPresetDac.updatePresets({
-				categories: ["Technical"],
-				skills: ["JavaScript"]
+	describe("createDraftOrUpdate", () => {
+		test("creates new draft when no draft exists (positive test)", async () => {
+			const mockDoc = { _id: "123", title: "Draft Title", author: "user1", publicationState: "draft" };
+			mockModel.findOneAndUpdate = () => ({
+				lean: () => Promise.resolve(mockDoc)
 			});
 
-			let statusCode = null;
-			let jsonBody = null;
-			const req = {
-				body: { title: "" }, 
-				user: { id: "user123" },
-				userId: "user123",
-				app: {}
-			};
-			const res = {
-				status(code) {
-					statusCode = code;
-					return this;
-				},
-				json(body) {
-					jsonBody = body;
-					return this;
-				}
-			};
-
-			await publishBoard(req, res);
-
-			expect(statusCode).toBe(400);
-			expect(jsonBody.status).toBe("error");
-			expect(jsonBody.message).toContain("Title must be non-empty");
-		});
-
-		test("returns 409 when duplicate title exists (negative test)", async () => {
-			// Setup presets
-			await CategorySkillPresetDac.updatePresets({
-				categories: ["Technical"],
-				skills: ["JavaScript"]
-			});
-
-			// Create user with skills
-			const user = new User({
-				username: "testuser",
-				password: "password123",
-				skills: ["JavaScript"]
-			});
-			const createdUser = await user.create();
-			const userId = String(createdUser.id);
-
-			// Create a board with the duplicate title first
-			const existingBoard = new CoachingBoard({
-				title: "Duplicate Title",
-				category: "Technical",
-				description: "Test",
-				objective: "Test",
-				steps: ["Step 1"],
-				relatedSkills: ["JavaScript"],
-				author: userId,
-				publicationState: "published"
-			});
-			await existingBoard.publishNew();
-
-			let statusCode = null;
-			let jsonBody = null;
-			const req = {
-				body: {
-					title: "Duplicate Title",
+			const result = await dao.createDraftOrUpdate({
+				author: "user1",
+				payload: {
+					title: "Draft Title",
 					category: "Technical",
-					description: "Test",
-					objective: "Test",
+					description: "Desc",
+					objective: "Obj",
 					steps: ["Step 1"],
 					relatedSkills: ["JavaScript"]
-				},
-				user: { id: userId },
-				userId: userId,
-				app: {}
-			};
-			const res = {
-				status(code) {
-					statusCode = code;
-					return this;
-				},
-				json(body) {
-					jsonBody = body;
-					return this;
 				}
-			};
+			});
 
-			await publishBoard(req, res);
-
-			expect(statusCode).toBe(409);
-			expect(jsonBody.errorStatus).toBe("DUPLICATE_TITLE");
-			expect(jsonBody.message).toContain("already exists");
+			expect(result.title).toBe("Draft Title");
+			expect(result.author).toBe("user1");
 		});
 
-		test("returns 400 when user has no matching skills (negative test)", async () => {
-			// Setup presets
-			await CategorySkillPresetDac.updatePresets({
-				categories: ["Technical"],
-				skills: ["JavaScript", "Python"]
+		test("updates existing draft when draft exists (positive test)", async () => {
+			const mockDoc = { _id: "123", title: "Updated Title", author: "user1", publicationState: "draft" };
+			mockModel.findOneAndUpdate = () => ({
+				lean: () => Promise.resolve(mockDoc)
 			});
 
-			// Create user with only Python skill (not JavaScript)
-			const user = new User({
-				username: "testuser",
-				password: "password123",
-				skills: ["Python"]
+			const result = await dao.createDraftOrUpdate({
+				author: "user1",
+				payload: { title: "Updated Title" }
 			});
-			const createdUser = await user.create();
-			const userId = String(createdUser.id);
 
-			let statusCode = null;
-			let jsonBody = null;
-			const req = {
-				body: {
-					title: "New Title",
-					category: "Technical",
-					description: "Test",
-					objective: "Test",
-					steps: ["Step 1"],
-					relatedSkills: ["JavaScript"] 
-				},
-				user: { id: userId },
-				userId: userId,
-				app: {}
-			};
-			const res = {
-				status(code) {
-					statusCode = code;
-					return this;
-				},
-				json(body) {
-					jsonBody = body;
-					return this;
-				}
-			};
+			expect(result.title).toBe("Updated Title");
+		});
+	});
 
-			await publishBoard(req, res);
+	describe("getMyDraft", () => {
+		test("returns draft when draft exists (positive test)", async () => {
+			const mockDoc = { _id: "123", title: "Draft Title", author: "user1", publicationState: "draft" };
+			mockModel.findOne = () => ({
+				lean: () => Promise.resolve(mockDoc)
+			});
 
-			expect(statusCode).toBe(400);
-			expect(jsonBody.status).toBe("error");
-			expect(jsonBody.message).toContain("At least one related skill must be a verified skill");
+			const result = await dao.getMyDraft({ author: "user1" });
+
+			expect(result).not.toBeNull();
+			expect(result.title).toBe("Draft Title");
 		});
 
-		test("successfully publishes board when all validations pass (positive test)", async () => {
-			// Setup presets
-			await CategorySkillPresetDac.updatePresets({
-				categories: ["Technical"],
-				skills: ["JavaScript"]
+		test("returns null when no draft exists (negative test)", async () => {
+			mockModel.findOne = () => ({
+				lean: () => Promise.resolve(null)
 			});
 
-			// Create user with matching skills
-			const user = new User({
-				username: "testuser",
-				password: "password123",
-				skills: ["JavaScript"]
-			});
-			const createdUser = await user.create();
-			const userId = String(createdUser.id);
+			const result = await dao.getMyDraft({ author: "user1" });
 
-			let statusCode = null;
-			let jsonBody = null;
-			const req = {
-				body: {
-					title: "New Title",
+			expect(result).toBeNull();
+		});
+	});
+
+	describe("publishNew", () => {
+		test("creates new published board (positive test)", async () => {
+			const mockDoc = {
+				toObject: () => ({
+					_id: "123",
+					title: "Published Title",
+					author: "user1",
+					publicationState: "published",
+					subscribers: ["user1"]
+				})
+			};
+			mockModel.create = async () => mockDoc;
+
+			const result = await dao.publishNew({
+				author: "user1",
+				payload: {
+					title: "Published Title",
 					category: "Technical",
-					description: "Test description",
-					objective: "Test objective",
+					description: "Desc",
+					objective: "Obj",
 					steps: ["Step 1"],
 					relatedSkills: ["JavaScript"]
-				},
-				user: { id: userId },
-				userId: userId,
-				app: {}
-			};
-			const res = {
-				status(code) {
-					statusCode = code;
-					return this;
-				},
-				json(body) {
-					jsonBody = body;
-					return this;
 				}
+			});
+
+			expect(result.title).toBe("Published Title");
+			expect(result.author).toBe("user1");
+			expect(result.publicationState).toBe("published");
+		});
+
+		test("automatically subscribes author (positive test)", async () => {
+			let createCalledWith = null;
+			const mockDoc = {
+				toObject: () => ({
+					_id: "123",
+					title: "Published Title",
+					author: "user1",
+					publicationState: "published",
+					subscribers: ["user1"]
+				})
+			};
+			mockModel.create = async (data) => {
+				createCalledWith = data;
+				return mockDoc;
 			};
 
-			await publishBoard(req, res);
+			await dao.publishNew({
+				author: "user1",
+				payload: {
+					title: "Published Title",
+					category: "Technical",
+					description: "Desc",
+					objective: "Obj",
+					steps: ["Step 1"],
+					relatedSkills: ["JavaScript"]
+				}
+			});
 
-			expect(statusCode).toBe(201);
-			expect(jsonBody.message).toBe("Board published successfully");
-			expect(jsonBody.boardId).toBeDefined();
+			expect(createCalledWith.subscribers).toContain("user1");
+			expect(createCalledWith.publicationState).toBe("published");
+		});
+	});
+
+	describe("deleteDraft", () => {
+		test("calls Model.deleteOne with correct parameters (positive test)", async () => {
+			let calledWith = null;
+			mockModel.deleteOne = async (query) => {
+				calledWith = query;
+				return { deletedCount: 1 };
+			};
+
+			await dao.deleteDraft({ author: "user1" });
+
+			expect(calledWith.author).toBe("user1");
+			expect(calledWith.publicationState).toBe("draft");
+		});
+	});
+
+	describe("publishFromDraft", () => {
+		test("deletes draft and publishes new board (positive test)", async () => {
+			let deleteCalled = false;
+			let createCalled = false;
+
+			mockModel.deleteOne = async () => {
+				deleteCalled = true;
+			};
+
+			const mockDoc = {
+				toObject: () => ({
+					_id: "123",
+					title: "Published Title",
+					author: "user1",
+					publicationState: "published"
+				})
+			};
+			mockModel.create = async () => {
+				createCalled = true;
+				return mockDoc;
+			};
+
+			const result = await dao.publishFromDraft({
+				author: "user1",
+				payload: {
+					title: "Published Title",
+					category: "Technical",
+					description: "Desc",
+					objective: "Obj",
+					steps: ["Step 1"],
+					relatedSkills: ["JavaScript"]
+				}
+			});
+
+			expect(deleteCalled).toBe(true);
+			expect(createCalled).toBe(true);
+			expect(result.title).toBe("Published Title");
+		});
+	});
+
+	describe("listPublished", () => {
+		test("returns only published boards (positive test)", async () => {
+			const mockDocs = [
+				{ _id: "1", title: "Published 1", publicationState: "published" },
+				{ _id: "2", title: "Published 2", publicationState: "published" }
+			];
+			mockModel.find = () => ({
+				sort: () => ({
+					select: () => ({
+						lean: () => Promise.resolve(mockDocs)
+					})
+				})
+			});
+
+			const result = await dao.listPublished();
+
+			expect(result.length).toBe(2);
+		});
+
+		test("returns empty array when no published boards (negative test)", async () => {
+			mockModel.find = () => ({
+				sort: () => ({
+					select: () => ({
+						lean: () => Promise.resolve([])
+					})
+				})
+			});
+
+			const result = await dao.listPublished();
+
+			expect(result).toEqual([]);
+		});
+	});
+
+	describe("getById", () => {
+		test("returns board when board exists (positive test)", async () => {
+			const mockDoc = { _id: "123", title: "Test Board", author: "user1" };
+			mockModel.findById = () => ({
+				lean: () => Promise.resolve(mockDoc)
+			});
+
+			const result = await dao.getById({ id: "123" });
+
+			expect(result).not.toBeNull();
+			expect(result.id).toBe("123");
+		});
+
+		test("returns null when board does not exist (negative test)", async () => {
+			mockModel.findById = () => ({
+				lean: () => Promise.resolve(null)
+			});
+
+			const result = await dao.getById({ id: "nonexistent" });
+
+			expect(result).toBeNull();
 		});
 	});
 
 	describe("updateBoard", () => {
-		test("returns 403 when user is not the author (negative test)", async () => {
-			// Setup presets
-			await CategorySkillPresetDac.updatePresets({
-				categories: ["Technical"],
-				skills: ["JavaScript"]
+		test("updates board when author matches (positive test)", async () => {
+			const mockDoc = { _id: "123", title: "New Title", author: "user1", publicationState: "published" };
+			mockModel.findOneAndUpdate = () => ({
+				lean: () => Promise.resolve(mockDoc)
 			});
 
-			// Create owner user
-			const ownerUser = new User({
-				username: "owner",
-				password: "password123",
-				skills: ["JavaScript"]
+			const result = await dao.updateBoard({
+				id: "123",
+				author: "user1",
+				update: { title: "New Title" }
 			});
-			const createdOwner = await ownerUser.create();
-			const ownerId = String(createdOwner.id);
 
-			// Create other user
-			const otherUser = new User({
-				username: "other",
-				password: "password123",
-				skills: ["JavaScript"]
-			});
-			const createdOther = await otherUser.create();
-			const otherId = String(createdOther.id);
-
-			// Create a board owned by owner
-			const board = new CoachingBoard({
-				title: "Original Title",
-				category: "Technical",
-				description: "Description",
-				objective: "Objective",
-				steps: ["Step 1"],
-				relatedSkills: ["JavaScript"],
-				author: ownerId,
-				publicationState: "published"
-			});
-			const createdBoard = await board.publishNew();
-			const boardId = createdBoard.id;
-
-			let statusCode = null;
-			let jsonBody = null;
-			const req = {
-				params: { bid: boardId },
-				body: { title: "Updated Title" },
-				user: { id: otherId },
-				userId: otherId,
-				app: {}
-			};
-			const res = {
-				status(code) {
-					statusCode = code;
-					return this;
-				},
-				json(body) {
-					jsonBody = body;
-					return this;
-				}
-			};
-
-			await updateBoard(req, res);
-
-			expect(statusCode).toBe(403);
-			expect(jsonBody.status).toBe("error");
-			expect(jsonBody.message).toContain("permission");
+			expect(result).not.toBeNull();
+			expect(result.title).toBe("New Title");
 		});
 
-		test("successfully updates board when user is the author (positive test)", async () => {
-			// Setup presets
-			await CategorySkillPresetDac.updatePresets({
-				categories: ["Technical"],
-				skills: ["JavaScript"]
+		test("returns null when author does not match (negative test)", async () => {
+			mockModel.findOneAndUpdate = () => ({
+				lean: () => Promise.resolve(null)
 			});
 
-			// Create user
-			const user = new User({
-				username: "testuser",
-				password: "password123",
-				skills: ["JavaScript"]
-			});
-			const createdUser = await user.create();
-			const userId = String(createdUser.id);
-
-			// Create a board
-			const board = new CoachingBoard({
-				title: "Original Title",
-				category: "Technical",
-				description: "Description",
-				objective: "Objective",
-				steps: ["Step 1"],
-				relatedSkills: ["JavaScript"],
-				author: userId,
-				publicationState: "published"
-			});
-			const createdBoard = await board.publishNew();
-			const boardId = createdBoard.id;
-
-			// Subscribe another user to test notifications
-			const subscriber = new User({
-				username: "subscriber",
-				password: "password123",
-				skills: []
-			});
-			const createdSubscriber = await subscriber.create();
-			await CoachingBoard.subscribe({ id: boardId, userId: String(createdSubscriber.id) });
-
-			const mockSocket = {
-				emitCoachingBoardNotification: () => {}
-			};
-			const mockApp = {
-				get: (key) => key === "socketInstance" ? mockSocket : null
-			};
-
-			let statusCode = null;
-			let jsonBody = null;
-			const req = {
-				params: { bid: boardId },
-				body: { title: "Updated Title" },
-				user: { id: userId },
-				userId: userId,
-				app: mockApp
-			};
-			const res = {
-				status(code) {
-					statusCode = code;
-					return this;
-				},
-				json(body) {
-					jsonBody = body;
-					return this;
-				}
-			};
-
-			await updateBoard(req, res);
-
-			expect(statusCode).toBe(200);
-			expect(jsonBody.message).toBe("Board updated successfully");
-			expect(jsonBody.boardId).toBe(boardId);
-		});
-
-		test("returns 400 when missing board id (negative test)", async () => {
-			let statusCode = null;
-			let jsonBody = null;
-			const req = {
-				params: {},
-				body: { title: "Updated Title" },
-				user: { id: "user123" },
-				userId: "user123",
-				app: {}
-			};
-			const res = {
-				status(code) {
-					statusCode = code;
-					return this;
-				},
-				json(body) {
-					jsonBody = body;
-					return this;
-				}
-			};
-
-			await updateBoard(req, res);
-
-			expect(statusCode).toBe(400);
-			expect(jsonBody.status).toBe("error");
-			expect(jsonBody.message).toContain("Missing board id");
-		});
-
-		test("returns 400 when relatedSkills is empty array (negative test)", async () => {
-			// Setup presets
-			await CategorySkillPresetDac.updatePresets({
-				categories: ["Technical"],
-				skills: ["JavaScript"]
+			const result = await dao.updateBoard({
+				id: "123",
+				author: "user2",
+				update: { title: "New Title" }
 			});
 
-			// Create user and board
-			const user = new User({
-				username: "testuser",
-				password: "password123",
-				skills: ["JavaScript"]
-			});
-			const createdUser = await user.create();
-			const userId = String(createdUser.id);
-
-			const board = new CoachingBoard({
-				title: "Original Title",
-				category: "Technical",
-				description: "Description",
-				objective: "Objective",
-				steps: ["Step 1"],
-				relatedSkills: ["JavaScript"],
-				author: userId,
-				publicationState: "published"
-			});
-			const createdBoard = await board.publishNew();
-			const boardId = createdBoard.id;
-
-			let statusCode = null;
-			let jsonBody = null;
-			const req = {
-				params: { bid: boardId },
-				body: { relatedSkills: [] },
-				user: { id: userId },
-				userId: userId,
-				app: {}
-			};
-			const res = {
-				status(code) {
-					statusCode = code;
-					return this;
-				},
-				json(body) {
-					jsonBody = body;
-					return this;
-				}
-			};
-
-			await updateBoard(req, res);
-
-			expect(statusCode).toBe(400);
-			expect(jsonBody.status).toBe("error");
-			expect(jsonBody.message).toContain("At least one related skill is required");
-		});
-
-		test("returns 400 when relatedSkills contains non-preset skill (negative test)", async () => {
-			// Setup presets
-			await CategorySkillPresetDac.updatePresets({
-				categories: ["Technical"],
-				skills: ["JavaScript"]
-			});
-
-			// Create user and board
-			const user = new User({
-				username: "testuser",
-				password: "password123",
-				skills: ["JavaScript"]
-			});
-			const createdUser = await user.create();
-			const userId = String(createdUser.id);
-
-			const board = new CoachingBoard({
-				title: "Original Title",
-				category: "Technical",
-				description: "Description",
-				objective: "Objective",
-				steps: ["Step 1"],
-				relatedSkills: ["JavaScript"],
-				author: userId,
-				publicationState: "published"
-			});
-			const createdBoard = await board.publishNew();
-			const boardId = createdBoard.id;
-
-			let statusCode = null;
-			let jsonBody = null;
-			const req = {
-				params: { bid: boardId },
-				body: { relatedSkills: ["InvalidSkill"] },
-				user: { id: userId },
-				userId: userId,
-				app: {}
-			};
-			const res = {
-				status(code) {
-					statusCode = code;
-					return this;
-				},
-				json(body) {
-					jsonBody = body;
-					return this;
-				}
-			};
-
-			await updateBoard(req, res);
-
-			expect(statusCode).toBe(400);
-			expect(jsonBody.status).toBe("error");
-			expect(jsonBody.message).toContain("Related Skills must be from system preset");
-		});
-
-		test("handles socket notification error gracefully (negative test)", async () => {
-			// Setup presets
-			await CategorySkillPresetDac.updatePresets({
-				categories: ["Technical"],
-				skills: ["JavaScript"]
-			});
-
-			// Create user and board
-			const user = new User({
-				username: "testuser",
-				password: "password123",
-				skills: ["JavaScript"]
-			});
-			const createdUser = await user.create();
-			const userId = String(createdUser.id);
-
-			const board = new CoachingBoard({
-				title: "Original Title",
-				category: "Technical",
-				description: "Description",
-				objective: "Objective",
-				steps: ["Step 1"],
-				relatedSkills: ["JavaScript"],
-				author: userId,
-				publicationState: "published"
-			});
-			const createdBoard = await board.publishNew();
-			const boardId = createdBoard.id;
-
-			// Subscribe another user
-			const subscriber = new User({
-				username: "subscriber",
-				password: "password123",
-				skills: []
-			});
-			const createdSubscriber = await subscriber.create();
-			await CoachingBoard.subscribe({ id: boardId, userId: String(createdSubscriber.id) });
-
-			const mockSocket = {
-				emitCoachingBoardNotification: () => {
-					throw new Error("Socket error");
-				}
-			};
-			const mockApp = {
-				get: (key) => key === "socketInstance" ? mockSocket : null
-			};
-
-			let statusCode = null;
-			let jsonBody = null;
-			const req = {
-				params: { bid: boardId },
-				body: { title: "Updated Title" },
-				user: { id: userId },
-				userId: userId,
-				app: mockApp
-			};
-			const res = {
-				status(code) {
-					statusCode = code;
-					return this;
-				},
-				json(body) {
-					jsonBody = body;
-					return this;
-				}
-			};
-
-			await updateBoard(req, res);
-
-			expect(statusCode).toBe(200);
-			expect(jsonBody.message).toBe("Board updated successfully");
-		});
-
-		test("handles general database error (negative test)", async () => {
-			// Setup presets
-			await CategorySkillPresetDac.updatePresets({
-				categories: ["Technical"],
-				skills: ["JavaScript"]
-			});
-
-			// Mock the DAO's updateBoard method to throw an error
-			const originalUpdateBoard = CoachingBoardDac.DAO.updateBoard;
-			CoachingBoardDac.DAO.updateBoard = async () => {
-				throw new Error("Database error");
-			};
-
-			// Create user and board
-			const user = new User({
-				username: "testuser",
-				password: "password123",
-				skills: ["JavaScript"]
-			});
-			const createdUser = await user.create();
-			const userId = String(createdUser.id);
-
-			const board = new CoachingBoard({
-				title: "Original Title",
-				category: "Technical",
-				description: "Description",
-				objective: "Objective",
-				steps: ["Step 1"],
-				relatedSkills: ["JavaScript"],
-				author: userId,
-				publicationState: "published"
-			});
-			const createdBoard = await board.publishNew();
-			const boardId = createdBoard.id;
-
-			let statusCode = null;
-			let jsonBody = null;
-			const req = {
-				params: { bid: boardId },
-				body: { title: "Updated Title" },
-				user: { id: userId },
-				userId: userId,
-				app: {}
-			};
-			const res = {
-				status(code) {
-					statusCode = code;
-					return this;
-				},
-				json(body) {
-					jsonBody = body;
-					return this;
-				}
-			};
-
-			await updateBoard(req, res);
-
-			expect(statusCode).toBe(500);
-			expect(jsonBody.status).toBe("error");
-			expect(jsonBody.message).toBe("Server error");
-
-			// Restore original method
-			CoachingBoardDac.DAO.updateBoard = originalUpdateBoard;
+			expect(result).toBeNull();
 		});
 	});
 
 	describe("deleteBoard", () => {
-		test("returns 403 when user is not the author (negative test)", async () => {
-			// Create owner user
-			const ownerUser = new User({
-				username: "owner",
-				password: "password123",
-				skills: []
-			});
-			const createdOwner = await ownerUser.create();
-			const ownerId = String(createdOwner.id);
+		test("returns true when board deleted (positive test)", async () => {
+			mockModel.deleteOne = async () => ({ deletedCount: 1 });
 
-			// Create other user
-			const otherUser = new User({
-				username: "other",
-				password: "password123",
-				skills: []
-			});
-			const createdOther = await otherUser.create();
-			const otherId = String(createdOther.id);
+			const result = await dao.deleteBoard({ id: "123", author: "user1" });
 
-			// Setup presets
-			await CategorySkillPresetDac.updatePresets({
-				categories: ["Technical"],
-				skills: ["JavaScript"]
-			});
-
-			// Create a board owned by owner
-			const board = new CoachingBoard({
-				title: "Test Board",
-				category: "Technical",
-				description: "Description",
-				objective: "Objective",
-				steps: ["Step 1"],
-				relatedSkills: ["JavaScript"],
-				author: ownerId,
-				publicationState: "published"
-			});
-			const createdBoard = await board.publishNew();
-			const boardId = createdBoard.id;
-
-			let statusCode = null;
-			let jsonBody = null;
-			const req = {
-				params: { bid: boardId },
-				user: { id: otherId },
-				userId: otherId,
-				app: {}
-			};
-			const res = {
-				status(code) {
-					statusCode = code;
-					return this;
-				},
-				json(body) {
-					jsonBody = body;
-					return this;
-				}
-			};
-
-			await deleteBoard(req, res);
-
-			expect(statusCode).toBe(403);
-			expect(jsonBody.status).toBe("error");
-			expect(jsonBody.message).toContain("permission");
+			expect(result).toBe(true);
 		});
 
-		test("successfully deletes board when user is the author (positive test)", async () => {
-			// Setup presets
-			await CategorySkillPresetDac.updatePresets({
-				categories: ["Technical"],
-				skills: ["JavaScript"]
-			});
+		test("returns false when board not found (negative test)", async () => {
+			mockModel.deleteOne = async () => ({ deletedCount: 0 });
 
-			// Create user
-			const user = new User({
-				username: "testuser",
-				password: "password123",
-				skills: ["JavaScript"]
-			});
-			const createdUser = await user.create();
-			const userId = String(createdUser.id);
+			const result = await dao.deleteBoard({ id: "nonexistent", author: "user1" });
 
-			// Create a board
-			const board = new CoachingBoard({
-				title: "Test Board",
-				category: "Technical",
-				description: "Description",
-				objective: "Objective",
-				steps: ["Step 1"],
-				relatedSkills: ["JavaScript"],
-				author: userId,
-				publicationState: "published"
-			});
-			const createdBoard = await board.publishNew();
-			const boardId = createdBoard.id;
+			expect(result).toBe(false);
+		});
+	});
 
-			let statusCode = null;
-			let jsonBody = null;
-			const req = {
-				params: { bid: boardId },
-				user: { id: userId },
-				userId: userId,
-				app: {}
-			};
-			const res = {
-				status(code) {
-					statusCode = code;
-					return this;
-				},
-				json(body) {
-					jsonBody = body;
-					return this;
-				}
-			};
+	describe("existsPublishedByTitle", () => {
+		test("returns false when no duplicate exists (positive test)", async () => {
+			mockModel.exists = async () => false;
 
-			await deleteBoard(req, res);
+			const result = await dao.existsPublishedByTitle({ title: "New Title" });
 
-			expect(statusCode).toBe(200);
-			expect(jsonBody.message).toBe("Board deleted successfully");
-
-			// Verify board is deleted
-			const deletedBoard = await CoachingBoard.getById({ id: boardId });
-			expect(deletedBoard).toBeNull();
+			expect(result).toBe(false);
 		});
 
-		test("returns 400 when missing board id (negative test)", async () => {
-			let statusCode = null;
-			let jsonBody = null;
-			const req = {
-				params: {},
-				user: { id: "user123" },
-				userId: "user123",
-				app: {}
-			};
-			const res = {
-				status(code) {
-					statusCode = code;
-					return this;
-				},
-				json(body) {
-					jsonBody = body;
-					return this;
-				}
-			};
+		test("returns true when duplicate exists (positive test)", async () => {
+			mockModel.exists = async () => true;
 
-			await deleteBoard(req, res);
+			const result = await dao.existsPublishedByTitle({ title: "Existing Title" });
 
-			expect(statusCode).toBe(400);
-			expect(jsonBody.status).toBe("error");
-			expect(jsonBody.message).toContain("Missing board id");
+			expect(result).toBe(true);
 		});
 
-		test("handles database error (negative test)", async () => {
-			// Mock the DAO's deleteBoard method to throw an error
-			const originalDeleteBoard = CoachingBoardDac.DAO.deleteBoard;
-			CoachingBoardDac.DAO.deleteBoard = async () => {
-				throw new Error("Database error");
+		test("excludes specified ID from check (positive test)", async () => {
+			let calledWith = null;
+			mockModel.exists = async (query) => {
+				calledWith = query;
+				return false;
 			};
 
-			let statusCode = null;
-			let jsonBody = null;
-			const req = {
-				params: { bid: "board123" },
-				user: { id: "user123" },
-				userId: "user123",
-				app: {}
-			};
-			const res = {
-				status(code) {
-					statusCode = code;
-					return this;
-				},
-				json(body) {
-					jsonBody = body;
-					return this;
-				}
-			};
+			await dao.existsPublishedByTitle({ title: "Test Title", excludeId: "exclude123" });
 
-			await deleteBoard(req, res);
+			expect(calledWith._id.$ne).toBe("exclude123");
+		});
+	});
 
-			expect(statusCode).toBe(500);
-			expect(jsonBody.status).toBe("error");
-			expect(jsonBody.message).toBe("Server error");
+	describe("findPublishedByTitle", () => {
+		test("returns board ID when found (positive test)", async () => {
+			const mockDoc = { _id: "board123" };
+			mockModel.findOne = () => ({
+				select: () => ({
+					lean: () => Promise.resolve(mockDoc)
+				})
+			});
 
-			// Restore original method
-			CoachingBoardDac.DAO.deleteBoard = originalDeleteBoard;
+			const result = await dao.findPublishedByTitle({ title: "Existing Title" });
+
+			expect(result).toBe("board123");
+		});
+
+		test("returns null when not found (negative test)", async () => {
+			mockModel.findOne = () => ({
+				select: () => ({
+					lean: () => Promise.resolve(null)
+				})
+			});
+
+			const result = await dao.findPublishedByTitle({ title: "Nonexistent Title" });
+
+			expect(result).toBeNull();
 		});
 	});
 });
