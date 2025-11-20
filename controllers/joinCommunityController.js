@@ -11,11 +11,6 @@ export async function register(req, res) {
 	try{
 		const { username, password } = req.body;
 
-		// if (!isUsernameValid(username)) return res.status(400).json({ error: "Invalid username" });
-		// if (!isPasswordValid(password)) return res.status(400).json({ error: "Invalid password" });
-
-		// await req.app.locals.userDao.create({ username, password });
-
 		const user = new User({ username, password });
   		const created = await user.create();
 
@@ -60,7 +55,6 @@ export async function usernameStatus(req, res) {
 			});
 		}
 		const user = await User.findByUsername(username);
-		// const user = await req.app.locals.userDao.findByUsername(username);
 		if (user) {
 			return res.json({ status: "exists" });
 		}

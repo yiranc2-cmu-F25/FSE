@@ -4,6 +4,7 @@
 import Group from "../entities/Group.js";
 import GroupMessage from "../entities/GroupMessage.js";
 import User from "../entities/User.js";
+import { isUsernameValid } from "../utils/validators.js";
 
 const normId = (idLike) => {
   if (idLike == null) return "";
@@ -50,6 +51,13 @@ export async function createGroup(req, res) {
       return res.status(400).json({
         status: "error",
         message: `Group must have between ${MIN_MEMBERS} and ${MAX_MEMBERS} members (excluding owner)`
+      });
+    }
+
+    if (!isUsernameValid(groupName)) {
+      return res.status(400).json({
+        status: "error",
+        message: `Invalid group name`
       });
     }
 
