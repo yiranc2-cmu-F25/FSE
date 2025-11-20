@@ -1,37 +1,22 @@
 import { jest } from '@jest/globals';
-import mongoose from "mongoose";
 import request from "supertest";
-import { MongoMemoryServer } from "mongodb-memory-server";
 import app from "../app.js";
 
-import makeTaskModel from "../db/TaskSchema.js";
-import makeTaskParticipantModel from "../db/TaskParticipantSchema.js";
-import makeTaskLogModel from "../db/TaskLogSchema.js";
-
-import TaskDao from "../daos/TaskDao.js";
+import { inMemoryTaskDao } from "../daos/inMemoryTaskDao.js";
 import TaskDac from "../dacs/taskDac.js";
 
-import { makeUserModel } from "../db/UserSchema.js";
-import { UserDao } from "../daos/UserDao.js";
+import { inMemoryUserDao } from "../daos/inMemoryUserDao.js";
 import UserDac from "../dacs/userDac.js";
 
+import { setupTestDb, cleanupTestDb } from "../config/testDbConfig.js";
+
 describe("Task Management REST API Integration Tests", () => {
-  let mongod, conn, TaskModel, TaskParticipantModel, TaskLogModel, UserModel, mockSocket;
+  let mockSocket;
 
   beforeAll(async () => {
-    mongod = await MongoMemoryServer.create();
-    const uri = mongod.getUri();
-
-    await mongoose.disconnect();
-    conn = await mongoose.createConnection(uri);
-
-    TaskModel = makeTaskModel(conn);
-    TaskParticipantModel = makeTaskParticipantModel(conn);
-    TaskLogModel = makeTaskLogModel(conn);
-    UserModel = makeUserModel(conn);
-
-    TaskDac.DAO = new TaskDao({ TaskModel, TaskParticipantModel, TaskLogModel });
-    UserDac.DAO = new UserDao({ UserModel });
+    await setupTestDb();
+    TaskDac.DAO = new inMemoryTaskDao();
+    UserDac.DAO = new inMemoryUserDao();
 
     mockSocket = {
       emitMessageFrom: jest.fn((username, payload) => {
@@ -43,15 +28,17 @@ describe("Task Management REST API Integration Tests", () => {
   });
 
   afterAll(async () => {
-    await conn.close();
-    await mongod.stop();
+    // Cleanup test database
+    await cleanupTestDb();
+    
+    TaskDac.DAO = null;
+    UserDac.DAO = null;
   });
 
   afterEach(async () => {
-    const collections = conn.collections;
-    for (const key in collections) {
-      await collections[key].deleteMany({});
-    }
+    // Reset in-memory DAOs for test isolation
+    TaskDac.DAO = new inMemoryTaskDao();
+    UserDac.DAO = new inMemoryUserDao();
   });
 
   // Helper function to register and authenticate a user
@@ -132,7 +119,9 @@ describe("Task Management REST API Integration Tests", () => {
       expect(getRes.body.id).toBe(taskId);
       expect(getRes.body.title).toBe("Clear debris from Main Street");
       expect(getRes.body.creator).toBeDefined();
-      expect(String(getRes.body.creator.id || getRes.body.creator._id || getRes.body.creator)).toBe(String(user._id));
+      const creatorId = getRes.body.creator.id || getRes.body.creator._id || getRes.body.creator;
+      const userId = user.id || user._id;
+      expect(String(creatorId)).toBe(String(userId));
       expect(getRes.body.isOpen).toBe(true);
       expect(getRes.body.helpersJoined).toBe(0);
     });
@@ -518,7 +507,8 @@ describe("Task Management REST API Integration Tests", () => {
       // Verify all returned tasks belong to user1
       const allBelongToUser1 = getRes.body.every(task => {
         const creatorId = task.creator?.id || task.creator?._id || task.creator;
-        return String(creatorId) === String(user1._id) || task.isParticipant === true;
+        const userId1 = user1.id || user1._id;
+        return String(creatorId) === String(userId1) || task.isParticipant === true;
       });
       expect(allBelongToUser1).toBe(true);
     });
