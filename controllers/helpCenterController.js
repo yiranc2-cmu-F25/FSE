@@ -152,3 +152,25 @@ export async function registerHelpCenter(req, res) {
         return res.status(500).json({ status: "error", message: "Server error" });
     }
 }
+
+export async function getHelpCenter(req, res) {
+    try {
+        const { id } = req.params;
+        const helpCenter = await HelpCenter.getHelpCenterById(id);
+
+        if (!helpCenter) {
+            return res.status(404).json({
+                status: "error",
+                message: "Help center not found"
+            });
+        }
+
+        return res.status(200).json(helpCenter);
+    } catch (err) {
+        console.error("Error fetching help center:", err);
+        return res.status(500).json({
+            status: "error",
+            message: "Server error"
+        });
+    }
+}

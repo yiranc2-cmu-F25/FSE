@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Register Help Center</title>
+        <%- include('../partials/head') %>
+    </head>
+
+    <body class="min-h-screen bg-white">
+        <div class="relative mx-auto flex h-screen w-full max-w-md flex-col items-center justify-center">
+            <!-- Header -->
+            <div class="absolute top-[5%] flex w-11/12 items-center justify-start gap-1">
+                <a href="/help-centers">
+                    <img
+                        src="/images/icons/illustrations/icon-left.svg"
+                        alt="Back"
+                        class="w-10"
+                    />
+                </a>
+            </div>
+        
+            <p class="font-poppins font-semibold absolute top-[5%] text-center text-xl leading-normal text-black">
+                Register Help Center
+            </p>
+
+            <!-- Illustration -->
+            <div class="absolute top-[18%] flex w-full items-center justify-center px-2">
+                <img
+                    src="\images\helpCenter\registerHelpCenter.svg"
+                    alt="Image"
+                    class="h-40"/>
+            </div>
+
+            <!-- Form -->
+            <div class="mt-24 flex w-5/6 flex-col gap-4">
+                <!-- Name -->
+                <input
+                    id="name"
+                    type="text"
+                    name="name"
+                    placeholder="Name"
+                    class="flex h-12 items-center rounded-full bg-white px-4 shadow-md"
+                    required
+                />
+
+                <!-- Select Type -->
+                <div class="relative h-10 w-full">
+                    <select
+                        id="type"
+                        name="type"
+                        class="h-full w-full appearance-none bg-white pr-10 outline-none rounded-2xl bg-white px-4 shadow-md"
+                        required
+                    >
+                        <option value="" disabled selected hidden>Select Type</option>
+                        <option value="shelter">Shelter</option>
+                        <option value="medical">Medical</option>
+                        <option value="food">Food</option>
+                        <option value="counseling">Counseling</option>
+                    </select>
+                    <!-- Arrow block on the right -->
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex w-10 items-center justify-center">
+                        <img
+                            src="\images\search-info\keyboard_arrow_down.svg"
+                            class="w-4 opacity-60"
+                            alt="Arrow"
+                        />
+                    </div>
+                </div>
+
+                <!-- Address + Verify button -->
+                <div class="w-full">
+                    <!-- Only input + button are inside this relative wrapper -->
+                    <div class="relative w-full">
+                        <input
+                            id="address-input"
+                            type="text"
+                            name="address"
+                            placeholder="Address"
+                            class="flex h-12 w-full items-center rounded-full bg-white pl-4 pr-24 shadow-md"
+                            autocomplete="off"
+                            required
+                        />
+
+                        <!-- Verify button, vertically centered and fixed size -->
+                        <button
+                            type="button"
+                            id="verify-address-btn"
+                            class="absolute right-1 top-1/2 -translate-y-1/2 flex h-9 items-center justify-center rounded-full bg-theme px-3 text-xs font-semibold text-white shadow-sm"
+                        >
+                        Verify
+                        </button>
+                    </div>
+
+                    <!-- Suggestions / status area (NO LONGER affects button height) -->
+                    <div
+                        id="address-results"
+                        class="mt-2 max-h-40 w-full overflow-y-auto rounded-2xl bg-white text-sm shadow-md hidden"
+                    ></div>
+
+                    <!-- Hidden coordinates populated after user selects an address -->
+                    <input type="hidden" id="lon-input" name="coordinates[0]" />
+                    <input type="hidden" id="lat-input" name="coordinates[1]" />
+                </div>
+
+                <!-- Description -->
+                <textarea
+                    id="description"
+                    name="description"
+                    placeholder="Description"
+                    class="h-24 w-full p-3 outline-none resize-none rounded-2xl bg-white px-4 shadow-md"
+                ></textarea>
+
+                <!-- Global form message (errors / success) -->
+                <div
+                    id="form-message"
+                    class="mt-3 min-h-[1.25rem] text-sm text-center"
+                ></div>
+            </div>
+            <!-- Register button -->
+            <button
+                id="register-Btn"
+                type="submit"
+                class="font-poppins font-semibold absolute top-[78%] h-12 w-5/6 bg-theme text-lg text-white"
+            >
+                REGISTER
+            </button>
+        </div>
+        <script type="module" src="\js\helpCenter\registerHelpCenter.js"></script>
+    </body>
+</html>

@@ -8,11 +8,11 @@ export function makeHelpCenterModel(conn) {
             type: String,
             required: true
         },
-        type: [{
+        type: {
             type: String,
             enum: Object.values(HELP_CENTER_TYPE),
             required: true
-        }],
+        },
         location: {
             type: String,
             required: true,

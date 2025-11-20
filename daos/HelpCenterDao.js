@@ -49,4 +49,8 @@ export class HelpCenterDao extends iHelpCenterDao {
         console.log("trying to delete", id)
         return this.HelpCenterModel.findByIdAndDelete(id);
     }
+
+    async getHelpCenterById(id) {
+        return this.HelpCenterModel.findById(id);
+    }
 }

@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Manage Help Center</title>
+        <%- include('../partials/head') %>
+    </head>
+
+    <body class="min-h-screen bg-white">
+        <div class="relative mx-auto flex h-screen w-full max-w-md flex-col items-center justify-center">
+            <!-- Header -->
+            <div class="absolute top-[5%] flex w-11/12 items-center justify-start gap-1">
+                <a href="/members">
+                    <img
+                        src="/images/icons/illustrations/icon-left.svg"
+                        alt="Back"
+                        class="w-10"
+                    />
+                </a>
+            </div>
+        
+            <p class="font-poppins font-semibold absolute top-[5%] text-center text-xl leading-normal text-black">
+                Manage Help Center
+            </p>
+
+            <!-- Illustration -->
+            <div class="absolute top-[24%] flex w-full items-center justify-center px-2">
+                <img
+                    src="\images\helpCenter\manageHelpCenter.svg"
+                    alt="Image"
+                    class="h-40"/>
+            </div>
+
+            <!-- Start Test -->
+             <div class="flex flex-col items-center gap-4 mt-48 w-full">
+                <a href="/help-centers/register"
+                   class="font-poppins font-semibold h-24 w-2/3 bg-theme text-lg text-white flex items-center justify-center">
+                        REGISTER HELP CENTER
+                </a>
+
+                <a href="/help-centers/edit"
+                   class="font-poppins font-semibold h-24 w-2/3 bg-theme text-lg text-white flex items-center justify-center">
+                        EDIT MY HELP CENTER
+                </a>
+            </div>
+
+        </div>
+        <script type="module"></script>
+    </body>
+</html>

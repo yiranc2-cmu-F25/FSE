@@ -40,6 +40,10 @@ class HelpCenter {
     static async deleteHelpCenter( id ) {
         return await HelpCenter.DAO.deleteHelpCenter( id );
     }
+
+    static async getHelpCenterById( id ) {
+        return await HelpCenter.DAO.getHelpCenterById( id );
+    }
 }
 
 export default HelpCenter;

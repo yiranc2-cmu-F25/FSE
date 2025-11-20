@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>ESN Speed Test</title>
+        <%- include('../partials/head') %>
+    </head>
+
+    <body class="min-h-screen bg-white">
+        <!-- Main app container -->
+        <div class="mx-auto flex h-screen w-full max-w-md flex-col bg-white">
+            
+            <!-- Header (fixed at top of column, non-scrollable) -->
+            <header class="flex w-full items-center px-4 pt-4 pb-2">
+                <a href="/members" class="mr-2">
+                    <img
+                        src="/images/icons/illustrations/icon-left.svg"
+                        alt="Back"
+                        class="w-10"
+                    />
+                </a>
+                <h1 class="flex-1 text-center font-poppins text-xl font-semibold leading-normal text-black">
+                    Edit My Help Center
+                </h1>
+            </header>
+
+            <!-- Illustration area (non-scrollable, sits under header) -->
+            <section class="flex-none flex w-full items-center justify-center px-2 pt-2 pb-2">
+                <img
+                    src="/images/helpCenter/editHelpCenter.svg"
+                    alt="Image"
+                    class="h-40"
+                />
+            </section>
+
+            <!-- Scrollable content area at the bottom -->
+            <main class="flex-1 overflow-y-auto px-4 pb-6">
+                <!-- Status / message -->
+                <div
+                    id="help-center-message"
+                    class="min-h-[1.25rem] text-sm text-gray-600 text-center mb-3"
+                ></div>
+
+                <!-- Help center cards list (this is what scrolls) -->
+                <section
+                    id="help-center-list"
+                    class="mb-6 mt-2 flex flex-col gap-6 scroll-smooth"
+                    tabindex="0"
+                ></section>
+            </main>
+
+        </div>
+
+        <script type="module" src="/js/helpCenter/editHelpCenter.js"></script>
+    </body>
+</html>

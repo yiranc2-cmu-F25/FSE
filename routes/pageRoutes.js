@@ -75,11 +75,30 @@ function setupAnnouncementRoutes() {
     });
 }
 
+function setupHelpCenterRoutes() {
+    router.get("/help-centers", authView, (req, res) => {
+        res.render("helpCenter/manageHelpCenter")
+    });
+    router.get("/help-centers/register", authView, (req, res) => {
+        res.render("helpCenter/registerHelpCenter")
+    });
+    router.get("/help-centers/edit", authView, (req, res) => {
+        res.render("helpCenter/editHelpCenter")
+    });
+    router.get("/help-centers/confirmation", authView, (req, res) => {
+        res.render("helpCenter/confirmPage")
+    });
+    router.get("/help-centers/edit/:id", authView, async (req, res) => {
+        res.render("helpCenter/editHelpCenterDetail");
+    });
+}
+
 setupJoinCommunityRoutes();
 setupPublicChatRoutes();
 setupLoginRoutes();
 setupUpdateStatusRoutes();
 setupPrivateChatRoutes();
 setupAnnouncementRoutes();
+setupHelpCenterRoutes();
 
 export default router;

@@ -15,7 +15,11 @@ export class iHelpCenterDao {
         throw new Error("To be implemented!");
     }
 
-    async deleteHelpCenter({ id }) {
+    async deleteHelpCenter( id ) {
+        throw new Error("To be implemented!");
+    }
+
+    async getHelpCenterById( id ) {
         throw new Error("To be implemented!");
     }
 }

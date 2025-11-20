@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getHelpCentersByUserId, getClosestHelpCenters, updateHelpCenter, deleteHelpCenter, registerHelpCenter } from "../controllers/helpCenterController.js";
+import { getHelpCentersByUserId, getClosestHelpCenters, updateHelpCenter, deleteHelpCenter, registerHelpCenter, getHelpCenter } from "../controllers/helpCenterController.js";
 import { auth } from "../middleware/JWT.js";
 
 const router = Router();
@@ -455,5 +455,95 @@ router.delete("/:id", auth, deleteHelpCenter);
  *                   example: "Server error"
  */
 router.post("/", auth, registerHelpCenter);
+
+/**
+ * @openapi
+ * /api/help-centers/{id}:
+ *   get:
+ *     tags: [HelpCenters]
+ *     summary: Get a single help center by ID
+ *     description: |
+ *       Retrieves a specific help center owned by the currently authenticated user.
+ *       Returns 404 if the help center does not exist.  
+ *       Returns 403 if the help center exists but does not belong to the user.
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: ID of the help center to fetch
+ *         schema:
+ *           type: string
+ *           example: "672fa1f3b0c4c53dd22ff3ba"
+ *     responses:
+ *       200:
+ *         description: Help center retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 _id:
+ *                   type: string
+ *                   example: "672fa1f3b0c4c53dd22ff3ba"
+ *                 name:
+ *                   type: string
+ *                   example: "Sunrise Shelter"
+ *                 type:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                   example: ["shelter", "food"]
+ *                 location:
+ *                   type: string
+ *                   example: "123 Main St, San Jose, CA"
+ *                 description:
+ *                   type: string
+ *                   example: "Provides temporary housing and meals."
+ *                 coordinates:
+ *                   type: array
+ *                   items:
+ *                     type: number
+ *                   description: [longitude, latitude]
+ *                   example: [-121.89, 37.335]
+ *                 owner:
+ *                   type: string
+ *                   example: "671f91897e183f70b09e73ed"
+ *                 createdAt:
+ *                   type: string
+ *                   format: date-time
+ *                 updatedAt:
+ *                   type: string
+ *                   format: date-time
+ *       404:
+ *         description: Help center not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: "error"
+ *                 message:
+ *                   type: string
+ *                   example: "Help center not found"
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: "error"
+ *                 message:
+ *                   type: string
+ *                   example: "Server error"
+ */
+
+router.get("/:id", auth, getHelpCenter);
 
 export default router;
