@@ -51,12 +51,13 @@ export function initVoiceCall(groupId) {
  * Setup Socket.IO listeners for WebRTC signaling
  */
 function setupSocketListeners() {
-  // Handle user joined
+  // Handle user joined (existing user receives this - DO NOT initiate)
   socket.on("voice-user-joined", async (data) => {
     if (data.groupId !== currentGroupId || !isInCall) return;
 
     console.log("Voice user joined:", data);
-    await createPeerConnection(data.socketId, data.username, data.userId, true);
+    // Existing users should NOT initiate - wait for the new user to send offer
+    await createPeerConnection(data.socketId, data.username, data.userId, false);
   });
 
   // Handle WebRTC offer
