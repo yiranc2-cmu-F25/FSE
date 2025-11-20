@@ -1,4 +1,4 @@
-import HelpCenterDac from "../dacs/HelpCenterDac.js";
+import HelpCenterDac from "../dacs/helpCenterDac.js";
 
 class HelpCenter {
     constructor({ name, type, location, description, coordinates, owner }) {
