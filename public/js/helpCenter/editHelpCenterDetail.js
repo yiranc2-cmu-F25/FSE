@@ -1,3 +1,5 @@
+// public/js/helpCenter/editHelpCenterDetail.js
+
 // ------------- DOM refs -------------
 const addressInput = document.getElementById("address-input");
 const verifyBtn = document.getElementById("verify-address-btn");
@@ -278,7 +280,7 @@ if (confirmBtn) {
       });
 
       if (res.ok) {
-        // back to the list
+        // redirect to confirmation page with updated action
         window.location.href = "/help-centers/confirmation?action=updated";
         return;
       }
@@ -297,44 +299,72 @@ if (confirmBtn) {
   });
 }
 
-// ------------- Delete (DELETE) -------------
+// ------------- Delete modal using <template> -------------
 
-if (deleteBtn) {
-  deleteBtn.addEventListener("click", async (e) => {
-    e.preventDefault();
-    clearFormMessage();
+function openDeleteModal() {
+  const tpl = document.getElementById("delete-modal-template");
+  if (!tpl) {
+    console.warn("Delete modal template not found");
+    return;
+  }
 
-    if (!HELP_CENTER_ID) {
-      showFormMessage("Invalid help center ID.", "text-red-600");
+  const fragment = tpl.content.cloneNode(true);
+  const overlay = fragment.firstElementChild;
+  if (!overlay) return;
+
+  const cancelBtn = overlay.querySelector("[data-cancel]");
+  const confirmBtn = overlay.querySelector("[data-confirm]");
+
+  // Add modal to DOM
+  document.body.appendChild(overlay);
+
+  // Cancel → just remove overlay
+  cancelBtn?.addEventListener("click", () => {
+    overlay.remove();
+  });
+
+  // Confirm → perform delete, then remove overlay
+  confirmBtn?.addEventListener("click", async () => {
+    await deleteHelpCenter();
+    overlay.remove();
+  });
+}
+
+async function deleteHelpCenter() {
+  clearFormMessage();
+
+  if (!HELP_CENTER_ID) {
+    showFormMessage("Invalid help center ID.", "text-red-600");
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/help-centers/${HELP_CENTER_ID}`, {
+      method: "DELETE",
+    });
+
+    if (res.ok) {
+      window.location.href = "/help-centers/confirmation?action=deleted";
       return;
     }
 
-    const ok = window.confirm(
-      "Are you sure you want to delete this help center?"
-    );
-    if (!ok) return;
-
+    let errMsg = "Failed to delete help center.";
     try {
-      const res = await fetch(`/api/help-centers/${HELP_CENTER_ID}`, {
-        method: "DELETE",
-      });
+      const body = await res.json();
+      if (body && body.message) errMsg = body.message;
+    } catch (_) {}
 
-      if (res.ok) {
-        window.location.href = "/help-centers/confirmation?action=deleted";
-        return;
-      }
+    showFormMessage(errMsg, "text-red-600");
+  } catch (err) {
+    console.error("Delete help center error:", err);
+    showFormMessage("Network error. Please try again.", "text-red-600");
+  }
+}
 
-      let errMsg = "Failed to delete help center.";
-      try {
-        const body = await res.json();
-        if (body && body.message) errMsg = body.message;
-      } catch (_) {}
-
-      showFormMessage(errMsg, "text-red-600");
-    } catch (err) {
-      console.error("Delete help center error:", err);
-      showFormMessage("Network error. Please try again.", "text-red-600");
-    }
+if (deleteBtn) {
+  deleteBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    openDeleteModal();
   });
 }
 

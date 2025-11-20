@@ -65,7 +65,7 @@ async function getUserLocation() {
         console.warn("Geolocation error:", err);
         resolve(null); // Allow graceful fallback
       },
-      { enableHighAccuracy: true, timeout: 5000 }
+      { enableHighAccuracy: true, timeout: 10000 }
     );
   });
 }
