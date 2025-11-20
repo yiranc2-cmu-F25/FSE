@@ -43,7 +43,7 @@ export async function getVoiceCallStatus(req, res) {
 
 /**
  * Join a group voice call room
- * @route POST /api/calls/join
+ * @route POST /api/calls/join-room
  */
 export async function joinVoiceCall(req, res) {
   try {
@@ -142,7 +142,7 @@ export async function joinVoiceCall(req, res) {
 
 /**
  * Leave a group voice call room
- * @route POST /api/calls/leave
+ * @route POST /api/calls/leave-room
  */
 export async function leaveVoiceCall(req, res) {
   try {

@@ -10,7 +10,7 @@ const router = Router();
 
 /**
  * @openapi
- * /api/calls/join:
+ * /api/calls/join-room:
  *   post:
  *     tags: [Voice Calls]
  *     summary: Join a group voice call room
@@ -109,11 +109,11 @@ const router = Router();
  *                 status: { type: string, example: "error" }
  *                 message: { type: string, example: "Server error" }
  */
-router.post("/join", auth, joinVoiceCall);
+router.post("/join-room", auth, joinVoiceCall);
 
 /**
  * @openapi
- * /api/calls/leave:
+ * /api/calls/leave-room:
  *   post:
  *     tags: [Voice Calls]
  *     summary: Leave a group voice call room
@@ -191,7 +191,7 @@ router.post("/join", auth, joinVoiceCall);
  *                 status: { type: string, example: "error" }
  *                 message: { type: string, example: "Server error" }
  */
-router.post("/leave", auth, leaveVoiceCall);
+router.post("/leave-room", auth, leaveVoiceCall);
 
 /**
  * @openapi
