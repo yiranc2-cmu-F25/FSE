@@ -6,7 +6,7 @@ import app from "../app.js";
 
 import { makeHelpCenterModel } from "../db/HelpCenterSchema.js";
 import { HelpCenterDao } from "../daos/HelpCenterDao.js";
-import HelpCenterDac from "../dacs/HelpCenterDac.js";
+import HelpCenterDac from "../dacs/helpCenterDac.js";
 
 import { makeUserModel } from "../db/UserSchema.js";
 import { UserDao } from "../daos/UserDao.js";
