@@ -1,4 +1,6 @@
 import iTaskDao from "./iTaskDao.js";
+import { transformTaskDoc, transformTaskDocSimple, generateHelperAvatars, extractParticipantNames } from "../utils/task/taskTransformers.js";
+import { buildTaskFilter, buildTaskSort, buildParticipantCountMap } from "../utils/task/filterBuilders.js";
 
 export default class TaskDao extends iTaskDao {
   constructor({ TaskModel, TaskParticipantModel, TaskLogModel }) {
@@ -76,56 +78,17 @@ export default class TaskDao extends iTaskDao {
       .limit(10)
       .lean();
 
-    // Format helper avatars
-    const helperAvatars = participants.map((p) => {
-      const username = p.user?.username || "";
-      const initials = username
-        .split(" ")
-        .map((n) => n[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2);
-      // Generate a color based on username hash
-      const colors = [
-        "#f97316", "#0ea5e9", "#22c55e", "#6366f1", "#a855f7", "#facc15",
-        "#ef4444", "#14b8a6", "#8b5cf6", "#ec4899",
-      ];
-      const hash = username.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
-      const color = colors[hash % colors.length];
-      return { initials, color };
+    // Format helper avatars and participant names
+    const helperAvatars = generateHelperAvatars(participants);
+    const participantNames = extractParticipantNames(participants);
+
+    return transformTaskDoc(doc, {
+      participantCount,
+      isParticipant,
+      helperAvatars,
+      participantNames,
+      taskLogs: logs,
     });
-
-    // Participant names list
-    const participantNames = participants
-      .map((p) => p.user?.username)
-      .filter((name) => typeof name === "string" && name.trim().length > 0);
-
-    return {
-      id: doc._id,
-      title: doc.title,
-      description: doc.description,
-      category: doc.category,
-      helpers: doc.helpers,
-      emergencyLevel: doc.emergencyLevel,
-      taskType: doc.taskType,
-      dueDate: doc.dueDate,
-      location: doc.location,
-      resourcesNeeded: doc.resourcesNeeded || {},
-      skillsRequired: doc.skillsRequired || [],
-      isOpen: doc.isOpen,
-      creator: doc.creator,
-      createdAt: doc.createdAt,
-      updatedAt: doc.updatedAt,
-      helpersJoined: participantCount,
-      isParticipant: isParticipant,
-      helperAvatars: helperAvatars,
-      participantNames: participantNames,
-      taskLogs: logs.map((log) => ({
-        timestamp: log.timestamp,
-        summary: log.summary,
-        user: log.user,
-      })),
-    };
   }
 
   async getAllTasks({
@@ -137,45 +100,8 @@ export default class TaskDao extends iTaskDao {
     limit,
     skip,
   } = {}) {
-    const filter = {};
-
-    // Apply filters
-    if (emergencyLevel) {
-      filter.emergencyLevel = emergencyLevel;
-    }
-    if (category) {
-      filter.category = category;
-    }
-    if (isOpen !== undefined) {
-      filter.isOpen = isOpen;
-    }
-
-    // Build sort object
-    let sort = {};
-    switch (sortBy) {
-      case "emergencyLevel":
-        // Note: MongoDB doesn't support custom sort orders directly,
-        // so we'll sort by the field and handle ordering in application logic if needed
-        sort.emergencyLevel = sortOrder === "asc" ? 1 : -1;
-        break;
-      case "helpers":
-        sort.helpers = sortOrder === "asc" ? 1 : -1;
-        break;
-      case "category":
-        sort.category = sortOrder === "asc" ? 1 : -1;
-        break;
-      case "createdAt":
-        sort.createdAt = sortOrder === "asc" ? 1 : -1;
-        break;
-      case "updatedAt":
-        sort.updatedAt = sortOrder === "asc" ? 1 : -1;
-        break;
-      case "isOpen":
-        sort.isOpen = sortOrder === "asc" ? 1 : -1;
-        break;
-      default:
-        sort.createdAt = -1; // Default: newest first
-    }
+    const filter = buildTaskFilter({ emergencyLevel, category, isOpen });
+    const sort = buildTaskSort(sortBy, sortOrder);
 
     const query = this.TaskModel.find(filter)
       .sort(sort)
@@ -195,28 +121,10 @@ export default class TaskDao extends iTaskDao {
       { $group: { _id: "$task", count: { $sum: 1 } } },
     ]);
 
-    // Create a map of task ID to participant count
-    const countMap = {};
-    participantCounts.forEach((pc) => {
-      countMap[pc._id.toString()] = pc.count;
-    });
+    const countMap = buildParticipantCountMap(participantCounts);
 
     return docs.map((doc) => ({
-      id: doc._id,
-      title: doc.title,
-      description: doc.description,
-      category: doc.category,
-      helpers: doc.helpers,
-      emergencyLevel: doc.emergencyLevel,
-      taskType: doc.taskType,
-      dueDate: doc.dueDate,
-      location: doc.location,
-      resourcesNeeded: doc.resourcesNeeded || {},
-      skillsRequired: doc.skillsRequired || [],
-      isOpen: doc.isOpen,
-      creator: doc.creator,
-      createdAt: doc.createdAt,
-      updatedAt: doc.updatedAt,
+      ...transformTaskDocSimple(doc),
       helpersJoined: countMap[doc._id.toString()] || 0,
     }));
   }
@@ -233,43 +141,8 @@ export default class TaskDao extends iTaskDao {
       skip,
     } = {},
   ) {
-    const filter = { creator: creatorId };
-
-    // Apply filters
-    if (emergencyLevel) {
-      filter.emergencyLevel = emergencyLevel;
-    }
-    if (category) {
-      filter.category = category;
-    }
-    if (isOpen !== undefined) {
-      filter.isOpen = isOpen;
-    }
-
-    // Build sort object (same logic as getAllTasks)
-    let sort = {};
-    switch (sortBy) {
-      case "emergencyLevel":
-        sort.emergencyLevel = sortOrder === "asc" ? 1 : -1;
-        break;
-      case "helpers":
-        sort.helpers = sortOrder === "asc" ? 1 : -1;
-        break;
-      case "category":
-        sort.category = sortOrder === "asc" ? 1 : -1;
-        break;
-      case "createdAt":
-        sort.createdAt = sortOrder === "asc" ? 1 : -1;
-        break;
-      case "updatedAt":
-        sort.updatedAt = sortOrder === "asc" ? 1 : -1;
-        break;
-      case "isOpen":
-        sort.isOpen = sortOrder === "asc" ? 1 : -1;
-        break;
-      default:
-        sort.createdAt = -1;
-    }
+    const filter = buildTaskFilter({ emergencyLevel, category, isOpen, creatorId });
+    const sort = buildTaskSort(sortBy, sortOrder);
 
     const query = this.TaskModel.find(filter)
       .sort(sort)
@@ -287,28 +160,10 @@ export default class TaskDao extends iTaskDao {
       { $group: { _id: "$task", count: { $sum: 1 } } },
     ]);
 
-    // Create a map of task ID to participant count
-    const countMap = {};
-    participantCounts.forEach((pc) => {
-      countMap[pc._id.toString()] = pc.count;
-    });
+    const countMap = buildParticipantCountMap(participantCounts);
 
     return docs.map((doc) => ({
-      id: doc._id,
-      title: doc.title,
-      description: doc.description,
-      category: doc.category,
-      helpers: doc.helpers,
-      emergencyLevel: doc.emergencyLevel,
-      taskType: doc.taskType,
-      dueDate: doc.dueDate,
-      location: doc.location,
-      resourcesNeeded: doc.resourcesNeeded || {},
-      skillsRequired: doc.skillsRequired || [],
-      isOpen: doc.isOpen,
-      creator: doc.creator,
-      createdAt: doc.createdAt,
-      updatedAt: doc.updatedAt,
+      ...transformTaskDocSimple(doc),
       helpersJoined: countMap[doc._id.toString()] || 0,
     }));
   }
@@ -335,48 +190,15 @@ export default class TaskDao extends iTaskDao {
     const participantTaskIds = participantTasks.map((p) => p.task);
 
     // Build filter: tasks where user is creator OR participant
-    const filter = {
-      $or: [
-        { creator: userId },
-        { _id: { $in: participantTaskIds } },
-      ],
-    };
+    const filter = buildTaskFilter({ 
+      emergencyLevel, 
+      category, 
+      isOpen, 
+      creatorId: userId, 
+      participantTaskIds 
+    });
 
-    // Apply additional filters
-    if (emergencyLevel) {
-      filter.emergencyLevel = emergencyLevel;
-    }
-    if (category) {
-      filter.category = category;
-    }
-    if (isOpen !== undefined) {
-      filter.isOpen = isOpen;
-    }
-
-    // Build sort object
-    let sort = {};
-    switch (sortBy) {
-      case "emergencyLevel":
-        sort.emergencyLevel = sortOrder === "asc" ? 1 : -1;
-        break;
-      case "helpers":
-        sort.helpers = sortOrder === "asc" ? 1 : -1;
-        break;
-      case "category":
-        sort.category = sortOrder === "asc" ? 1 : -1;
-        break;
-      case "createdAt":
-        sort.createdAt = sortOrder === "asc" ? 1 : -1;
-        break;
-      case "updatedAt":
-        sort.updatedAt = sortOrder === "asc" ? 1 : -1;
-        break;
-      case "isOpen":
-        sort.isOpen = sortOrder === "asc" ? 1 : -1;
-        break;
-      default:
-        sort.createdAt = -1;
-    }
+    const sort = buildTaskSort(sortBy, sortOrder);
 
     const query = this.TaskModel.find(filter)
       .sort(sort)
@@ -404,28 +226,10 @@ export default class TaskDao extends iTaskDao {
       userParticipations.map((p) => p.task.toString())
     );
 
-    // Create a map of task ID to participant count
-    const countMap = {};
-    participantCounts.forEach((pc) => {
-      countMap[pc._id.toString()] = pc.count;
-    });
+    const countMap = buildParticipantCountMap(participantCounts);
 
     return docs.map((doc) => ({
-      id: doc._id,
-      title: doc.title,
-      description: doc.description,
-      category: doc.category,
-      helpers: doc.helpers,
-      emergencyLevel: doc.emergencyLevel,
-      taskType: doc.taskType,
-      dueDate: doc.dueDate,
-      location: doc.location,
-      resourcesNeeded: doc.resourcesNeeded || {},
-      skillsRequired: doc.skillsRequired || [],
-      isOpen: doc.isOpen,
-      creator: doc.creator,
-      createdAt: doc.createdAt,
-      updatedAt: doc.updatedAt,
+      ...transformTaskDocSimple(doc),
       helpersJoined: countMap[doc._id.toString()] || 0,
       isParticipant: participationSet.has(doc._id.toString()),
     }));
@@ -461,23 +265,7 @@ export default class TaskDao extends iTaskDao {
 
     if (!doc) return null;
 
-    return {
-      id: doc._id,
-      title: doc.title,
-      description: doc.description,
-      category: doc.category,
-      helpers: doc.helpers,
-      emergencyLevel: doc.emergencyLevel,
-      taskType: doc.taskType,
-      dueDate: doc.dueDate,
-      location: doc.location,
-      resourcesNeeded: doc.resourcesNeeded || {},
-      skillsRequired: doc.skillsRequired || [],
-      isOpen: doc.isOpen,
-      creator: doc.creator,
-      createdAt: doc.createdAt,
-      updatedAt: doc.updatedAt,
-    };
+    return transformTaskDocSimple(doc);
   }
 
   async deleteTask(taskId, creatorId) {
@@ -495,12 +283,7 @@ export default class TaskDao extends iTaskDao {
   }
 
   async countTasks({ emergencyLevel, category, isOpen } = {}) {
-    const filter = {};
-
-    if (emergencyLevel) filter.emergencyLevel = emergencyLevel;
-    if (category) filter.category = category;
-    if (isOpen !== undefined) filter.isOpen = isOpen;
-
+    const filter = buildTaskFilter({ emergencyLevel, category, isOpen });
     return await this.TaskModel.countDocuments(filter);
   }
 
@@ -508,12 +291,7 @@ export default class TaskDao extends iTaskDao {
     creatorId,
     { emergencyLevel, category, isOpen } = {},
   ) {
-    const filter = { creator: creatorId };
-
-    if (emergencyLevel) filter.emergencyLevel = emergencyLevel;
-    if (category) filter.category = category;
-    if (isOpen !== undefined) filter.isOpen = isOpen;
-
+    const filter = buildTaskFilter({ emergencyLevel, category, isOpen, creatorId });
     return await this.TaskModel.countDocuments(filter);
   }
 
@@ -537,14 +315,13 @@ export default class TaskDao extends iTaskDao {
       return 0;
     }
 
-    // Build filter: tasks where user is participant (including tasks they created)
-    const filter = {
-      _id: { $in: participantTaskIds },
-    };
-
-    if (emergencyLevel) filter.emergencyLevel = emergencyLevel;
-    if (category) filter.category = category;
-    if (isOpen !== undefined) filter.isOpen = isOpen;
+    // Build filter: tasks where user is participant
+    const filter = buildTaskFilter({ 
+      emergencyLevel, 
+      category, 
+      isOpen, 
+      participantTaskIds 
+    });
 
     return await this.TaskModel.countDocuments(filter);
   }

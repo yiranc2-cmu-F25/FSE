@@ -1,4 +1,5 @@
 import iTaskDao from "./iTaskDao.js";
+import { transformTaskDoc, transformTaskDocSimple, generateHelperAvatars, extractParticipantNames } from "../utils/task/taskTransformers.js";
 
 export class inMemoryTaskDao extends iTaskDao {
   constructor() {
@@ -73,54 +74,22 @@ export class inMemoryTaskDao extends iTaskDao {
       .sort((a, b) => a.joinedAt - b.joinedAt)
       .slice(0, 10);
 
-    // Mock user data for participants
-    const helperAvatars = taskParticipants.map((p) => {
-      const username = p.user?.username || `user_${p.user}`;
-      const initials = username
-        .split(" ")
-        .map((n) => n[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2);
-      const colors = [
-        "#f97316", "#0ea5e9", "#22c55e", "#6366f1", "#a855f7", "#facc15",
-        "#ef4444", "#14b8a6", "#8b5cf6", "#ec4899",
-      ];
-      const hash = username.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
-      const color = colors[hash % colors.length];
-      return { initials, color };
+    // Mock user data for participants - ensure user objects have username
+    const participantsWithUsers = taskParticipants.map((p) => ({
+      ...p,
+      user: p.user?.username ? p.user : { username: `user_${p.user}` },
+    }));
+
+    const helperAvatars = generateHelperAvatars(participantsWithUsers);
+    const participantNames = extractParticipantNames(participantsWithUsers);
+
+    return transformTaskDoc(task, {
+      participantCount,
+      isParticipant,
+      helperAvatars,
+      participantNames,
+      taskLogs,
     });
-
-    const participantNames = taskParticipants
-      .map((p) => p.user?.username || `user_${p.user}`)
-      .filter((name) => typeof name === "string" && name.trim().length > 0);
-
-    return {
-      id: task._id,
-      title: task.title,
-      description: task.description,
-      category: task.category,
-      helpers: task.helpers,
-      emergencyLevel: task.emergencyLevel,
-      taskType: task.taskType,
-      dueDate: task.dueDate,
-      location: task.location,
-      resourcesNeeded: task.resourcesNeeded || {},
-      skillsRequired: task.skillsRequired || [],
-      isOpen: task.isOpen,
-      creator: task.creator,
-      createdAt: task.createdAt,
-      updatedAt: task.updatedAt,
-      helpersJoined: participantCount,
-      isParticipant: isParticipant,
-      helperAvatars: helperAvatars,
-      participantNames: participantNames,
-      taskLogs: taskLogs.map((log) => ({
-        timestamp: log.timestamp,
-        summary: log.summary,
-        user: log.user,
-      })),
-    };
   }
 
   async getAllTasks({

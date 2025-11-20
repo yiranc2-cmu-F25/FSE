@@ -1,15 +1,6 @@
 import Task from "../entities/Task.js";
-
-// Helper function to normalize ID
-// This is used to convert the ID to a string (in case browser throws something strange at us)
-const normId = (idLike) => {
-  if (idLike == null) return "";
-  if (typeof idLike === "string") return idLike;
-  if (typeof idLike === "object") {
-    return String(idLike._id ?? idLike.id ?? "");
-  }
-  return idLike.toString ? idLike.toString() : String(idLike);
-};
+import { requireAuth, getTaskIdFromRequest, getUserIdFromRequest } from "../utils/task/controllerHelpers.js";
+import { parseTaskQueryParams, parseTaskCountParams } from "../utils/task/queryParsers.js";
 
 export default class TaskController {
   /**
@@ -18,13 +9,8 @@ export default class TaskController {
    */
   static async createTask(req, res) {
     try {
-      const creatorIdRaw = req.user?.id ?? req.userId;
-      if (!creatorIdRaw) {
-        return res
-          .status(401)
-          .json({ status: "error", message: "Unauthorized" });
-      }
-      const creatorId = normId(creatorIdRaw);
+      const creatorId = requireAuth(req, res);
+      if (!creatorId) return;
 
       const {
         title,
@@ -76,16 +62,11 @@ export default class TaskController {
    */
   static async getTask(req, res) {
     try {
-      const taskId = req.params.id;
-      if (!taskId) {
-        return res
-          .status(400)
-          .json({ status: "error", message: "Task ID is required" });
-      }
+      const taskId = getTaskIdFromRequest(req, res);
+      if (!taskId) return;
 
       // Get current user ID if authenticated
-      const userIdRaw = req.user?.id ?? req.userId;
-      const userId = userIdRaw ? normId(userIdRaw) : null;
+      const userId = getUserIdFromRequest(req);
 
       const task = await Task.getTask(taskId, userId);
       if (!task) {
@@ -107,32 +88,7 @@ export default class TaskController {
    */
   static async getAllTasks(req, res) {
     try {
-      const {
-        emergencyLevel,
-        category,
-        isOpen,
-        sortBy,
-        sortOrder,
-        limit,
-        skip,
-      } = req.query;
-
-      // Parse boolean and number query parameters
-      const filters = {};
-      if (emergencyLevel) filters.emergencyLevel = emergencyLevel;
-      if (category) filters.category = category;
-      if (isOpen !== undefined) {
-        filters.isOpen = isOpen === "true" || isOpen === true;
-      }
-
-      const options = {
-        ...filters,
-        sortBy: sortBy || "createdAt",
-        sortOrder: sortOrder || "desc",
-        limit: limit ? parseInt(limit, 10) : undefined,
-        skip: skip ? parseInt(skip, 10) : undefined,
-      };
-
+      const options = parseTaskQueryParams(req.query);
       const tasks = await Task.getAllTasks(options);
 
       return res.status(200).json(tasks);
@@ -148,40 +104,10 @@ export default class TaskController {
    */
   static async getMyTasks(req, res) {
     try {
-      const userIdRaw = req.user?.id ?? req.userId;
-      if (!userIdRaw) {
-        return res
-          .status(401)
-          .json({ status: "error", message: "Unauthorized" });
-      }
-      const userId = normId(userIdRaw);
+      const userId = requireAuth(req, res);
+      if (!userId) return;
 
-      const {
-        emergencyLevel,
-        category,
-        isOpen,
-        sortBy,
-        sortOrder,
-        limit,
-        skip,
-      } = req.query;
-
-      // Parse boolean and number query parameters
-      const filters = {};
-      if (emergencyLevel) filters.emergencyLevel = emergencyLevel;
-      if (category) filters.category = category;
-      if (isOpen !== undefined) {
-        filters.isOpen = isOpen === "true" || isOpen === true;
-      }
-
-      const options = {
-        ...filters,
-        sortBy: sortBy || "createdAt",
-        sortOrder: sortOrder || "desc",
-        limit: limit ? parseInt(limit, 10) : undefined,
-        skip: skip ? parseInt(skip, 10) : undefined,
-      };
-
+      const options = parseTaskQueryParams(req.query);
       // Get tasks where user is either creator or participant
       const tasks = await Task.getTasksByUser(userId, options);
 
@@ -198,20 +124,11 @@ export default class TaskController {
    */
   static async updateTask(req, res) {
     try {
-      const taskId = req.params.id;
-      if (!taskId) {
-        return res
-          .status(400)
-          .json({ status: "error", message: "Task ID is required" });
-      }
+      const taskId = getTaskIdFromRequest(req, res);
+      if (!taskId) return;
 
-      const creatorIdRaw = req.user?.id ?? req.userId;
-      if (!creatorIdRaw) {
-        return res
-          .status(401)
-          .json({ status: "error", message: "Unauthorized" });
-      }
-      const creatorId = normId(creatorIdRaw);
+      const creatorId = requireAuth(req, res);
+      if (!creatorId) return;
 
       const updateData = req.body;
       // Remove fields that shouldn't be updated directly
@@ -251,20 +168,11 @@ export default class TaskController {
    */
   static async deleteTask(req, res) {
     try {
-      const taskId = req.params.id;
-      if (!taskId) {
-        return res
-          .status(400)
-          .json({ status: "error", message: "Task ID is required" });
-      }
+      const taskId = getTaskIdFromRequest(req, res);
+      if (!taskId) return;
 
-      const creatorIdRaw = req.user?.id ?? req.userId;
-      if (!creatorIdRaw) {
-        return res
-          .status(401)
-          .json({ status: "error", message: "Unauthorized" });
-      }
-      const creatorId = normId(creatorIdRaw);
+      const creatorId = requireAuth(req, res);
+      if (!creatorId) return;
 
       const deleted = await Task.deleteTask(taskId, creatorId);
 
@@ -293,15 +201,7 @@ export default class TaskController {
    */
   static async countTasks(req, res) {
     try {
-      const { emergencyLevel, category, isOpen } = req.query;
-
-      const filters = {};
-      if (emergencyLevel) filters.emergencyLevel = emergencyLevel;
-      if (category) filters.category = category;
-      if (isOpen !== undefined) {
-        filters.isOpen = isOpen === "true" || isOpen === true;
-      }
-
+      const filters = parseTaskCountParams(req.query);
       const count = await Task.countTasks(filters);
 
       return res.status(200).json({ count });
@@ -317,23 +217,10 @@ export default class TaskController {
    */
   static async countMyTasks(req, res) {
     try {
-      const creatorIdRaw = req.user?.id ?? req.userId;
-      if (!creatorIdRaw) {
-        return res
-          .status(401)
-          .json({ status: "error", message: "Unauthorized" });
-      }
-      const creatorId = normId(creatorIdRaw);
+      const creatorId = requireAuth(req, res);
+      if (!creatorId) return;
 
-      const { emergencyLevel, category, isOpen } = req.query;
-
-      const filters = {};
-      if (emergencyLevel) filters.emergencyLevel = emergencyLevel;
-      if (category) filters.category = category;
-      if (isOpen !== undefined) {
-        filters.isOpen = isOpen === "true" || isOpen === true;
-      }
-
+      const filters = parseTaskCountParams(req.query);
       const count = await Task.countTasksByCreator(creatorId, filters);
 
       return res.status(200).json({ count });
@@ -349,23 +236,10 @@ export default class TaskController {
    */
   static async countParticipatedTasks(req, res) {
     try {
-      const userIdRaw = req.user?.id ?? req.userId;
-      if (!userIdRaw) {
-        return res
-          .status(401)
-          .json({ status: "error", message: "Unauthorized" });
-      }
-      const userId = normId(userIdRaw);
+      const userId = requireAuth(req, res);
+      if (!userId) return;
 
-      const { emergencyLevel, category, isOpen } = req.query;
-
-      const filters = {};
-      if (emergencyLevel) filters.emergencyLevel = emergencyLevel;
-      if (category) filters.category = category;
-      if (isOpen !== undefined) {
-        filters.isOpen = isOpen === "true" || isOpen === true;
-      }
-
+      const filters = parseTaskCountParams(req.query);
       const count = await Task.countTasksByParticipant(userId, filters);
 
       return res.status(200).json({ count });
@@ -381,20 +255,11 @@ export default class TaskController {
    */
   static async joinTask(req, res) {
     try {
-      const taskId = req.params.id;
-      if (!taskId) {
-        return res
-          .status(400)
-          .json({ status: "error", message: "Task ID is required" });
-      }
+      const taskId = getTaskIdFromRequest(req, res);
+      if (!taskId) return;
 
-      const userIdRaw = req.user?.id ?? req.userId;
-      if (!userIdRaw) {
-        return res
-          .status(401)
-          .json({ status: "error", message: "Unauthorized" });
-      }
-      const userId = normId(userIdRaw);
+      const userId = requireAuth(req, res);
+      if (!userId) return;
 
       const { note } = req.body;
 
@@ -422,20 +287,11 @@ export default class TaskController {
    */
   static async quitTask(req, res) {
     try {
-      const taskId = req.params.id;
-      if (!taskId) {
-        return res
-          .status(400)
-          .json({ status: "error", message: "Task ID is required" });
-      }
+      const taskId = getTaskIdFromRequest(req, res);
+      if (!taskId) return;
 
-      const userIdRaw = req.user?.id ?? req.userId;
-      if (!userIdRaw) {
-        return res
-          .status(401)
-          .json({ status: "error", message: "Unauthorized" });
-      }
-      const userId = normId(userIdRaw);
+      const userId = requireAuth(req, res);
+      if (!userId) return;
 
       await Task.quitTask(taskId, userId);
 
@@ -458,20 +314,11 @@ export default class TaskController {
    */
   static async addTaskLog(req, res) {
     try {
-      const taskId = req.params.id;
-      if (!taskId) {
-        return res
-          .status(400)
-          .json({ status: "error", message: "Task ID is required" });
-      }
+      const taskId = getTaskIdFromRequest(req, res);
+      if (!taskId) return;
 
-      const userIdRaw = req.user?.id ?? req.userId;
-      if (!userIdRaw) {
-        return res
-          .status(401)
-          .json({ status: "error", message: "Unauthorized" });
-      }
-      const userId = normId(userIdRaw);
+      const userId = requireAuth(req, res);
+      if (!userId) return;
 
       const { summary } = req.body;
       if (!summary || typeof summary !== "string" || summary.trim().length === 0) {
