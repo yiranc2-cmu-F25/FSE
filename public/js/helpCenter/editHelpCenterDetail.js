@@ -289,7 +289,9 @@ if (confirmBtn) {
       try {
         const body = await res.json();
         if (body && body.message) errMsg = body.message;
-      } catch (_) {}
+      } catch (_) {
+        console.log("");
+      }
 
       showFormMessage(errMsg, "text-red-600");
     } catch (err) {
@@ -352,7 +354,9 @@ async function deleteHelpCenter() {
     try {
       const body = await res.json();
       if (body && body.message) errMsg = body.message;
-    } catch (_) {}
+    } catch (_) {
+      console.log("")
+    }
 
     showFormMessage(errMsg, "text-red-600");
   } catch (err) {

@@ -1,3 +1,4 @@
+/* global mapboxgl */
 const msgEl = document.getElementById("map-message");
 
 function showMessage(msg) {
