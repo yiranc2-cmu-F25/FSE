@@ -1,4 +1,5 @@
 import { getInitialsSafe, getAvatarColor } from "../utils/avatars.js";
+import { formatTimestamp } from "../utils/dateFormatter.js";
 
 const groupsUL = document.getElementById("groups-list");
 const createGroupBtn = document.getElementById("create-group-btn");
@@ -55,6 +56,14 @@ function renderGroupItem(group) {
   }
 
   li.querySelector(".group-name").textContent = groupName;
+
+  // Format and display timestamp
+  const timestampEl = li.querySelector(".timestamp");
+  if (group.timestamp) {
+    timestampEl.textContent = formatTimestamp(group.timestamp);
+  } else {
+    timestampEl.textContent = "";
+  }
 
   // Format member names with length limit and "x others" pattern
   const maxNameLength = 15;
