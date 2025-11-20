@@ -82,7 +82,7 @@ router.get("/", auth, getHelpCentersByUserId);
 
 /**
  * @openapi
- * /api/help-centers/nearby:
+ * /api/help-centers/closest-help-centers:
  *   get:
  *     tags: [HelpCenters]
  *     summary: Get nearby help centers
@@ -186,7 +186,7 @@ router.get("/", auth, getHelpCentersByUserId);
  *                   type: string
  *                   example: "Server error"
  */
-router.get("/nearby", auth, getClosestHelpCenters);
+router.get("/closest-help-centers", auth, getClosestHelpCenters);
 
 /**
  * @openapi
@@ -543,7 +543,6 @@ router.post("/", auth, registerHelpCenter);
  *                   type: string
  *                   example: "Server error"
  */
-
 router.get("/:id", auth, getHelpCenter);
 
 export default router;

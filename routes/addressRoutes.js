@@ -1,64 +1,81 @@
 import express from "express";
+import { verify } from "../services/address/addressVerification.js"
+import { auth } from "../middleware/JWT.js";
+
+
 const router = express.Router();
 
-router.get("/", async (req, res) => {
-    const { query } = req.query;
-
-    if (!query || query.trim().length < 3) {
-        return res.status(400).json({
-        status: "error",
-        message: "Query too short",
-        });
-    }
-
-    try {
-        const token = process.env.MAPBOX_TOKEN;
-
-        // Correct endpoint for Mapbox Search v1 Forward API
-        const url =
-            `https://api.mapbox.com/search/searchbox/v1/forward` +
-            `?q=${encodeURIComponent(query)}` +
-            `&limit=5` +
-            `&access_token=${token}`;
-
-        const response = await fetch(url);
-
-        if (!response.ok) {
-            return res.status(500).json({
-                status: "error",
-                message: "Mapbox request failed",
-            });
-        }
-
-        const json = await response.json();
-
-        console.log(JSON.stringify(json, null, 2));
-
-        const features = json.features || [];
-        
-        const results = features
-            .map((f) => ({
-                label: f.properties?.full_address,
-                lon: f.geometry?.coordinates?.[0],
-                lat: f.geometry?.coordinates?.[1],
-            }))
-            .filter(
-                (r) =>
-                typeof r.label === "string" &&
-                r.label.trim().length > 0 &&
-                typeof r.lon === "number" &&
-                typeof r.lat === "number"
-            );
-
-        return res.json(results);
-
-    } catch (err) {
-        console.error("Mapbox verify error:", err);
-        return res.status(500).json({
-        status: "error",
-        message: "Address verification failed",
-        });
-    }
-});
+/**
+ * @openapi
+ * /api/addresses:
+ *   get:
+ *     tags: [Address Verification]
+ *     summary: Verify and autocomplete an address
+ *     description: >
+ *       Uses the Mapbox Searchbox Forward API to retrieve a list of possible
+ *       matching addresses based on a partial text query.  
+ *       
+ *       Returns an array of result objects containing a human-readable label and
+ *       geographic coordinates (longitude, latitude).  
+ *       
+ *       Returns **400** if the query is missing or shorter than 3 characters.
+ *     parameters:
+ *       - in: query
+ *         name: query
+ *         required: true
+ *         description: The partial address text to search for (minimum 3 characters).
+ *         schema:
+ *           type: string
+ *           example: "Carnegie Mellon"
+ *     responses:
+ *       200:
+ *         description: List of matched address suggestions
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   label:
+ *                     type: string
+ *                     description: Full formatted address from Mapbox
+ *                     example: "NASA Research Park Building 23 Moffett Field, Mountain View, CA 94043, United States"
+ *                   lon:
+ *                     type: number
+ *                     description: Longitude coordinate
+ *                     example: -122.0597346
+ *                   lat:
+ *                     type: number
+ *                     description: Latitude coordinate
+ *                     example: 37.4104419
+ *       400:
+ *         description: Query is missing or too short
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: "error"
+ *                 message:
+ *                   type: string
+ *                   example: "Query too short"
+ *       500:
+ *         description: Mapbox API error or internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: "error"
+ *                 message:
+ *                   type: string
+ *                   example: "Address verification failed"
+ */
+router.get("/", auth, verify);
 
 export default router;
