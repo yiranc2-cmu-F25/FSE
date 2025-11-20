@@ -3,7 +3,7 @@ import { el } from "../utils/domHelpers.js";
 import { setupModalEventListeners, openModal } from "../utils/modalHelpers.js";
 import { fetchCategorySkillPresets } from "../utils/presets.js";
 import { createSkillTag } from "../utils/skillTags.js";
-import { setupSkillSelectHandler } from "../utils/skillSelect.js";
+import { setupSkillSelectHandler, updateSelectedSkillsRef, updateUserSkillsRef } from "../utils/skillSelect.js";
 import { autoResizeTextarea } from "../utils/autoResizeTextarea.js";
 import { countCharacters, updateCharCount as updateCharCountUtil, setupCharCountListener } from "../utils/charCount.js";
 
@@ -103,10 +103,15 @@ function applyDraft(d) {
 	toolsContainer.innerHTML = "";
 	(d.tools || [""]).forEach(val => toolsContainer.appendChild(createToolRow(val)));
 	selectedSkills = Array.from(new Set(d.relatedSkills || []));
-	renderSkillTags();
-	document.getElementById("notes").value = d.notes ?? "";
+	const select = document.getElementById("skillSelect");
+	if (select) {
+		updateSelectedSkillsRef(select, selectedSkills);
+		updateUserSkillsRef(select, userSkills);
+	}
 	
-	// Update character counts
+	renderSkillTags();
+	updateSkillSelectOptions();
+	document.getElementById("notes").value = d.notes ?? "";
 	updateCharCountUtil("title", "titleCharCount", CHAR_LIMITS.title);
 	updateCharCountUtil("description", "descriptionCharCount", CHAR_LIMITS.description);
 	updateCharCountUtil("objective", "objectiveCharCount", CHAR_LIMITS.objective);
@@ -126,10 +131,15 @@ function applyBoardData(board) {
 	toolsContainer.innerHTML = "";
 	(board.tools || []).forEach(val => toolsContainer.appendChild(createToolRow(val)));
 	selectedSkills = Array.from(new Set(board.relatedSkills || []));
-	renderSkillTags();
-	document.getElementById("notes").value = board.notes ?? "";
+	const select = document.getElementById("skillSelect");
+	if (select) {
+		updateSelectedSkillsRef(select, selectedSkills);
+		updateUserSkillsRef(select, userSkills);
+	}
 	
-	// Update character counts
+	renderSkillTags();
+	updateSkillSelectOptions();
+	document.getElementById("notes").value = board.notes ?? "";
 	updateCharCountUtil("title", "titleCharCount", CHAR_LIMITS.title);
 	updateCharCountUtil("description", "descriptionCharCount", CHAR_LIMITS.description);
 	updateCharCountUtil("objective", "objectiveCharCount", CHAR_LIMITS.objective);
@@ -143,17 +153,17 @@ function setupCategoryOptions() {
 	[...CATEGORY_PRESET].sort().forEach(c => sel.appendChild(el("option", { value: c, text: c })));
 }
 
-function renderSkillTags() {
-	const list = document.getElementById("skillsTagList");
+function renderSkillTags() {const list = document.getElementById("skillsTagList");
+	if (!list) {return;
+	}
 	list.innerHTML = "";
-	selectedSkills.forEach(s => {
-		const tag = createSkillTag(s, (skill) => {
+	selectedSkills.forEach(s => {const tag = createSkillTag(s, (skill) => {
 			selectedSkills = selectedSkills.filter(x => x !== skill);
 			renderSkillTags();
+			updateSkillSelectOptions();
 		});
 		list.appendChild(tag);
-	});
-}
+	});}
 
 async function fetchUserSkills() {
 	try {
@@ -167,17 +177,19 @@ async function fetchUserSkills() {
 		if (!res.ok) return [];
 		const data = await res.json();
 		return data.skills || [];
-	} catch (err) {
-		console.error("Error fetching user skills:", err);
-		return [];
+	} catch (err) {return [];
 	}
 }
 
-function setupSkills() {
+function updateSkillSelectOptions() {
 	const select = document.getElementById("skillSelect");
-	select.innerHTML = "";
-	select.appendChild(el("option", { value: "", text: "Add a skill" }));
-	[...SKILL_PRESET].sort().forEach(s => {
+	if (!select) return;
+	const currentValue = select.value;
+	while (select.options.length > 1) {
+		select.remove(1);
+	}
+	const availableSkills = [...SKILL_PRESET].sort().filter(s => !selectedSkills.includes(s));
+	availableSkills.forEach(s => {
 		const option = el("option", { value: s, text: s });
 		if (userSkills.includes(s)) {
 			option.textContent = `⭐ ${s}`;
@@ -186,7 +198,30 @@ function setupSkills() {
 		}
 		select.appendChild(option);
 	});
-	setupSkillSelectHandler(select, selectedSkills, renderSkillTags);
+	if (currentValue && availableSkills.includes(currentValue)) {
+		select.value = currentValue;
+	} else {
+		select.value = "";
+	}
+}
+
+function setupSkills() {
+	const select = document.getElementById("skillSelect");
+	select.innerHTML = "";
+	select.appendChild(el("option", { value: "", text: "Add a skill" }));
+	const availableSkills = [...SKILL_PRESET].sort().filter(s => !selectedSkills.includes(s));
+	availableSkills.forEach(s => {
+		const option = el("option", { value: s, text: s });
+		if (userSkills.includes(s)) {
+			option.textContent = `⭐ ${s}`;
+			option.style.backgroundColor = "#FEF3C7";
+			option.style.color = "#92400E";
+		}
+		select.appendChild(option);
+	});
+	setupSkillSelectHandler(select, selectedSkills, () => {renderSkillTags();
+		updateSkillSelectOptions();}, userSkills);
+	
 	renderSkillTags();
 }
 
@@ -243,8 +278,6 @@ function createStepRow(value = "") {
 	stepWrapper.appendChild(textareaWrapper);
 	stepWrapper.appendChild(delBtn);
 	row.appendChild(stepWrapper);
-	
-	// Call autoResizeTextarea after DOM insertion to ensure proper width calculation
 	setTimeout(() => {
 		autoResizeTextarea(textarea, 160);
 		updateStepCharCount(textarea, countSpan);
@@ -484,7 +517,6 @@ function setupActions(isEditMode = false, boardId = null) {
 	form.addEventListener("submit", async (e) => {
 		e.preventDefault();
 		const payload = readForm();
-		
 		const title = payload.title.trim();
 		const category = payload.category || "";
 		const titleErrorEl = document.getElementById("titleError");
@@ -593,7 +625,6 @@ function setupActions(isEditMode = false, boardId = null) {
 					hideDeleteModal();
 				}
 			} catch (error) {
-				console.error("Delete error:", error);
 				alert("An error occurred while deleting the board.");
 				hideDeleteModal();
 			}
@@ -688,6 +719,11 @@ function showErrorModal(message, modalId, messageElId, okBtnId) {
 		modal.classList.add("hidden");
 		modal.classList.remove("flex");
 		modal.setAttribute("aria-hidden", "true");
+		const select = document.getElementById("skillSelect");
+		if (select) {
+			updateSelectedSkillsRef(select, selectedSkills);
+			updateUserSkillsRef(select, userSkills);
+		}
 	};
 	
 	setupModalEventListeners(modal, okBtn, closeModal);
@@ -724,6 +760,7 @@ function setupCharCountListeners() {
 		const board = await fetchBoard(boardId);
 		if (board) {
 			applyBoardData(board);
+			setupSkills();
 		} else {
 			alert("Board not found");
 			window.location.href = "/boards";
@@ -735,10 +772,12 @@ function setupCharCountListeners() {
 	
 	if (!isEditMode) {
 		const draft = await fetchDraft();
-		if (draft) applyDraft(draft);
+		if (draft) {
+			applyDraft(draft);
+			setupSkills();
+		}
 	}
 	
 	getSocket();
 })(); 
-
 

@@ -45,9 +45,7 @@ async function verifyAtLeastOneUserSkill(req, relatedSkills) {
 	try {
 		const userSkills = await User.getSkillsById(requesterId);
 		return relatedSkills.some(s => userSkills.includes(s));
-	} catch (err) {
-		console.error("Error verifying user skills:", err);
-		return false;
+	} catch (err) {return false;
 	}
 }
 
@@ -111,7 +109,6 @@ async function getBoardAndComment(id, commentId) {
 	return { board, comment };
 }
 
-
 export async function checkDuplicateTitle(req, res) {
 	try {
 		const title = String(req.query?.title ?? "").trim();
@@ -129,9 +126,7 @@ export async function checkDuplicateTitle(req, res) {
 			boardId = await CoachingBoard.findPublishedByTitle({ title, excludeId });
 		}
 		return res.status(200).json({ isDuplicate, titleValid: true, boardId });
-	} catch (err) {
-		console.error("checkDuplicateTitle error", err);
-		return res.status(500).json({ status: "error", message: "Server error" });
+	} catch (err) {return res.status(500).json({ status: "error", message: "Server error" });
 	}
 }
 
@@ -139,9 +134,7 @@ export async function listBoards(req, res) {
 	try {
 		const boards = await CoachingBoard.listPublished();
 		return res.status(200).json(boards);
-	} catch (err) {
-		console.error("listBoards error", err);
-		return res.status(500).json({ status: "error", message: "Server error" });
+	} catch (err) {return res.status(500).json({ status: "error", message: "Server error" });
 	}
 }
 
@@ -301,9 +294,7 @@ export async function getBoard(req, res) {
 		});
 		
 		return res.status(200).json({ ...board, authorName, comments: limitedComments, hasMoreComments: (board.comments || []).length > 10 });
-	} catch (err) {
-		console.error("getBoard error", err);
-		return res.status(500).json({ status: "error", message: "Server error" });
+	} catch (err) {return res.status(500).json({ status: "error", message: "Server error" });
 	}
 }
 
@@ -356,9 +347,7 @@ export async function getMoreComments(req, res) {
 			hasMore,
 			total: allComments.length
 		});
-	} catch (err) {
-		console.error("getMoreComments error", err);
-		return res.status(500).json({ status: "error", message: "Server error" });
+	} catch (err) {return res.status(500).json({ status: "error", message: "Server error" });
 	}
 }
 
@@ -401,9 +390,7 @@ export async function getMoreReplies(req, res) {
 			hasMore,
 			total: allReplies.length
 		});
-	} catch (err) {
-		console.error("getMoreReplies error", err);
-		return res.status(500).json({ status: "error", message: "Server error" });
+	} catch (err) {return res.status(500).json({ status: "error", message: "Server error" });
 	}
 }
 
@@ -446,7 +433,7 @@ export async function publishBoard(req, res) {
 		try {
 			await CoachingBoard.deleteDraft({ author: requesterId });
 		} catch (e) {
-			console.warn("Failed to delete draft after publishing (non-fatal):", e?.message);
+			// Ignore error if draft deletion fails
 		}
 
 		try {
@@ -457,13 +444,11 @@ export async function publishBoard(req, res) {
 			});
 			await announcement.create();
 		} catch (e) {
-			console.warn("Announcement publishBoard failed (non-fatal):", e?.message);
+			// Ignore error if announcement creation fails
 		}
 
 		return res.status(201).json({ message: "Board published successfully", boardId: created.id });
-	} catch (err) {
-		console.error("publishBoard error", err);
-		if (err?.code === 11000) {
+	} catch (err) {if (err?.code === 11000) {
 			return res.status(409).json({
 				errorStatus: "DUPLICATE_TITLE",
 				message: "A board with this title already exists under this category."
@@ -479,14 +464,25 @@ export async function updateBoard(req, res) {
 		if (!requesterId) return res.status(401).json({ error: "Unauthorized" });
 		const id = String(req.params?.bid ?? "");
 		if (!id) return res.status(400).json({ status: "error", message: "Missing board id" });
+		const currentBoard = await CoachingBoard.getById({ id });
+		if (!currentBoard) return res.status(404).json({ status: "error", message: "Board not found" });
 
 		const update = {};
 		const allowed = ["title", "category", "description", "objective", "steps", "relatedSkills", "tools", "notes"];
 		for (const key of allowed) {
 			if (key in req.body) update[key] = req.body[key];
 		}
-
-		if ("title" in update && !validateTitle(update.title)) {
+		const mergedData = {
+			title: update.title ?? currentBoard.title,
+			category: update.category ?? currentBoard.category,
+			description: update.description ?? currentBoard.description,
+			objective: update.objective ?? currentBoard.objective,
+			steps: update.steps ?? currentBoard.steps ?? [],
+			relatedSkills: update.relatedSkills ?? currentBoard.relatedSkills ?? [],
+			tools: update.tools ?? currentBoard.tools ?? [],
+			notes: update.notes ?? currentBoard.notes ?? ""
+		};
+		if (!validateTitle(mergedData.title)) {
 			return res.status(400).json({ status: "error", message: "Title must be non-empty and < 50 characters." });
 		}
 		
@@ -494,16 +490,32 @@ export async function updateBoard(req, res) {
 		const categories = presets.categories || [];
 		const skills = presets.skills || [];
 		
-		if ("category" in update && !categories.includes(update.category)) {
-			return res.status(400).json({ status: "error", message: "Category must be from preset." });
+		if (!categories.includes(mergedData.category)) {
+			return res.status(400).json({ status: "error", message: "Category must be chosen from system preset." });
 		}
-		if ("relatedSkills" in update) {
-			if (!Array.isArray(update.relatedSkills) || update.relatedSkills.length === 0) {
-				return res.status(400).json({ status: "error", message: "At least one related skill is required." });
-			}
-			if (!update.relatedSkills.every(s => skills.includes(s))) {
-				return res.status(400).json({ status: "error", message: "Related Skills must be from preset." });
-			}
+		
+		if (typeof mergedData.description !== "string" || !mergedData.description.trim()) {
+			return res.status(400).json({ status: "error", message: "Description is required." });
+		}
+		
+		if (typeof mergedData.objective !== "string" || !mergedData.objective.trim()) {
+			return res.status(400).json({ status: "error", message: "Objective is required." });
+		}
+		
+		if (!Array.isArray(mergedData.steps) || mergedData.steps.length === 0) {
+			return res.status(400).json({ status: "error", message: "At least one step is required." });
+		}
+		
+		if (!Array.isArray(mergedData.relatedSkills) || mergedData.relatedSkills.length === 0) {
+			return res.status(400).json({ status: "error", message: "At least one related skill is required." });
+		}
+		
+		if (!mergedData.relatedSkills.every(s => skills.includes(s))) {
+			return res.status(400).json({ status: "error", message: "Related Skills must be from system preset." });
+		}
+		const okSkill = await verifyAtLeastOneUserSkill(req, mergedData.relatedSkills);
+		if (!okSkill) {
+			return res.status(400).json({ status: "error", message: "At least one related skill must be a verified skill that belongs to you." });
 		}
 
 		const updated = await CoachingBoard.updateBoard({ id, author: requesterId, update });
@@ -527,13 +539,11 @@ export async function updateBoard(req, res) {
 				}
 			}
 		} catch (e) {
-			console.warn("Socket notification updateBoard failed (non-fatal):", e?.message);
+			// Ignore error if socket emission fails
 		}
 
 		return res.status(200).json({ message: "Board updated successfully", boardId: updated.id });
-	} catch (err) {
-		console.error("updateBoard error", err);
-		if (err?.code === 11000) {
+	} catch (err) {if (err?.code === 11000) {
 			return res.status(409).json({
 				errorStatus: "DUPLICATE_TITLE",
 				message: "A board with this title already exists under this category."
@@ -556,9 +566,7 @@ export async function deleteBoard(req, res) {
 		}
 
 		return res.status(200).json({ message: "Board deleted successfully" });
-	} catch (err) {
-		console.error("deleteBoard error", err);
-		return res.status(500).json({ status: "error", message: "Server error" });
+	} catch (err) {return res.status(500).json({ status: "error", message: "Server error" });
 	}
 }
 
@@ -577,7 +585,6 @@ export async function addComment(req, res) {
 		const replyMatch = comment.match(/^@([^#:]+)(?:#(reply:[^:]+|[^:]+))?:\s*(.+)$/);
 		if (replyMatch) {
 			const [, username, targetId, replyText] = replyMatch;
-			console.log("[addComment] Reply detected:", { username, targetId, replyText: replyText?.substring(0, 50) });
 			if (!replyText || !replyText.trim()) {
 				return res.status(400).json({ status: "error", message: "Reply text cannot be empty" });
 			}
@@ -588,33 +595,20 @@ export async function addComment(req, res) {
 			let targetReply = null;
 			let targetComment = null;
 			
-			if (targetId) {
-				console.log("[addComment] Looking for target with ID:", targetId);
-				if (targetId.startsWith("reply:")) {
-					const replyId = targetId.replace("reply:", "");
-					console.log("[addComment] Searching for reply ID:", replyId);
-					for (const c of (board.comments || [])) {
+			if (targetId) {if (targetId.startsWith("reply:")) {
+					const replyId = targetId.replace("reply:", "");for (const c of (board.comments || [])) {
 						const reply = (c.replies || []).find(r => {
-							const rId = String(r.id || r._id);
-							console.log("[addComment] Comparing reply ID:", rId, "with", replyId, "match:", rId === replyId);
-							return rId === replyId;
+							const rId = String(r.id || r._id);return rId === replyId;
 						});
 						if (reply) {
 							targetReply = reply;
 							targetComment = c;
-							console.log("[addComment] Found target reply in comment:", String(c.id || c._id));
 							break;
 						}
 					}
-				} else {
-					console.log("[addComment] Searching for comment ID:", targetId);
-					for (const c of (board.comments || [])) {
-						const cId = String(c.id || c._id);
-						console.log("[addComment] Comparing comment ID:", cId, "with", targetId, "match:", cId === targetId);
-						if (cId === targetId) {
-							targetComment = c;
-							console.log("[addComment] Found target comment:", cId);
-							break;
+				} else {for (const c of (board.comments || [])) {
+						const cId = String(c.id || c._id);if (cId === targetId) {
+							targetComment = c;break;
 						}
 					}
 				}
@@ -674,9 +668,7 @@ export async function addComment(req, res) {
 						}
 					}
 				}
-			} catch (err) {
-				console.warn("Failed to emit reply socket event:", err);
-			}
+			} catch (err) {}
 			
 			try {
 				const socketInstance = req.app.get("socketInstance");
@@ -711,9 +703,7 @@ export async function addComment(req, res) {
 						});
 					}
 				}
-			} catch (err) {
-				console.warn("Failed to emit reply notification:", err);
-			}
+			} catch (err) {}
 			
 			return res.status(201).json({ message: "Reply added successfully" });
 		}
@@ -742,9 +732,7 @@ export async function addComment(req, res) {
 					socketInstance.emitCoachingBoardComment(id, newComment);
 				}
 			}
-		} catch (err) {
-			console.warn("Failed to emit comment socket event:", err);
-		}
+		} catch (err) {}
 		
 		try {
 			const socketInstance = req.app.get("socketInstance");
@@ -767,14 +755,10 @@ export async function addComment(req, res) {
 					});
 				}
 			}
-		} catch (err) {
-			console.warn("Failed to emit comment notification:", err);
-		}
+		} catch (err) {}
 		
 		return res.status(201).json({ message: "Comment added successfully" });
-	} catch (err) {
-		console.error("addComment error", err);
-		return res.status(500).json({ status: "error", message: "Server error" });
+	} catch (err) {return res.status(500).json({ status: "error", message: "Server error" });
 	}
 }
 
@@ -793,9 +777,7 @@ export async function toggleCommentLike(req, res) {
 		if (!updated) return res.status(404).json({ status: "error", message: "Board or comment not found" });
 		
 		return res.status(200).json({ message: "Like toggled successfully" });
-	} catch (err) {
-		console.error("toggleCommentLike error", err);
-		return res.status(500).json({ status: "error", message: "Server error" });
+	} catch (err) {return res.status(500).json({ status: "error", message: "Server error" });
 	}
 }
 
@@ -815,9 +797,7 @@ export async function toggleReplyLike(req, res) {
 		if (!updated) return res.status(404).json({ status: "error", message: "Board, comment, or reply not found" });
 		
 		return res.status(200).json({ message: "Like toggled successfully" });
-	} catch (err) {
-		console.error("toggleReplyLike error", err);
-		return res.status(500).json({ status: "error", message: "Server error" });
+	} catch (err) {return res.status(500).json({ status: "error", message: "Server error" });
 	}
 }
 
@@ -841,13 +821,11 @@ export async function deleteComment(req, res) {
 				socketInstance.emitCoachingBoardCommentDeleted(id, commentId);
 			}
 		} catch (e) {
-			console.warn("Socket notification deleteComment failed (non-fatal):", e?.message);
+			// Ignore error if socket emission fails
 		}
 		
 		return res.status(200).json({ message: "Comment deleted successfully" });
-	} catch (err) {
-		console.error("deleteComment error", err);
-		return res.status(500).json({ status: "error", message: "Server error" });
+	} catch (err) {return res.status(500).json({ status: "error", message: "Server error" });
 	}
 }
 
@@ -872,13 +850,11 @@ export async function deleteReply(req, res) {
 				socketInstance.emitCoachingBoardReplyDeleted(id, commentId, replyId);
 			}
 		} catch (e) {
-			console.warn("Socket notification deleteReply failed (non-fatal):", e?.message);
+			// Ignore error if socket emission fails
 		}
 		
 		return res.status(200).json({ message: "Reply deleted successfully" });
-	} catch (err) {
-		console.error("deleteReply error", err);
-		return res.status(500).json({ status: "error", message: "Server error" });
+	} catch (err) {return res.status(500).json({ status: "error", message: "Server error" });
 	}
 }
 
@@ -901,9 +877,7 @@ export async function addReply(req, res) {
 		});
 		if (!updated) return res.status(404).json({ status: "error", message: "Board or comment not found" });
 		return res.status(201).json({ message: "Reply added successfully" });
-	} catch (err) {
-		console.error("addReply error", err);
-		return res.status(500).json({ status: "error", message: "Server error" });
+	} catch (err) {return res.status(500).json({ status: "error", message: "Server error" });
 	}
 }
 
@@ -930,9 +904,7 @@ export async function saveDraft(req, res) {
 		});
 		const draft = await boardEntity.saveDraft();
 		return res.status(200).json({ message: "Your draft has been saved.", draftId: draft.id });
-	} catch (err) {
-		console.error("saveDraft error", err);
-		return res.status(500).json({ status: "error", message: "Server error" });
+	} catch (err) {return res.status(500).json({ status: "error", message: "Server error" });
 	}
 }
 
@@ -943,9 +915,7 @@ export async function getMyDraft(req, res) {
 		const draft = await CoachingBoard.getMyDraft({ author: requesterId });
 		if (!draft) return res.status(204).send();
 		return res.status(200).json(draft);
-	} catch (err) {
-		console.error("getMyDraft error", err);
-		return res.status(500).json({ status: "error", message: "Server error" });
+	} catch (err) {return res.status(500).json({ status: "error", message: "Server error" });
 	}
 }
 
@@ -957,22 +927,14 @@ export async function subscribeBoard(req, res) {
 		if (!id) return res.status(400).json({ status: "error", message: "Missing board id" });
 		await CoachingBoard.subscribe({ id, userId: requesterId });
 		return res.status(204).send();
-	} catch (err) {
-		console.error("subscribeBoard error", err);
-		return res.status(500).json({ status: "error", message: "Server error" });
+	} catch (err) {return res.status(500).json({ status: "error", message: "Server error" });
 	}
 }
 
 export async function getPendingNotifications(req, res) {
 	try {
 		const requesterId = getRequesterUserId(req);
-		if (!requesterId) return res.status(401).json({ error: "Unauthorized" });
-		
-		console.log("[getPendingNotifications] Fetching notifications for user:", requesterId);
-		const notifications = await CoachingBoard.getPendingNotificationsForUser({ userId: requesterId });
-		console.log("[getPendingNotifications] Found notifications:", notifications.length, notifications);
-		
-		for (const notif of notifications) {
+		if (!requesterId) return res.status(401).json({ error: "Unauthorized" });const notifications = await CoachingBoard.getPendingNotificationsForUser({ userId: requesterId });for (const notif of notifications) {
 			if (notif.type === "new_reply" && notif.replyId) {
 				const board = await CoachingBoard.getById({ id: notif.boardId });
 				if (board && board.comments) {
@@ -994,13 +956,8 @@ export async function getPendingNotifications(req, res) {
 					}
 				}
 			}
-		}
-		
-		console.log("[getPendingNotifications] Returning notifications:", notifications.length);
-		return res.status(200).json({ notifications });
-	} catch (err) {
-		console.error("getPendingNotifications error", err);
-		return res.status(500).json({ status: "error", message: "Server error" });
+		}return res.status(200).json({ notifications });
+	} catch (err) {return res.status(500).json({ status: "error", message: "Server error" });
 	}
 }
 
@@ -1015,9 +972,7 @@ export async function markNotificationSeen(req, res) {
 		await CoachingBoard.markNotificationSeen({ id: boardId, userId: requesterId });
 		
 		return res.status(200).json({ message: "Notification marked as seen" });
-	} catch (err) {
-		console.error("markNotificationSeen error", err);
-		return res.status(500).json({ status: "error", message: "Server error" });
+	} catch (err) {return res.status(500).json({ status: "error", message: "Server error" });
 	}
 }
 
@@ -1029,10 +984,7 @@ export async function unsubscribeBoard(req, res) {
 		if (!id) return res.status(400).json({ status: "error", message: "Missing board id" });
 		await CoachingBoard.unsubscribe({ id, userId: requesterId });
 		return res.status(204).send();
-	} catch (err) {
-		console.error("unsubscribeBoard error", err);
-		return res.status(500).json({ status: "error", message: "Server error" });
+	} catch (err) {return res.status(500).json({ status: "error", message: "Server error" });
 	}
 }
-
 
