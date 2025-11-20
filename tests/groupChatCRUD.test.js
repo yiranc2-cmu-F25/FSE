@@ -23,7 +23,7 @@ describe("Group Chat Integration Tests", () => {
     const uri = mongod.getUri();
 
     await mongoose.disconnect();
-    conn = await mongoose.createConnection(uri);
+    conn = mongoose.createConnection(uri);
 
     GroupModel = makeGroupModel(conn);
     GroupMessageModel = makeGroupMessageModel(conn);
