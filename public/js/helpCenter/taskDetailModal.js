@@ -493,12 +493,23 @@ function setDetailButtonsVisibility(isParticipant, isOwner) {
   } else {
     // For OPEN tasks, show buttons based on participation and ownership
     if (!isParticipant) {
-      // can join
-      anyButtons.push(btnJoinTask);
-      showElement(btnJoinTask);
+      // Check if task is fully claimed (all helper slots filled)
+      const helpersJoined = currentTaskData?.helpersJoined || 0;
+      const helpersCapacity = currentTaskData?.helpersCapacity || 0;
+      const isFullyClaimed = helpersCapacity > 0 && helpersJoined >= helpersCapacity;
+      
+      if (!isFullyClaimed) {
+        // can join - task has available slots
+        anyButtons.push(btnJoinTask);
+        showElement(btnJoinTask);
+        console.log("[setDetailButtonsVisibility] Showing Join Task button");
+      } else {
+        // task is fully claimed - hide join button
+        hideElement(btnJoinTask);
+        console.log("[setDetailButtonsVisibility] Task is fully claimed - hiding Join Task button");
+      }
       hideElement(btnQuitTask);
       hideElement(btnUploadLog);
-      console.log("[setDetailButtonsVisibility] Showing Join Task button");
     } else {
       // participant: can quit and upload log
       anyButtons.push(btnQuitTask, btnUploadLog);
@@ -632,6 +643,16 @@ document.addEventListener("click", (e) => {
     if (currentTaskData && currentTaskData.status === "CLOSED") {
       alert("This task is CLOSED. You cannot join closed tasks.");
       return;
+    }
+    
+    // Check if task is fully claimed (all helper slots filled)
+    if (currentTaskData) {
+      const helpersJoined = currentTaskData.helpersJoined || 0;
+      const helpersCapacity = currentTaskData.helpersCapacity || 0;
+      if (helpersCapacity > 0 && helpersJoined >= helpersCapacity) {
+        alert("This task is fully claimed. No helper slots available.");
+        return;
+      }
     }
     
     console.log("[Join Task] Button clicked, opening join panel");
@@ -841,6 +862,25 @@ document.addEventListener("click", async (event) => {
       // Return to detail panel
       openDetail();
       return;
+    }
+    
+    // Check if task is fully claimed (all helper slots filled)
+    if (currentTaskData) {
+      const helpersJoined = currentTaskData.helpersJoined || 0;
+      const helpersCapacity = currentTaskData.helpersCapacity || 0;
+      if (helpersCapacity > 0 && helpersJoined >= helpersCapacity) {
+        alert("This task is fully claimed. No helper slots available.");
+        // Close confirm modal
+        if (window.ModalManager) {
+          window.ModalManager.close("join-confirm-modal");
+        }
+        // Return to detail panel
+        openDetail();
+        // Re-enable button
+        target.disabled = false;
+        target.textContent = originalText;
+        return;
+      }
     }
     
     try {

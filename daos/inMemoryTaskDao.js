@@ -1,5 +1,8 @@
 import iTaskDao from "./iTaskDao.js";
 import { transformTaskDoc, transformTaskDocSimple, generateHelperAvatars, extractParticipantNames } from "../utils/task/taskTransformers.js";
+import { filterTasks } from "../utils/task/inMemoryHelpers.js";
+import { buildBaseTaskData } from "../utils/task/taskCreators.js";
+import { queryInMemoryTasksWithCounts, queryInMemoryTasksWithStatus } from "../utils/task/inMemoryQueryHelpers.js";
 
 export class inMemoryTaskDao extends iTaskDao {
   constructor() {
@@ -25,26 +28,25 @@ export class inMemoryTaskDao extends iTaskDao {
     skillsRequired,
     creator,
   }) {
-    const now = new Date();
-    const task = {
-      _id: `task_${this.nextTaskId++}`,
-      id: `task_${this.nextTaskId - 1}`,
+    const taskData = buildBaseTaskData({
       title,
       description,
       category,
       helpers,
       emergencyLevel,
       taskType,
-      isOpen: true,
-      creator: creator,
-      createdAt: now,
-      updatedAt: now,
-    };
+      creator,
+      dueDate,
+      location,
+      resourcesNeeded,
+      skillsRequired,
+    });
 
-    if (dueDate !== undefined) task.dueDate = dueDate;
-    if (location !== undefined) task.location = location;
-    if (resourcesNeeded !== undefined) task.resourcesNeeded = resourcesNeeded;
-    if (skillsRequired !== undefined) task.skillsRequired = skillsRequired;
+    const task = {
+      _id: `task_${this.nextTaskId++}`,
+      id: `task_${this.nextTaskId - 1}`,
+      ...taskData,
+    };
 
     this.tasks.push(task);
     return { ...task };
@@ -101,91 +103,15 @@ export class inMemoryTaskDao extends iTaskDao {
     limit,
     skip,
   } = {}) {
-    let filtered = [...this.tasks];
-
-    if (emergencyLevel) {
-      filtered = filtered.filter((t) => t.emergencyLevel === emergencyLevel);
-    }
-    if (category) {
-      filtered = filtered.filter((t) => t.category === category);
-    }
-    if (isOpen !== undefined) {
-      filtered = filtered.filter((t) => t.isOpen === isOpen);
-    }
-
-    // Sort
-    filtered.sort((a, b) => {
-      let aVal, bVal;
-      switch (sortBy) {
-        case "emergencyLevel":
-          aVal = a.emergencyLevel;
-          bVal = b.emergencyLevel;
-          break;
-        case "helpers":
-          aVal = a.helpers;
-          bVal = b.helpers;
-          break;
-        case "category":
-          aVal = a.category;
-          bVal = b.category;
-          break;
-        case "createdAt":
-          aVal = a.createdAt;
-          bVal = b.createdAt;
-          break;
-        case "updatedAt":
-          aVal = a.updatedAt;
-          bVal = b.updatedAt;
-          break;
-        case "isOpen":
-          aVal = a.isOpen ? 1 : 0;
-          bVal = b.isOpen ? 1 : 0;
-          break;
-        default:
-          aVal = a.createdAt;
-          bVal = b.createdAt;
-      }
-
-      if (aVal < bVal) return sortOrder === "asc" ? -1 : 1;
-      if (aVal > bVal) return sortOrder === "asc" ? 1 : -1;
-      return 0;
+    return queryInMemoryTasksWithCounts({
+      tasks: this.tasks,
+      participants: this.participants,
+      filters: { emergencyLevel, category, isOpen },
+      sortBy,
+      sortOrder,
+      skip,
+      limit,
     });
-
-    // Pagination
-    if (skip !== undefined) {
-      filtered = filtered.slice(skip);
-    }
-    if (limit !== undefined) {
-      filtered = filtered.slice(0, limit);
-    }
-
-    // Get participant counts
-    const taskIds = filtered.map((t) => t._id);
-    const countMap = {};
-    taskIds.forEach((taskId) => {
-      countMap[taskId] = this.participants.filter(
-        (p) => p.task === taskId
-      ).length;
-    });
-
-    return filtered.map((task) => ({
-      id: task._id,
-      title: task.title,
-      description: task.description,
-      category: task.category,
-      helpers: task.helpers,
-      emergencyLevel: task.emergencyLevel,
-      taskType: task.taskType,
-      dueDate: task.dueDate,
-      location: task.location,
-      resourcesNeeded: task.resourcesNeeded || {},
-      skillsRequired: task.skillsRequired || [],
-      isOpen: task.isOpen,
-      creator: task.creator,
-      createdAt: task.createdAt,
-      updatedAt: task.updatedAt,
-      helpersJoined: countMap[task._id] || 0,
-    }));
   }
 
   async getTasksByCreator(
@@ -200,91 +126,15 @@ export class inMemoryTaskDao extends iTaskDao {
       skip,
     } = {},
   ) {
-    let filtered = this.tasks.filter(
-      (t) => String(t.creator) === String(creatorId)
-    );
-
-    if (emergencyLevel) {
-      filtered = filtered.filter((t) => t.emergencyLevel === emergencyLevel);
-    }
-    if (category) {
-      filtered = filtered.filter((t) => t.category === category);
-    }
-    if (isOpen !== undefined) {
-      filtered = filtered.filter((t) => t.isOpen === isOpen);
-    }
-
-    // Sort (same logic as getAllTasks)
-    filtered.sort((a, b) => {
-      let aVal, bVal;
-      switch (sortBy) {
-        case "emergencyLevel":
-          aVal = a.emergencyLevel;
-          bVal = b.emergencyLevel;
-          break;
-        case "helpers":
-          aVal = a.helpers;
-          bVal = b.helpers;
-          break;
-        case "category":
-          aVal = a.category;
-          bVal = b.category;
-          break;
-        case "createdAt":
-          aVal = a.createdAt;
-          bVal = b.createdAt;
-          break;
-        case "updatedAt":
-          aVal = a.updatedAt;
-          bVal = b.updatedAt;
-          break;
-        case "isOpen":
-          aVal = a.isOpen ? 1 : 0;
-          bVal = b.isOpen ? 1 : 0;
-          break;
-        default:
-          aVal = a.createdAt;
-          bVal = b.createdAt;
-      }
-
-      if (aVal < bVal) return sortOrder === "asc" ? -1 : 1;
-      if (aVal > bVal) return sortOrder === "asc" ? 1 : -1;
-      return 0;
+    return queryInMemoryTasksWithCounts({
+      tasks: this.tasks,
+      participants: this.participants,
+      filters: { emergencyLevel, category, isOpen, creatorId },
+      sortBy,
+      sortOrder,
+      skip,
+      limit,
     });
-
-    if (skip !== undefined) {
-      filtered = filtered.slice(skip);
-    }
-    if (limit !== undefined) {
-      filtered = filtered.slice(0, limit);
-    }
-
-    const taskIds = filtered.map((t) => t._id);
-    const countMap = {};
-    taskIds.forEach((taskId) => {
-      countMap[taskId] = this.participants.filter(
-        (p) => p.task === taskId
-      ).length;
-    });
-
-    return filtered.map((task) => ({
-      id: task._id,
-      title: task.title,
-      description: task.description,
-      category: task.category,
-      helpers: task.helpers,
-      emergencyLevel: task.emergencyLevel,
-      taskType: task.taskType,
-      dueDate: task.dueDate,
-      location: task.location,
-      resourcesNeeded: task.resourcesNeeded || {},
-      skillsRequired: task.skillsRequired || [],
-      isOpen: task.isOpen,
-      creator: task.creator,
-      createdAt: task.createdAt,
-      updatedAt: task.updatedAt,
-      helpersJoined: countMap[task._id] || 0,
-    }));
   }
 
   async getTasksByUser(userId, {
@@ -300,104 +150,22 @@ export class inMemoryTaskDao extends iTaskDao {
       .filter((p) => String(p.user) === String(userId))
       .map((p) => p.task);
 
-    let filtered = this.tasks.filter(
-      (t) =>
-        String(t.creator) === String(userId) ||
-        participantTaskIds.includes(t._id)
-    );
-
-    if (emergencyLevel) {
-      filtered = filtered.filter((t) => t.emergencyLevel === emergencyLevel);
-    }
-    if (category) {
-      filtered = filtered.filter((t) => t.category === category);
-    }
-    if (isOpen !== undefined) {
-      filtered = filtered.filter((t) => t.isOpen === isOpen);
-    }
-
-    // Sort (same logic as getAllTasks)
-    filtered.sort((a, b) => {
-      let aVal, bVal;
-      switch (sortBy) {
-        case "emergencyLevel":
-          aVal = a.emergencyLevel;
-          bVal = b.emergencyLevel;
-          break;
-        case "helpers":
-          aVal = a.helpers;
-          bVal = b.helpers;
-          break;
-        case "category":
-          aVal = a.category;
-          bVal = b.category;
-          break;
-        case "createdAt":
-          aVal = a.createdAt;
-          bVal = b.createdAt;
-          break;
-        case "updatedAt":
-          aVal = a.updatedAt;
-          bVal = b.updatedAt;
-          break;
-        case "isOpen":
-          aVal = a.isOpen ? 1 : 0;
-          bVal = b.isOpen ? 1 : 0;
-          break;
-        default:
-          aVal = a.createdAt;
-          bVal = b.createdAt;
-      }
-
-      if (aVal < bVal) return sortOrder === "asc" ? -1 : 1;
-      if (aVal > bVal) return sortOrder === "asc" ? 1 : -1;
-      return 0;
+    return queryInMemoryTasksWithStatus({
+      tasks: this.tasks,
+      participants: this.participants,
+      userId,
+      filters: {
+        emergencyLevel,
+        category,
+        isOpen,
+        creatorId: userId,
+        participantTaskIds,
+      },
+      sortBy,
+      sortOrder,
+      skip,
+      limit,
     });
-
-    if (skip !== undefined) {
-      filtered = filtered.slice(skip);
-    }
-    if (limit !== undefined) {
-      filtered = filtered.slice(0, limit);
-    }
-
-    const taskIds = filtered.map((t) => t._id);
-    const countMap = {};
-    taskIds.forEach((taskId) => {
-      countMap[taskId] = this.participants.filter(
-        (p) => p.task === taskId
-      ).length;
-    });
-
-    const participationSet = new Set(
-      this.participants
-        .filter(
-          (p) =>
-            String(p.user) === String(userId) &&
-            taskIds.includes(p.task)
-        )
-        .map((p) => p.task)
-    );
-
-    return filtered.map((task) => ({
-      id: task._id,
-      title: task.title,
-      description: task.description,
-      category: task.category,
-      helpers: task.helpers,
-      emergencyLevel: task.emergencyLevel,
-      taskType: task.taskType,
-      dueDate: task.dueDate,
-      location: task.location,
-      resourcesNeeded: task.resourcesNeeded || {},
-      skillsRequired: task.skillsRequired || [],
-      isOpen: task.isOpen,
-      creator: task.creator,
-      createdAt: task.createdAt,
-      updatedAt: task.updatedAt,
-      helpersJoined: countMap[task._id] || 0,
-      isParticipant: participationSet.has(task._id),
-    }));
   }
 
   async updateTask(taskId, creatorId, updateData) {
@@ -420,23 +188,7 @@ export class inMemoryTaskDao extends iTaskDao {
     task.updatedAt = new Date();
     this.tasks[taskIndex] = task;
 
-    return {
-      id: task._id,
-      title: task.title,
-      description: task.description,
-      category: task.category,
-      helpers: task.helpers,
-      emergencyLevel: task.emergencyLevel,
-      taskType: task.taskType,
-      dueDate: task.dueDate,
-      location: task.location,
-      resourcesNeeded: task.resourcesNeeded || {},
-      skillsRequired: task.skillsRequired || [],
-      isOpen: task.isOpen,
-      creator: task.creator,
-      createdAt: task.createdAt,
-      updatedAt: task.updatedAt,
-    };
+    return transformTaskDocSimple(task);
   }
 
   async deleteTask(taskId, creatorId) {
@@ -463,36 +215,17 @@ export class inMemoryTaskDao extends iTaskDao {
   }
 
   async countTasks({ emergencyLevel, category, isOpen } = {}) {
-    let filtered = [...this.tasks];
-
-    if (emergencyLevel) {
-      filtered = filtered.filter((t) => t.emergencyLevel === emergencyLevel);
-    }
-    if (category) {
-      filtered = filtered.filter((t) => t.category === category);
-    }
-    if (isOpen !== undefined) {
-      filtered = filtered.filter((t) => t.isOpen === isOpen);
-    }
-
+    const filtered = filterTasks(this.tasks, { emergencyLevel, category, isOpen });
     return filtered.length;
   }
 
   async countTasksByCreator(creatorId, { emergencyLevel, category, isOpen } = {}) {
-    let filtered = this.tasks.filter(
-      (t) => String(t.creator) === String(creatorId)
-    );
-
-    if (emergencyLevel) {
-      filtered = filtered.filter((t) => t.emergencyLevel === emergencyLevel);
-    }
-    if (category) {
-      filtered = filtered.filter((t) => t.category === category);
-    }
-    if (isOpen !== undefined) {
-      filtered = filtered.filter((t) => t.isOpen === isOpen);
-    }
-
+    const filtered = filterTasks(this.tasks, { 
+      emergencyLevel, 
+      category, 
+      isOpen, 
+      creatorId 
+    });
     return filtered.length;
   }
 
@@ -505,17 +238,12 @@ export class inMemoryTaskDao extends iTaskDao {
       return 0;
     }
 
-    let filtered = this.tasks.filter((t) => participantTaskIds.includes(t._id));
-
-    if (emergencyLevel) {
-      filtered = filtered.filter((t) => t.emergencyLevel === emergencyLevel);
-    }
-    if (category) {
-      filtered = filtered.filter((t) => t.category === category);
-    }
-    if (isOpen !== undefined) {
-      filtered = filtered.filter((t) => t.isOpen === isOpen);
-    }
+    const filtered = filterTasks(this.tasks, {
+      emergencyLevel,
+      category,
+      isOpen,
+      participantTaskIds,
+    });
 
     return filtered.length;
   }

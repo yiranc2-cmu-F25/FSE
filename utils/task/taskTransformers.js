@@ -3,6 +3,31 @@
  */
 
 /**
+ * Gets the base task properties from a document
+ * @param {Object} doc - Task document
+ * @returns {Object} Base task properties
+ */
+function getBaseTaskProperties(doc) {
+  return {
+    id: doc._id || doc.id,
+    title: doc.title,
+    description: doc.description,
+    category: doc.category,
+    helpers: doc.helpers,
+    emergencyLevel: doc.emergencyLevel,
+    taskType: doc.taskType,
+    dueDate: doc.dueDate,
+    location: doc.location,
+    resourcesNeeded: doc.resourcesNeeded || {},
+    skillsRequired: doc.skillsRequired || [],
+    isOpen: doc.isOpen,
+    creator: doc.creator,
+    createdAt: doc.createdAt,
+    updatedAt: doc.updatedAt,
+  };
+}
+
+/**
  * Transforms a task document to a standardized format
  * @param {Object} doc - Task document from database
  * @param {Object} options - Additional transformation options
@@ -23,21 +48,7 @@ export function transformTaskDoc(doc, options = {}) {
   } = options;
 
   return {
-    id: doc._id || doc.id,
-    title: doc.title,
-    description: doc.description,
-    category: doc.category,
-    helpers: doc.helpers,
-    emergencyLevel: doc.emergencyLevel,
-    taskType: doc.taskType,
-    dueDate: doc.dueDate,
-    location: doc.location,
-    resourcesNeeded: doc.resourcesNeeded || {},
-    skillsRequired: doc.skillsRequired || [],
-    isOpen: doc.isOpen,
-    creator: doc.creator,
-    createdAt: doc.createdAt,
-    updatedAt: doc.updatedAt,
+    ...getBaseTaskProperties(doc),
     helpersJoined: participantCount,
     isParticipant: isParticipant,
     helperAvatars: helperAvatars,
@@ -56,23 +67,7 @@ export function transformTaskDoc(doc, options = {}) {
  * @returns {Object} Transformed task object
  */
 export function transformTaskDocSimple(doc) {
-  return {
-    id: doc._id || doc.id,
-    title: doc.title,
-    description: doc.description,
-    category: doc.category,
-    helpers: doc.helpers,
-    emergencyLevel: doc.emergencyLevel,
-    taskType: doc.taskType,
-    dueDate: doc.dueDate,
-    location: doc.location,
-    resourcesNeeded: doc.resourcesNeeded || {},
-    skillsRequired: doc.skillsRequired || [],
-    isOpen: doc.isOpen,
-    creator: doc.creator,
-    createdAt: doc.createdAt,
-    updatedAt: doc.updatedAt,
-  };
+  return getBaseTaskProperties(doc);
 }
 
 /**

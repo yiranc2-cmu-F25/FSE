@@ -1,6 +1,8 @@
 import iTaskDao from "./iTaskDao.js";
 import { transformTaskDoc, transformTaskDocSimple, generateHelperAvatars, extractParticipantNames } from "../utils/task/taskTransformers.js";
 import { buildTaskFilter, buildTaskSort, buildParticipantCountMap } from "../utils/task/filterBuilders.js";
+import { queryTasksWithParticipantCounts, queryTasksWithParticipantStatus } from "../utils/task/daoHelpers.js";
+import { buildBaseTaskData } from "../utils/task/taskCreators.js";
 
 export default class TaskDao extends iTaskDao {
   constructor({ TaskModel, TaskParticipantModel, TaskLogModel }) {
@@ -22,26 +24,19 @@ export default class TaskDao extends iTaskDao {
     skillsRequired,
     creator,
   }) {
-    const now = new Date();
-    const taskData = {
+    const taskData = buildBaseTaskData({
       title,
       description,
       category,
       helpers,
       emergencyLevel,
       taskType,
-      isOpen: true, // Default to OPEN status
-      creator, // Owner of the task
-      createdAt: now,
-      updatedAt: now,
-    };
-
-    // Add optional fields if provided
-    if (dueDate !== undefined) taskData.dueDate = dueDate;
-    if (location !== undefined) taskData.location = location;
-    if (resourcesNeeded !== undefined)
-      taskData.resourcesNeeded = resourcesNeeded;
-    if (skillsRequired !== undefined) taskData.skillsRequired = skillsRequired;
+      creator,
+      dueDate,
+      location,
+      resourcesNeeded,
+      skillsRequired,
+    });
 
     const doc = await this.TaskModel.create(taskData);
     return doc.toObject();
@@ -103,30 +98,17 @@ export default class TaskDao extends iTaskDao {
     const filter = buildTaskFilter({ emergencyLevel, category, isOpen });
     const sort = buildTaskSort(sortBy, sortOrder);
 
-    const query = this.TaskModel.find(filter)
-      .sort(sort)
-      .populate("creator", "username");
+    const tasks = await queryTasksWithParticipantCounts({
+      TaskModel: this.TaskModel,
+      TaskParticipantModel: this.TaskParticipantModel,
+      filter,
+      sort,
+      skip,
+      limit,
+    });
 
-    if (skip !== undefined) query.skip(skip);
-    if (limit !== undefined) query.limit(limit);
-
-    const docs = await query.lean();
-
-    console.log("All tasks: ", docs);
-
-    // Get participant counts for all tasks
-    const taskIds = docs.map((doc) => doc._id);
-    const participantCounts = await this.TaskParticipantModel.aggregate([
-      { $match: { task: { $in: taskIds } } },
-      { $group: { _id: "$task", count: { $sum: 1 } } },
-    ]);
-
-    const countMap = buildParticipantCountMap(participantCounts);
-
-    return docs.map((doc) => ({
-      ...transformTaskDocSimple(doc),
-      helpersJoined: countMap[doc._id.toString()] || 0,
-    }));
+    console.log("All tasks: ", tasks);
+    return tasks;
   }
 
   async getTasksByCreator(
@@ -144,28 +126,14 @@ export default class TaskDao extends iTaskDao {
     const filter = buildTaskFilter({ emergencyLevel, category, isOpen, creatorId });
     const sort = buildTaskSort(sortBy, sortOrder);
 
-    const query = this.TaskModel.find(filter)
-      .sort(sort)
-      .populate("creator", "username");
-
-    if (skip !== undefined) query.skip(skip);
-    if (limit !== undefined) query.limit(limit);
-
-    const docs = await query.lean();
-
-    // Get participant counts for all tasks
-    const taskIds = docs.map((doc) => doc._id);
-    const participantCounts = await this.TaskParticipantModel.aggregate([
-      { $match: { task: { $in: taskIds } } },
-      { $group: { _id: "$task", count: { $sum: 1 } } },
-    ]);
-
-    const countMap = buildParticipantCountMap(participantCounts);
-
-    return docs.map((doc) => ({
-      ...transformTaskDocSimple(doc),
-      helpersJoined: countMap[doc._id.toString()] || 0,
-    }));
+    return await queryTasksWithParticipantCounts({
+      TaskModel: this.TaskModel,
+      TaskParticipantModel: this.TaskParticipantModel,
+      filter,
+      sort,
+      skip,
+      limit,
+    });
   }
 
   /**
@@ -200,39 +168,15 @@ export default class TaskDao extends iTaskDao {
 
     const sort = buildTaskSort(sortBy, sortOrder);
 
-    const query = this.TaskModel.find(filter)
-      .sort(sort)
-      .populate("creator", "username");
-
-    if (skip !== undefined) query.skip(skip);
-    if (limit !== undefined) query.limit(limit);
-
-    const docs = await query.lean();
-
-    // Get participant counts and check if user is participant for each task
-    const taskIds = docs.map((doc) => doc._id);
-    const participantCounts = await this.TaskParticipantModel.aggregate([
-      { $match: { task: { $in: taskIds } } },
-      { $group: { _id: "$task", count: { $sum: 1 } } },
-    ]);
-
-    // Get user's participation status for each task
-    const userParticipations = await this.TaskParticipantModel.find({
-      task: { $in: taskIds },
-      user: userId,
-    }).lean();
-
-    const participationSet = new Set(
-      userParticipations.map((p) => p.task.toString())
-    );
-
-    const countMap = buildParticipantCountMap(participantCounts);
-
-    return docs.map((doc) => ({
-      ...transformTaskDocSimple(doc),
-      helpersJoined: countMap[doc._id.toString()] || 0,
-      isParticipant: participationSet.has(doc._id.toString()),
-    }));
+    return await queryTasksWithParticipantStatus({
+      TaskModel: this.TaskModel,
+      TaskParticipantModel: this.TaskParticipantModel,
+      userId,
+      filter,
+      sort,
+      skip,
+      limit,
+    });
   }
 
   async updateTask(taskId, creatorId, updateData) {
