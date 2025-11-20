@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   joinVoiceCall,
   leaveVoiceCall,
+  getVoiceCallStatus,
 } from "../controllers/voiceCallController.js";
 import { auth } from "../middleware/JWT.js";
 
@@ -191,5 +192,42 @@ router.post("/join", auth, joinVoiceCall);
  *                 message: { type: string, example: "Server error" }
  */
 router.post("/leave", auth, leaveVoiceCall);
+
+/**
+ * @openapi
+ * /api/calls/status/{groupId}:
+ *   get:
+ *     tags: [Voice Calls]
+ *     summary: Get voice call status for a group
+ *     description: Returns whether a voice call is active and who is in it
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: groupId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID of the group
+ *     responses:
+ *       200:
+ *         description: Call status retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 groupId:
+ *                   type: string
+ *                 isActive:
+ *                   type: boolean
+ *                 participantCount:
+ *                   type: number
+ *                 participants:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ */
+router.get("/status/:groupId", auth, getVoiceCallStatus);
 
 export default router;

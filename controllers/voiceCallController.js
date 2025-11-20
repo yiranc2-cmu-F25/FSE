@@ -6,6 +6,42 @@
 const voiceCallRooms = new Map();
 
 /**
+ * Get voice call status for a group
+ * @route GET /api/calls/status/:groupId
+ */
+export async function getVoiceCallStatus(req, res) {
+  try {
+    const { groupId } = req.params;
+
+    if (!groupId) {
+      return res.status(400).json({
+        status: "error",
+        message: "Group ID is required"
+      });
+    }
+
+    const callRoom = voiceCallRooms.get(groupId);
+    const isActive = callRoom && callRoom.size > 0;
+    const participantUsernames = isActive
+      ? Array.from(callRoom.values()).map(p => p.username)
+      : [];
+
+    res.status(200).json({
+      groupId: groupId,
+      isActive: isActive,
+      participantCount: isActive ? callRoom.size : 0,
+      participants: participantUsernames
+    });
+  } catch (error) {
+    console.error("Error getting voice call status:", error);
+    res.status(500).json({
+      status: "error",
+      message: "Server error"
+    });
+  }
+}
+
+/**
  * Join a group voice call room
  * @route POST /api/calls/join
  */
@@ -76,6 +112,18 @@ export async function joinVoiceCall(req, res) {
         username: username,
         groupId: groupId
       });
+    });
+
+    // Broadcast call status to ALL group members (including non-participants)
+    // This allows everyone to see "call ongoing" status
+    const callParticipantCount = callRoom.size;
+    const participantUsernames = Array.from(callRoom.values()).map(p => p.username);
+
+    socketInstance.io.emit('voice-call-status-update', {
+      groupId: groupId,
+      isActive: true,
+      participantCount: callParticipantCount,
+      participants: participantUsernames
     });
 
     res.status(200).json({
@@ -151,6 +199,17 @@ export async function leaveVoiceCall(req, res) {
         userId: userId,
         groupId: groupId
       });
+    });
+
+    // Broadcast call status update to ALL group members
+    const isCallActive = callRoom.size > 0;
+    const participantUsernames = Array.from(callRoom.values()).map(p => p.username);
+
+    socketInstance.io.emit('voice-call-status-update', {
+      groupId: groupId,
+      isActive: isCallActive,
+      participantCount: callRoom.size,
+      participants: participantUsernames
     });
 
     // Clean up empty rooms

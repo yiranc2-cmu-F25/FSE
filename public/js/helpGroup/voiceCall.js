@@ -17,15 +17,27 @@ let participants = new Map(); // Map of socketId -> { userId, username, audioEle
 let isMuted = false;
 let isInCall = false;
 let currentGroupId = null;
+let isPanelExpanded = false;
+
+// Call status for non-participants
+let isCallActive = false;
+let callParticipantNames = [];
 
 // DOM Elements
-const voiceCallModal = document.getElementById("voice-call-modal");
+const voiceCallPanel = document.getElementById("voice-call-panel");
+const voicePanelHeader = document.getElementById("voice-panel-header");
+const voicePanelTitle = document.getElementById("voice-panel-title");
+const voicePanelSubtitle = document.getElementById("voice-panel-subtitle");
+const voicePanelContent = document.getElementById("voice-panel-content");
+const voiceToggleBtn = document.getElementById("voice-toggle-btn");
+const voiceToggleIcon = document.getElementById("voice-toggle-icon");
+const voicePanelJoinBtn = document.getElementById("voice-panel-join-btn");
 const voiceCallBtn = document.getElementById("voice-call-btn");
-const voiceCloseBtn = document.getElementById("voice-close-btn");
 const voiceMuteBtn = document.getElementById("voice-mute-btn");
 const voiceLeaveBtn = document.getElementById("voice-leave-btn");
 const voiceParticipantsList = document.getElementById("voice-participants-list");
 const voiceConnectionStatus = document.getElementById("voice-connection-status");
+const voiceControls = document.getElementById("voice-controls");
 const participantTemplate = document.getElementById("voice-participant-template");
 
 // Get socket instance
@@ -39,18 +51,84 @@ export function initVoiceCall(groupId) {
 
   // Event listeners
   voiceCallBtn?.addEventListener("click", joinVoiceCall);
-  voiceCloseBtn?.addEventListener("click", leaveVoiceCall);
+  voicePanelJoinBtn?.addEventListener("click", joinVoiceCall);
   voiceMuteBtn?.addEventListener("click", toggleMute);
   voiceLeaveBtn?.addEventListener("click", leaveVoiceCall);
 
+  // Toggle button with stopPropagation to prevent header click
+  voiceToggleBtn?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    togglePanel();
+  });
+
+  // Header click to toggle (except when clicking join button or toggle button)
+  voicePanelHeader?.addEventListener("click", (e) => {
+    // Don't toggle if clicking on join button or toggle button
+    if (!e.target.closest("#voice-panel-join-btn") &&
+        !e.target.closest("#voice-toggle-btn")) {
+      togglePanel();
+    }
+  });
+
   // Socket event listeners for WebRTC signaling
   setupSocketListeners();
+
+  // Load initial call status
+  loadCallStatus();
+
+  // Cleanup on page unload (navigate away, refresh, close tab)
+  window.addEventListener("beforeunload", handlePageUnload);
+  window.addEventListener("pagehide", handlePageUnload);
 }
 
 /**
- * Setup Socket.IO listeners for WebRTC signaling
+ * Handle page unload - leave call if currently in one
+ */
+function handlePageUnload() {
+  if (isInCall) {
+    // Use sendBeacon for reliable async call during page unload
+    const blob = new Blob(
+      [JSON.stringify({ groupId: currentGroupId })],
+      { type: "application/json" }
+    );
+    navigator.sendBeacon("/api/calls/leave", blob);
+
+    // Also cleanup local resources
+    if (localStream) {
+      localStream.getTracks().forEach((track) => track.stop());
+    }
+    peerConnections.forEach((pc) => pc.close());
+  }
+}
+
+/**
+ * Load current call status from server
+ */
+async function loadCallStatus() {
+  try {
+    const response = await fetch(`/api/calls/status/${currentGroupId}`, {
+      credentials: "include",
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      updateCallStatus(data);
+    }
+  } catch (error) {
+    console.error("Error loading call status:", error);
+  }
+}
+
+/**
+ * Setup Socket.IO listeners for WebRTC signaling and call updates
  */
 function setupSocketListeners() {
+  // Listen for call status updates (for ALL users in group)
+  socket.on("voice-call-status-update", (data) => {
+    if (data.groupId !== currentGroupId) return;
+    updateCallStatus(data);
+  });
+
   // Handle user joined (existing user receives this - DO NOT initiate)
   socket.on("voice-user-joined", async (data) => {
     if (data.groupId !== currentGroupId || !isInCall) return;
@@ -116,6 +194,84 @@ function setupSocketListeners() {
 }
 
 /**
+ * Update call status UI (for both participants and non-participants)
+ */
+function updateCallStatus(data) {
+  isCallActive = data.isActive;
+  callParticipantNames = data.participants || [];
+
+  if (isCallActive) {
+    // Show the panel
+    voiceCallPanel.classList.remove("hidden");
+
+    // Update panel header with unified format (always show participant names)
+    if (isInCall) {
+      voicePanelTitle.textContent = "You're in the call";
+      voicePanelSubtitle.textContent = callParticipantNames.join(", ");
+      voicePanelJoinBtn.classList.add("hidden");
+    } else {
+      voicePanelTitle.textContent = "Voice call ongoing";
+      voicePanelSubtitle.textContent = callParticipantNames.join(", ");
+      voicePanelJoinBtn.classList.remove("hidden");
+    }
+
+    // If expanded and not in call, show participant list
+    if (isPanelExpanded && !isInCall) {
+      renderNonParticipantList();
+    }
+  } else {
+    // Hide the panel when no call is active
+    voiceCallPanel.classList.add("hidden");
+    isPanelExpanded = false;
+    voicePanelContent.classList.add("hidden");
+  }
+}
+
+/**
+ * Render participant list for non-participants (just names, no WebRTC)
+ */
+function renderNonParticipantList() {
+  voiceParticipantsList.innerHTML = "";
+
+  callParticipantNames.forEach((username) => {
+    const clone = participantTemplate.content.cloneNode(true);
+
+    const avatar = clone.querySelector(".voice-participant-avatar");
+    const initials = getInitialsSafe(username);
+    const color = getAvatarColor(username);
+    avatar.textContent = initials;
+    avatar.style.backgroundColor = color;
+
+    const name = clone.querySelector(".voice-participant-name");
+    name.textContent = username;
+
+    voiceParticipantsList.appendChild(clone);
+  });
+}
+
+/**
+ * Toggle panel expansion
+ */
+function togglePanel() {
+  isPanelExpanded = !isPanelExpanded;
+
+  if (isPanelExpanded) {
+    voicePanelContent.classList.remove("hidden");
+    voiceToggleIcon.src = "/images/help-group/icon-up.svg";
+    voiceToggleIcon.alt = "Collapse";
+
+    // If not in call, show the non-participant list
+    if (!isInCall && isCallActive) {
+      renderNonParticipantList();
+    }
+  } else {
+    voicePanelContent.classList.add("hidden");
+    voiceToggleIcon.src = "/images/help-group/icon-down.svg";
+    voiceToggleIcon.alt = "Expand";
+  }
+}
+
+/**
  * Join voice call
  */
 async function joinVoiceCall() {
@@ -153,14 +309,22 @@ async function joinVoiceCall() {
 
     isInCall = true;
 
-    // Show modal
-    voiceCallModal.classList.remove("hidden");
-    voiceCallModal.classList.add("flex");
+    // Update UI for in-call state
+    voicePanelTitle.textContent = "You're in the call";
+    voicePanelJoinBtn.classList.add("hidden");
+    voiceConnectionStatus.classList.remove("hidden");
+    voiceControls.classList.remove("hidden");
+
+    // Expand panel if collapsed
+    if (!isPanelExpanded) {
+      togglePanel();
+    }
 
     // Update status
     updateConnectionStatus("connected");
 
-    // Add self to participants
+    // Clear and add self to participants
+    voiceParticipantsList.innerHTML = "";
     addSelfToParticipants();
 
     // Create peer connections for existing participants
@@ -202,12 +366,17 @@ async function leaveVoiceCall() {
       }),
     });
 
-    // Cleanup
+    // Cleanup local state
     cleanup();
+
+    // Manually refresh call status to update UI immediately
+    // (in case socket event hasn't arrived yet)
+    await loadCallStatus();
   } catch (error) {
     console.error("Error leaving voice call:", error);
     // Cleanup anyway
     cleanup();
+    await loadCallStatus();
   }
 }
 
@@ -229,15 +398,29 @@ function cleanup() {
   participants.clear();
   voiceParticipantsList.innerHTML = "";
 
-  // Hide modal
-  voiceCallModal.classList.add("hidden");
-  voiceCallModal.classList.remove("flex");
+  // Hide in-call UI elements
+  voiceConnectionStatus.classList.add("hidden");
+  voiceControls.classList.add("hidden");
 
   // Reset state
   isInCall = false;
   isMuted = false;
   voiceMuteBtn.textContent = "Mute";
   voiceMuteBtn.classList.remove("bg-gray-400");
+
+  // Collapse panel when leaving
+  if (isPanelExpanded) {
+    isPanelExpanded = false;
+    voicePanelContent.classList.add("hidden");
+    voiceToggleIcon.src = "/images/help-group/icon-down.svg";
+    voiceToggleIcon.alt = "Expand";
+  }
+
+  // Update panel to show "call ongoing" if others are still in
+  // The socket event will trigger updateCallStatus which will:
+  // 1. Show "Voice call ongoing" if call is still active
+  // 2. Show join button
+  // 3. Hide panel if call ended (no more participants)
 }
 
 /**
@@ -477,14 +660,14 @@ function updateConnectionStatus(status) {
   if (status === "connected") {
     voiceConnectionStatus.textContent = "Connected";
     voiceConnectionStatus.className =
-      "mb-4 rounded-lg bg-green-500/30 px-3 py-2 text-center font-poppins text-sm font-semibold text-white";
+      "mb-3 rounded-lg bg-green-500/30 px-3 py-2 text-center font-poppins text-xs font-semibold text-white";
   } else if (status === "connecting") {
     voiceConnectionStatus.textContent = "Connecting...";
     voiceConnectionStatus.className =
-      "mb-4 rounded-lg bg-white/20 px-3 py-2 text-center font-poppins text-sm font-semibold text-white";
+      "mb-3 rounded-lg bg-white/20 px-3 py-2 text-center font-poppins text-xs font-semibold text-white";
   } else {
     voiceConnectionStatus.textContent = "Connection Error";
     voiceConnectionStatus.className =
-      "mb-4 rounded-lg bg-red-500/30 px-3 py-2 text-center font-poppins text-sm font-semibold text-white";
+      "mb-3 rounded-lg bg-red-500/30 px-3 py-2 text-center font-poppins text-xs font-semibold text-white";
   }
 }

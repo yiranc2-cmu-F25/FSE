@@ -1,70 +1,86 @@
-<!-- Voice Call Modal -->
+<!-- Voice Call Panel (Collapsible, shown when call is active) -->
 <div
-  id="voice-call-modal"
-  class="fixed inset-0 z-50 hidden items-center justify-center bg-black/20 backdrop-blur-sm"
+  id="voice-call-panel"
+  class="absolute left-4 right-4 top-4 z-30 hidden rounded-xl bg-[#D8937F] shadow-lg"
 >
-  <div class="relative mx-4 w-full max-w-sm rounded-2xl bg-[#D8937F] p-6 shadow-xl">
-    <!-- Header -->
-    <div class="mb-4 flex items-center justify-between">
-      <h3 class="font-poppins text-lg font-semibold text-white">Voice Call</h3>
+  <!-- Collapsed Header (always visible when panel shown) -->
+  <div
+    id="voice-panel-header"
+    class="flex cursor-pointer items-center justify-between rounded-xl px-4 py-3 hover:bg-[#D8937F]/90"
+  >
+    <div class="flex items-center gap-3 pointer-events-none">
+      <div class="flex h-8 w-8 items-center justify-center rounded-full bg-white/20">
+        <img src="/images/help-group/icon-call.svg" alt="Call" class="h-4 w-4" />
+      </div>
+      <div>
+        <p id="voice-panel-title" class="font-poppins text-sm font-semibold text-white">
+          Voice call ongoing
+        </p>
+        <p id="voice-panel-subtitle" class="font-poppins text-xs text-white/80">
+          <!-- Participant count or status -->
+        </p>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-2 pointer-events-auto">
+      <!-- Join button (shown when not in call) -->
       <button
-        id="voice-close-btn"
+        id="voice-panel-join-btn"
+        type="button"
+        class="hidden font-poppins rounded-lg bg-white/20 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/30"
+      >
+        Join
+      </button>
+
+      <!-- Toggle collapse button -->
+      <button
+        id="voice-toggle-btn"
         type="button"
         class="text-white hover:text-gray-200"
       >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="h-6 w-6"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M6 18L18 6M6 6l12 12"
-          />
-        </svg>
+        <img id="voice-toggle-icon" src="/images/help-group/icon-down.svg" alt="Expand" class="h-5 w-5 pointer-events-none" />
       </button>
     </div>
+  </div>
 
-    <!-- Connection Status -->
+  <!-- Expanded Content (toggleable) -->
+  <div id="voice-panel-content" class="hidden rounded-b-xl border-t border-white/20 px-4 py-3">
+    <!-- Connection Status (only when user is in call) -->
     <div
       id="voice-connection-status"
-      class="mb-4 rounded-lg bg-white/20 px-3 py-2 text-center font-poppins text-sm font-semibold text-white"
+      class="mb-3 hidden rounded-lg bg-white/20 px-3 py-2 text-center font-poppins text-xs font-semibold text-white"
     >
       Connecting...
     </div>
 
     <!-- Participants List -->
-    <div class="mb-4">
-      <h4 class="font-poppins mb-2 text-sm font-semibold text-white/90">
-        Participants:
+    <div class="mb-3">
+      <h4 class="font-poppins mb-2 text-xs font-semibold text-white/90">
+        In call:
       </h4>
       <div
         id="voice-participants-list"
-        class="max-h-64 space-y-2 overflow-y-auto"
+        class="max-h-40 space-y-1.5 overflow-y-auto"
       >
         <!-- Participants will be rendered here -->
       </div>
     </div>
 
-    <!-- Controls -->
-    <div class="flex gap-2">
+    <!-- Controls (only when user is in call) -->
+    <div id="voice-controls" class="hidden flex gap-2">
       <button
         id="voice-mute-btn"
         type="button"
-        class="font-poppins flex-1 rounded-lg bg-white/20 px-4 py-2 font-semibold text-white hover:bg-white/30"
+        class="font-poppins flex-1 rounded-lg bg-white/20 px-3 py-2 text-sm font-semibold text-white hover:bg-white/30"
       >
         Mute
       </button>
       <button
         id="voice-leave-btn"
         type="button"
-        class="font-poppins flex-1 rounded-lg bg-red-500 px-4 py-2 font-semibold text-white hover:bg-red-600"
+        class="font-poppins flex-1 rounded-lg bg-red-500 px-3 py-2 text-sm font-semibold text-white hover:bg-red-600"
       >
-        Leave Call
+        Leave
       </button>
     </div>
   </div>
@@ -73,13 +89,13 @@
 <!-- Participant Item Template -->
 <template id="voice-participant-template">
   <div
-    class="voice-participant flex items-center justify-between rounded-lg bg-white/10 p-3"
+    class="voice-participant flex items-center justify-between rounded-lg bg-white/10 px-2 py-2"
   >
-    <div class="flex items-center gap-3">
+    <div class="flex items-center gap-2">
       <div
-        class="voice-participant-avatar flex h-10 w-10 items-center justify-center rounded-full bg-[#D65841] font-poppins font-semibold text-white"
+        class="voice-participant-avatar flex h-8 w-8 items-center justify-center rounded-full bg-[#D65841] font-poppins text-xs font-semibold text-white"
       ></div>
-      <span class="voice-participant-name font-poppins font-semibold text-white"></span>
+      <span class="voice-participant-name font-poppins text-sm font-semibold text-white"></span>
     </div>
     <div class="voice-status-indicator h-2 w-2 rounded-full bg-green-400"></div>
   </div>
