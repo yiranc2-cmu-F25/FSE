@@ -1993,6 +1993,8 @@ describe("Task Management REST API Integration Tests", () => {
         .send({ helpers: 0 });
 
       // Validation might happen in entity which throws, causing 500, or be caught and return 400
+      expect(updateRes.status).toBeGreaterThanOrEqual(400);
+      expect(updateRes.status).toBeLessThan(600);
       expect([400, 500]).toContain(updateRes.status);
       expect(updateRes.body.status).toBe("error");
       if (updateRes.status === 400) {

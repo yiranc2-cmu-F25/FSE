@@ -179,6 +179,38 @@ export class inMemoryTaskDao extends iTaskDao {
       throw new Error("Unauthorized: Only the task owner can update this task");
     }
 
+    // Validate update data
+    if (updateData.title !== undefined) {
+      if (!updateData.title || typeof updateData.title !== "string" || updateData.title.length > 50) {
+        throw new Error("Invalid title: must be a string with max 50 characters");
+      }
+    }
+    if (updateData.helpers !== undefined) {
+      if (typeof updateData.helpers !== "number" || updateData.helpers < 1) {
+        throw new Error("Invalid helpers: must be a number >= 1");
+      }
+    }
+    if (updateData.description !== undefined) {
+      if (!updateData.description || typeof updateData.description !== "string") {
+        throw new Error("Invalid description: must be a string");
+      }
+    }
+    if (updateData.category !== undefined) {
+      if (!updateData.category || typeof updateData.category !== "string") {
+        throw new Error("Invalid category: must be a string");
+      }
+    }
+    if (updateData.emergencyLevel !== undefined) {
+      if (!updateData.emergencyLevel || typeof updateData.emergencyLevel !== "string") {
+        throw new Error("Invalid emergencyLevel: must be a string");
+      }
+    }
+    if (updateData.taskType !== undefined) {
+      if (!updateData.taskType || typeof updateData.taskType !== "string") {
+        throw new Error("Invalid taskType: must be a string");
+      }
+    }
+
     Object.keys(updateData).forEach((key) => {
       if (updateData[key] !== undefined) {
         task[key] = updateData[key];
