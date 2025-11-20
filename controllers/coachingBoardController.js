@@ -650,56 +650,64 @@ export async function addComment(req, res) {
 			});
 			if (!updated) return res.status(404).json({ status: "error", message: "Board not found" });
 			
-
-			if (socketInstance) {
-				const updatedBoard = await CoachingBoard.getById({ id });
-				const comment = (updatedBoard.comments || []).find(c => c.id === targetComment.id);
-				if (comment) {
-					const newReply = (comment.replies || []).find(r => 
-						String(r.author) === requesterId && 
-						r.reply === fullReplyText &&
-						Math.abs(new Date(r.timestamp).getTime() - Date.now()) < 5000
-					);
-					if (newReply) {
-						const authorName = await User.getUsernameById(requesterId);
-						newReply.authorName = authorName || "Unknown";
-						socketInstance.emitCoachingBoardReply(id, targetComment.id, newReply);
+			try {
+				const socketInstance = req.app.get("socketInstance");
+				if (socketInstance) {
+					const updatedBoard = await CoachingBoard.getById({ id });
+					const comment = (updatedBoard.comments || []).find(c => c.id === targetComment.id);
+					if (comment) {
+						const newReply = (comment.replies || []).find(r => 
+							String(r.author) === requesterId && 
+							r.reply === fullReplyText &&
+							Math.abs(new Date(r.timestamp).getTime() - Date.now()) < 5000
+						);
+						if (newReply) {
+							const authorName = await User.getUsernameById(requesterId);
+							newReply.authorName = authorName || "Unknown";
+							socketInstance.emitCoachingBoardReply(id, targetComment.id, newReply);
+						}
 					}
 				}
+			} catch (err) {
+				// Ignore error if socket emission fails
 			}
 			
-			if (socketInstance) {
-				const notifyUserId = targetReply ? String(targetReply.author) : String(targetComment.author);
-				
-				if (String(notifyUserId) !== String(requesterId)) {
-					const authorName = await User.getUsernameById(requesterId).catch(() => "Unknown");
-					const updatedBoard = await CoachingBoard.getById({ id });
+			try {
+				const socketInstance = req.app.get("socketInstance");
+				if (socketInstance) {
+					const notifyUserId = targetReply ? String(targetReply.author) : String(targetComment.author);
 					
-					const comment = (updatedBoard.comments || []).find(c => {
-						const cId = c.id || c._id;
-						return String(cId) === String(targetComment.id);
-					});
-					const newReply = comment ? (comment.replies || []).find(r => 
-						String(r.author) === requesterId && 
-						r.reply === fullReplyText &&
-						Math.abs(new Date(r.timestamp).getTime() - Date.now()) < 5000
-					) : null;
-					
-					const commentIdStr = String(targetComment.id || targetComment._id || "");
-					const replyIdStr = newReply ? String(newReply.id || newReply._id || "") : null;
-					
-					socketInstance.emitCoachingBoardNotification([notifyUserId], {
-						type: "new_reply",
-						boardId: id,
-						boardTitle: updatedBoard.title,
-						authorName: authorName || "Unknown",
-						commentId: commentIdStr,
-						replyId: replyIdStr,
-						timestamp: new Date()
-					});
+					if (String(notifyUserId) !== String(requesterId)) {
+						const authorName = await User.getUsernameById(requesterId).catch(() => "Unknown");
+						const updatedBoard = await CoachingBoard.getById({ id });
+						
+						const comment = (updatedBoard.comments || []).find(c => {
+							const cId = c.id || c._id;
+							return String(cId) === String(targetComment.id);
+						});
+						const newReply = comment ? (comment.replies || []).find(r => 
+							String(r.author) === requesterId && 
+							r.reply === fullReplyText &&
+							Math.abs(new Date(r.timestamp).getTime() - Date.now()) < 5000
+						) : null;
+						
+						const commentIdStr = String(targetComment.id || targetComment._id || "");
+						const replyIdStr = newReply ? String(newReply.id || newReply._id || "") : null;
+						
+						socketInstance.emitCoachingBoardNotification([notifyUserId], {
+							type: "new_reply",
+							boardId: id,
+							boardTitle: updatedBoard.title,
+							authorName: authorName || "Unknown",
+							commentId: commentIdStr,
+							replyId: replyIdStr,
+							timestamp: new Date()
+						});
+					}
 				}
+			} catch (err) {
+				// Ignore error if socket emission fails
 			}
-
 			
 			return res.status(201).json({ message: "Reply added successfully" });
 		}
@@ -714,37 +722,47 @@ export async function addComment(req, res) {
 		
 		const updatedBoard = await CoachingBoard.getById({ id });
 		
-		if (socketInstance) {
-			const newComment = (updatedBoard.comments || []).find(c => 
-				String(c.author) === requesterId && 
-				c.comment === comment &&
-				Math.abs(new Date(c.timestamp).getTime() - Date.now()) < 5000
-			);
-			if (newComment) {
-				const authorName = await User.getUsernameById(requesterId);
-				newComment.authorName = authorName || "Unknown";
-				socketInstance.emitCoachingBoardComment(id, newComment);
+		try {
+			const socketInstance = req.app.get("socketInstance");
+			if (socketInstance) {
+				const newComment = (updatedBoard.comments || []).find(c => 
+					String(c.author) === requesterId && 
+					c.comment === comment &&
+					Math.abs(new Date(c.timestamp).getTime() - Date.now()) < 5000
+				);
+				if (newComment) {
+					const authorName = await User.getUsernameById(requesterId);
+					newComment.authorName = authorName || "Unknown";
+					socketInstance.emitCoachingBoardComment(id, newComment);
+				}
 			}
+		} catch (err) {
+			// Ignore error if socket emission fails
 		}
 		
-		if (socketInstance && updatedBoard.subscribers) {
-			const authorName = await User.getUsernameById(requesterId).catch(() => "Unknown");
-			const newComment = (updatedBoard.comments || []).find(c => 
-				String(c.author) === requesterId && 
-				c.comment === comment &&
-				Math.abs(new Date(c.timestamp).getTime() - Date.now()) < 5000
-			);
-			const subscribers = (updatedBoard.subscribers || []).filter(subId => String(subId) !== String(requesterId));
-			if (subscribers.length > 0) {
-				socketInstance.emitCoachingBoardNotification(subscribers, {
-					type: "new_comment",
-					boardId: id,
-					boardTitle: updatedBoard.title,
-					authorName: authorName || "Unknown",
-					commentId: newComment ? (newComment.id || newComment._id) : null,
-					timestamp: new Date()
-				});
+		try {
+			const socketInstance = req.app.get("socketInstance");
+			if (socketInstance && updatedBoard.subscribers) {
+				const authorName = await User.getUsernameById(requesterId).catch(() => "Unknown");
+				const newComment = (updatedBoard.comments || []).find(c => 
+					String(c.author) === requesterId && 
+					c.comment === comment &&
+					Math.abs(new Date(c.timestamp).getTime() - Date.now()) < 5000
+				);
+				const subscribers = (updatedBoard.subscribers || []).filter(subId => String(subId) !== String(requesterId));
+				if (subscribers.length > 0) {
+					socketInstance.emitCoachingBoardNotification(subscribers, {
+						type: "new_comment",
+						boardId: id,
+						boardTitle: updatedBoard.title,
+						authorName: authorName || "Unknown",
+						commentId: newComment ? (newComment.id || newComment._id) : null,
+						timestamp: new Date()
+					});
+				}
 			}
+		} catch (err) {
+			// Ignore error if socket emission fails
 		}
 		
 		return res.status(201).json({ message: "Comment added successfully" });

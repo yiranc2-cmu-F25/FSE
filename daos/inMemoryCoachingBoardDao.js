@@ -276,6 +276,14 @@ export class inMemoryCoachingBoardDao {
 		const userIdStr = String(userId);
 		if (!board.subscribers.some(sub => String(sub) === userIdStr)) {
 			board.subscribers.push(userIdStr);
+			if (!board.notificationSeenAt) board.notificationSeenAt = [];
+			board.notificationSeenAt = board.notificationSeenAt.filter(
+				entry => String(entry.userId) !== String(userIdStr)
+			);
+			board.notificationSeenAt.push({
+				userId: userIdStr,
+				timestamp: new Date()
+			});
 		}
 	}
 

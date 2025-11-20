@@ -212,10 +212,24 @@ export class CoachingBoardDao {
 	}
 
 	async subscribe({ id, userId }) {
-		await this.CoachingBoardModel.updateOne(
-			{ _id: id },
-			{ $addToSet: { subscribers: userId } }
+		const board = await this.CoachingBoardModel.findById(id);
+		if (!board) return;
+		
+		if (!board.subscribers || !board.subscribers.some(sub => String(sub) === String(userId))) {
+			if (!board.subscribers) board.subscribers = [];
+			board.subscribers.push(userId);
+		}
+		
+		if (!board.notificationSeenAt) board.notificationSeenAt = [];
+		board.notificationSeenAt = board.notificationSeenAt.filter(
+			entry => String(entry.userId) !== String(userId)
 		);
+		board.notificationSeenAt.push({
+			userId: userId,
+			timestamp: new Date()
+		});
+		
+		await board.save();
 	}
 	
 	async unsubscribe({ id, userId }) {
