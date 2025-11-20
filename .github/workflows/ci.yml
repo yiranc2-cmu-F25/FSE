@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - main
+      - I4-ZiqiFang
   pull_request:
   workflow_dispatch: {}
 
