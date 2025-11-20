@@ -18,7 +18,7 @@ import { AnnouncementDao } from "./daos/AnnouncementDao.js";
 import AnnouncementDac from "./dacs/announcementDac.js";
 import { makeHelpCenterModel } from "./db/HelpCenterSchema.js";
 import { HelpCenterDao } from "./daos/HelpCenterDao.js";
-import HelpCenterDac from "./dacs/HelpCenterDac.js";
+import HelpCenterDac from "./dacs/helpCenterDac.js";
 
 async function connectToMongo() {
   // 1. Connect to MongoDB
