@@ -1,6 +1,7 @@
 import { renderMessage } from "../utils/renderMessage.js";
 import { getInitialsSafe, getAvatarColor } from "../utils/avatars.js";
 import { getSocket } from "../utils/socket.js";
+import { initVoiceCall } from "./voiceCall.js";
 
 const $ = (s) => document.querySelector(s);
 
@@ -868,4 +869,5 @@ document.addEventListener("DOMContentLoaded", async () => {
   setupEnterListener();
   setupSendButtonListener();
   setupGroupMessageListener();
+  initVoiceCall(groupId);
 });

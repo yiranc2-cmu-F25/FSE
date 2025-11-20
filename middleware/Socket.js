@@ -55,7 +55,35 @@ class Socket {
         this.broadcastUserJoin(username);
         this.broadcastUserList();
       }
-      
+
+      // ---- Voice Call WebRTC Signaling ----------------------------------------
+
+      // Relay WebRTC offer
+      socket.on('voice-offer', (data) => {
+        console.log(`[VOICE] Relaying offer from ${socket.id} to ${data.target}`);
+        this.io.to(data.target).emit('voice-offer', {
+          offer: data.offer,
+          from: socket.id
+        });
+      });
+
+      // Relay WebRTC answer
+      socket.on('voice-answer', (data) => {
+        console.log(`[VOICE] Relaying answer from ${socket.id} to ${data.target}`);
+        this.io.to(data.target).emit('voice-answer', {
+          answer: data.answer,
+          from: socket.id
+        });
+      });
+
+      // Relay ICE candidate
+      socket.on('voice-ice-candidate', (data) => {
+        this.io.to(data.target).emit('voice-ice-candidate', {
+          candidate: data.candidate,
+          from: socket.id
+        });
+      });
+
       socket.on("disconnect", () => {
         const info = this.users.get(socket.id);
         console.log("[disconnect] socket.id=", socket.id);

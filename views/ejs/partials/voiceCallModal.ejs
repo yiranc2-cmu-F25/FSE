@@ -1,0 +1,86 @@
+<!-- Voice Call Modal -->
+<div
+  id="voice-call-modal"
+  class="fixed inset-0 z-50 hidden items-center justify-center bg-black/20 backdrop-blur-sm"
+>
+  <div class="relative mx-4 w-full max-w-sm rounded-2xl bg-[#D8937F] p-6 shadow-xl">
+    <!-- Header -->
+    <div class="mb-4 flex items-center justify-between">
+      <h3 class="font-poppins text-lg font-semibold text-white">Voice Call</h3>
+      <button
+        id="voice-close-btn"
+        type="button"
+        class="text-white hover:text-gray-200"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-6 w-6"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M6 18L18 6M6 6l12 12"
+          />
+        </svg>
+      </button>
+    </div>
+
+    <!-- Connection Status -->
+    <div
+      id="voice-connection-status"
+      class="mb-4 rounded-lg bg-white/20 px-3 py-2 text-center font-poppins text-sm font-semibold text-white"
+    >
+      Connecting...
+    </div>
+
+    <!-- Participants List -->
+    <div class="mb-4">
+      <h4 class="font-poppins mb-2 text-sm font-semibold text-white/90">
+        Participants:
+      </h4>
+      <div
+        id="voice-participants-list"
+        class="max-h-64 space-y-2 overflow-y-auto"
+      >
+        <!-- Participants will be rendered here -->
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="flex gap-2">
+      <button
+        id="voice-mute-btn"
+        type="button"
+        class="font-poppins flex-1 rounded-lg bg-white/20 px-4 py-2 font-semibold text-white hover:bg-white/30"
+      >
+        Mute
+      </button>
+      <button
+        id="voice-leave-btn"
+        type="button"
+        class="font-poppins flex-1 rounded-lg bg-red-500 px-4 py-2 font-semibold text-white hover:bg-red-600"
+      >
+        Leave Call
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Participant Item Template -->
+<template id="voice-participant-template">
+  <div
+    class="voice-participant flex items-center justify-between rounded-lg bg-white/10 p-3"
+  >
+    <div class="flex items-center gap-3">
+      <div
+        class="voice-participant-avatar flex h-10 w-10 items-center justify-center rounded-full bg-[#D65841] font-poppins font-semibold text-white"
+      ></div>
+      <span class="voice-participant-name font-poppins font-semibold text-white"></span>
+    </div>
+    <div class="voice-status-indicator h-2 w-2 rounded-full bg-green-400"></div>
+  </div>
+</template>
