@@ -58,7 +58,7 @@ export default class TaskController {
 
   /**
    * Get a single task by ID
-   * GET /tasks/:id
+   * GET /tasks/single/:id
    */
   static async getTask(req, res) {
     try {
@@ -100,7 +100,7 @@ export default class TaskController {
 
   /**
    * Get all tasks created by or participated by the current user (My Tasks)
-   * GET /tasks/my-tasks
+   * GET /tasks/self
    */
   static async getMyTasks(req, res) {
     try {
@@ -120,7 +120,7 @@ export default class TaskController {
 
   /**
    * Update a task (only by owner)
-   * PUT /tasks/:id
+   * PUT /tasks/single/:id
    */
   static async updateTask(req, res) {
     try {
@@ -164,7 +164,7 @@ export default class TaskController {
 
   /**
    * Delete a task (only by owner)
-   * DELETE /tasks/:id
+   * DELETE /tasks/single/:id
    */
   static async deleteTask(req, res) {
     try {
@@ -197,7 +197,7 @@ export default class TaskController {
 
   /**
    * Count tasks matching filters
-   * GET /tasks/count
+   * GET /tasks/self/count
    */
   static async countTasks(req, res) {
     try {
@@ -213,7 +213,7 @@ export default class TaskController {
 
   /**
    * Count tasks created by the current user
-   * GET /tasks/my-tasks/count
+   * GET /tasks/self/count
    */
   static async countMyTasks(req, res) {
     try {
@@ -232,7 +232,7 @@ export default class TaskController {
 
   /**
    * Count tasks where current user is a participant (not owner)
-   * GET /tasks/participated/count
+   * GET /tasks/self/participated/count
    */
   static async countParticipatedTasks(req, res) {
     try {
@@ -251,7 +251,7 @@ export default class TaskController {
 
   /**
    * Join a task
-   * POST /tasks/:id/join
+   * POST /tasks/single/:id/participants
    */
   static async joinTask(req, res) {
     try {
@@ -283,7 +283,7 @@ export default class TaskController {
 
   /**
    * Quit a task
-   * POST /tasks/:id/quit
+   * POST /tasks/single/:id/quit
    */
   static async quitTask(req, res) {
     try {
