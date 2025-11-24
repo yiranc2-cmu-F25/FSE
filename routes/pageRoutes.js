@@ -34,31 +34,16 @@ function setupJoinCommunityRoutes() {
 }
 
 function setupPublicChatRoutes() {
-<<<<<<< HEAD
-  router.get("/chats", authView, (req, res) => {
-    res.render(PUB_CHAT_PATH + "publicChat", {
-      username: req.username || "",
-      searchMode: "set",
-=======
     router.get("/chats", authView, (req, res) => {
         res.render(PUB_CHAT_PATH + "publicChat", {
             username: req.username || "",
             currentUserId: req.userId,
             searchMode: "set",
         });
->>>>>>> origin/main
     });
-  });
 }
 
 function setupLoginRoutes() {
-<<<<<<< HEAD
-  router.get("/members", authView, (req, res) => {
-    res.render("memberList/membersLanding", {
-      username: req.username || "",
-      searchMode: "all",
-      searchMembers: true,
-=======
     router.get("/members", authView, (req, res) => {
         res.render("memberList/membersLanding", {
             username: req.username || "",
@@ -66,17 +51,10 @@ function setupLoginRoutes() {
             searchMode: "all",
             searchMembers: true,
         });
->>>>>>> origin/main
     });
-  });
 }
 
 function setupUpdateStatusRoutes() {
-<<<<<<< HEAD
-  router.get("/status", authView, (req, res) => {
-    res.render("memberProfile/profileUpdate", { username: req.username || "" });
-  });
-=======
     router.get("/status", authView, (req, res) => {
         res.render("memberProfile/profileUpdate", { 
             username: req.username || "",
@@ -92,7 +70,6 @@ function setupUpdateSkillsRoutes() {
             currentUserId: req.userId
         });
     });
->>>>>>> origin/main
 }
 
 function setupPrivateChatRoutes() {
@@ -113,24 +90,15 @@ function setupPrivateChatRoutes() {
 }
 
 function setupAnnouncementRoutes() {
-<<<<<<< HEAD
-  router.get("/postPublicAnnouncements", authView, (req, res) => {
-    res.render("announcement/publicAnnouncement", {
-      username: req.username || "",
-      searchMode: "set",
-=======
     router.get("/postPublicAnnouncements", authView, (req, res) => {
         res.render("announcement/publicAnnouncement", {
             username: req.username || "",
             currentUserId: req.userId,
             searchMode: "set",
         });
->>>>>>> origin/main
     });
-  });
 }
 
-<<<<<<< HEAD
 function setupESNHelpCenterRoutes() {
   console.log("Setting up ESN Help Center Routes...");
   router.get("/esn-help-center", optionalAuth, async (req, res) => {
@@ -267,7 +235,6 @@ function setupEditTaskRoutes() {
 //   });
 // }
 console.log("Setting up routes...");
-=======
 function setupCoachingBoardPages() {
     router.get("/boards", authView, (req, res) => {
         res.render("coachingBoards/list", {
@@ -297,7 +264,6 @@ function setupCoachingBoardPages() {
     });
 }
 
->>>>>>> origin/main
 setupJoinCommunityRoutes();
 setupPublicChatRoutes();
 setupLoginRoutes();
@@ -305,14 +271,11 @@ setupUpdateStatusRoutes();
 setupUpdateSkillsRoutes();
 setupPrivateChatRoutes();
 setupAnnouncementRoutes();
-<<<<<<< HEAD
 setupESNHelpCenterRoutes();
 setupMyHelpCenterRoutes();
 setupCreateTaskRoutes();
 setupEditTaskRoutes();
 // setupViewTaskDetailRoutes();
-=======
 setupCoachingBoardPages();
->>>>>>> origin/main
 
 export default router;
