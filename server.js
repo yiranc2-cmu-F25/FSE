@@ -73,7 +73,6 @@ function setupModels() {
   UserDac.DAO = new UserDao({ UserModel });
   MsgDac.DAO = new MsgDao({ MessageModel });
   AnnouncementDac.DAO = new AnnouncementDao({ AnnouncementModel });
-  statusDac.DAO = new StatusDao({ StatusModel, UserModel});
   HelpCenterDac.DAO = new HelpCenterDao({ HelpCenterModel });
   StatusDac.DAO = new StatusDao({ StatusModel, UserModel });
   CoachingBoardDac.DAO = new CoachingBoardDao({ CoachingBoardModel });
