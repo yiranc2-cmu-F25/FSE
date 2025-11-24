@@ -17,14 +17,9 @@ const ui = {
   statusButton: $("#status-button"),
   speedTestButton: $("#speed-test-button"),
   announcementButton: $("#post-public-announcement-button"),
-<<<<<<< HEAD
-  manageHelpCenterBtn: $('#manage-help-center-btn'),
-  viewHelpCenterBtn: $('#view-help-center-btn')
-=======
   myTasksButton: $("#my-tasks-button"),
   updateSkillsButton: $("#update-skills-button"),
   helpGroupsButton: $("#help-groups-button"),
->>>>>>> main
 };
 const body = document.body;
 ui.body = body;

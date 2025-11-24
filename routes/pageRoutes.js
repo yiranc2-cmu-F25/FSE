@@ -123,6 +123,9 @@ function setupHelpCenterRoutes() {
     });
     router.get("/help-centers/map", authView, (req, res) => {
         res.render("helpCenter/viewHelpCenterMap")
+    });
+}
+
 function setupESNHelpCenterRoutes() {
   console.log("Setting up ESN Help Center Routes...");
   router.get("/esn-help-center", optionalAuth, async (req, res) => {
