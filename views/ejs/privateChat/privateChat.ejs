@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Private Chat</title>
     <%- include('../partials/head') %>
-    <script>window.__CURRENT_USER__ = "<%= username %>";</script>
+    <script>window.__CURRENT_USER__ = "<%= username %>"; window.__CURRENT_USER_ID__ = "<%= currentUserId %>";</script>
     <script src="/socket.io/socket.io.js"></script>
     <script type="module" src="/js/privateChat/privateChat.js"></script>
     <script type="module" src="/js/notify/notify-bootstrap.js"></script>
@@ -166,5 +166,7 @@
       </li>
     </template>
     <%- include('../partials/searchScreen.ejs') %>
+    <%- include('../partials/boardNotificationModal.ejs') %>
+    <script type="module" src="/js/coachingBoards/boardNotifications.js"></script>
   </body>
 </html>

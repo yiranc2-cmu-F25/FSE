@@ -64,6 +64,8 @@ export class inMemoryAnnouncementDao extends iAnnouncementDao {
     
     const populatedItems = await populateSender(pageItems, "[inMemoryAnnouncementDao]");
     
+    // Return format should match AnnouncementDao.searchAnnouncement (which uses searchByModel)
+    // searchByModel returns { code: 200, count, items, nextCursor }
     return { code: 200, count, items: populatedItems, nextCursor };
   }
 }

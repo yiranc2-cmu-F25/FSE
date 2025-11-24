@@ -21,17 +21,12 @@ import { AnnouncementDao } from "./daos/AnnouncementDao.js";
 import AnnouncementDac from "./dacs/announcementDac.js";
 import TaskDao from "./daos/TaskDao.js";
 import TaskDac from "./dacs/taskDac.js";
-
-// Add new data models here, use name to reference them when you use them in setupModels
-const modelMap = {
-  "user": makeUserModel,
-  "message": makeMsgModel,
-  "announcement": makeAnnouncementModel,
-  "status": makeStatusModel,
-  "task": makeTaskModel,
-  "taskParticipant": makeTaskParticipantModel,
-  "taskLog": makeTaskLogModel,
-}
+import { makeCoachingBoardModel } from "./db/CoachingBoardSchema.js";
+import { CoachingBoardDao } from "./daos/CoachingBoardDao.js";
+import CoachingBoardDac from "./dacs/coachingBoardDac.js";
+import { makeCategorySkillPresetModel } from "./db/CategorySkillPresetSchema.js";
+import { CategorySkillPresetDao } from "./daos/CategorySkillPresetDao.js";
+import CategorySkillPresetDac from "./dacs/categorySkillPresetDac.js";
 
 /**
  * Connect to MongoDB
@@ -53,21 +48,26 @@ async function connectToMongo() {
 }
 
 function setupModels() {
-  // Make models
-  for (const [key, model] of Object.entries(modelMap)) {
-    // TODO: When needed, swap mongoose.connection with something else
-    console.log("Spawning model:", key);
-    modelMap[key] = model(mongoose.connection);
-  }
+  const UserModel = makeUserModel(mongoose.connection);
+  const MessageModel = makeMsgModel(mongoose.connection);
+  const AnnouncementModel = makeAnnouncementModel(mongoose.connection);
+  const StatusModel = makeStatusModel(mongoose.connection);
+  const CoachingBoardModel = makeCoachingBoardModel(mongoose.connection);
+  const CategorySkillPresetModel = makeCategorySkillPresetModel(mongoose.connection);
+  const TaskModel = makeTaskModel(mongoose.connection);
+  const TaskParticipantModel = makeTaskParticipantModel(mongoose.connection);
+  const TaskLogModel = makeTaskLogModel(mongoose.connection);
 
-  MsgDac.DAO = new MsgDao({ MessageModel: modelMap.message });
-  AnnouncementDac.DAO = new AnnouncementDao({ AnnouncementModel: modelMap.announcement });
-  StatusDac.DAO = new StatusDao({ StatusModel: modelMap.status, UserModel: modelMap.user });
-  UserDac.DAO = new UserDao({ UserModel: modelMap.user });
+  UserDac.DAO = new UserDao({ UserModel });
+  MsgDac.DAO = new MsgDao({ MessageModel });
+  AnnouncementDac.DAO = new AnnouncementDao({ AnnouncementModel });
+  StatusDac.DAO = new StatusDao({ StatusModel, UserModel });
+  CoachingBoardDac.DAO = new CoachingBoardDao({ CoachingBoardModel });
+  CategorySkillPresetDac.DAO = new CategorySkillPresetDao({ CategorySkillPresetModel });
   TaskDac.DAO = new TaskDao({ 
-    TaskModel: modelMap.task,
-    TaskParticipantModel: modelMap.taskParticipant,
-    TaskLogModel: modelMap.taskLog,
+    TaskModel,
+    TaskParticipantModel,
+    TaskLogModel,
   });
 }
 

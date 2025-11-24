@@ -199,6 +199,76 @@
       <%- include('./feature-modal/help-tools/myTasks.ejs') %>
 
       <button
+        id="update-skills-button"
+        type="button"
+        class="mb-6 flex w-full items-center justify-between rounded-2xl border border-stone-200 bg-white px-4 py-4 text-left shadow-sm hover:bg-stone-50"
+      >
+        <span class="flex items-center gap-3">
+          <span
+            class="grid h-10 w-10 place-content-center rounded-xl bg-stone-100"
+          >
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+            <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+            <line x1="6" y1="6" x2="6.01" y2="6"></line>
+            <line x1="6" y1="18" x2="6.01" y2="18"></line>
+          </svg>
+          </span>
+          <span class="text-base font-semibold">Update Skills</span>
+        </span>
+        <svg
+          viewBox="0 0 24 24"
+          class="h-5 w-5 stroke-stone-500"
+          fill="none"
+          stroke-width="2"
+        >
+          <path
+            d="M9 6l6 6-6 6"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      </button>
+
+      <a
+        href="/boards"
+        class="mb-6 flex w-full items-center justify-between rounded-2xl border border-stone-200 bg-white px-4 py-4 text-left shadow-sm hover:bg-stone-50"
+      >
+        <span class="flex items-center gap-3">
+          <span
+            class="grid h-10 w-10 place-content-center rounded-xl bg-stone-100"
+          >
+          
+            <svg
+              class="h-6 w-6 stroke-stone-700 transition duration-150"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M14 2H6a2 2 0 0 0-2 2v16c0 1.1.9 2 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
+              <path d="M14 3v5h5M16 13H8M16 17H8M10 9H8"/>
+            </svg>
+          </span>
+          <span class="text-base font-semibold">Skill Coaching Board</span>
+        </span>
+        <svg
+          viewBox="0 0 24 24"
+          class="h-5 w-5 stroke-stone-500"
+          fill="none"
+          stroke-width="2"
+        >
+          <path
+            d="M9 6l6 6-6 6"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      </a>
+
+      <button
         type="button"
         id="feature-logout"
         class="inline-flex w-full items-center justify-center rounded-2xl bg-[#C35F49] px-6 py-4 text-base font-semibold text-white shadow hover:brightness-95"

@@ -17,7 +17,11 @@ const ui = {
   statusButton: $("#status-button"),
   speedTestButton: $("#speed-test-button"),
   announcementButton: $("#post-public-announcement-button"),
+<<<<<<< HEAD
   myTasksButton: $("#my-tasks-button"),
+=======
+  updateSkillsButton: $("#update-skills-button"),
+>>>>>>> origin/main
 };
 const body = document.body;
 ui.body = body;
@@ -124,8 +128,14 @@ function setupSidebarSelection() {
     ui.announcementButton?.addEventListener("click", () => {
       window.location.href = "/postPublicAnnouncements";
     });
+<<<<<<< HEAD
     ui.myTasksButton?.addEventListener("click", () => {
       window.location.href = "/my-tasks";
+=======
+
+    ui.updateSkillsButton?.addEventListener("click", () => {
+      window.location.href = "/skills";
+>>>>>>> origin/main
     });
   });
 }

@@ -125,9 +125,28 @@ class Socket {
     this.io.emit("new_status", { username, status });
     console.log("Broadcasting new status:", { username, status });
   }
-  // 1. backend will call this function when user change their status
-  // 2.fronted will listen to this event to update the status of the user in userprofile and memberlist
 
+  emitCoachingBoardComment(boardId, commentData) {
+    this.io.emit("coaching_board_comment", { boardId, comment: commentData });
+  }
+
+  emitCoachingBoardReply(boardId, commentId, replyData) {
+    this.io.emit("coaching_board_reply", { boardId, commentId, reply: replyData });
+  }
+
+  emitCoachingBoardCommentDeleted(boardId, commentId) {
+    this.io.emit("coaching_board_comment_deleted", { boardId, commentId });
+  }
+
+  emitCoachingBoardReplyDeleted(boardId, commentId, replyId) {
+    this.io.emit("coaching_board_reply_deleted", { boardId, commentId, replyId });
+  }
+
+  emitCoachingBoardNotification(userIds, notificationData) {
+    userIds.forEach(userId => {
+      this.io.emit("coaching_board_notification", { userId, ...notificationData });
+    });
+  }
 
   disconnectUser(username) {
     if (!username) return;
