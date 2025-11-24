@@ -28,6 +28,7 @@ function setupPublicChatRoutes() {
     router.get("/chats", authView, (req, res) => {
         res.render(PUB_CHAT_PATH + "publicChat", {
             username: req.username || "",
+            currentUserId: req.userId,
             searchMode: "set",
         });
     });
@@ -37,6 +38,7 @@ function setupLoginRoutes() {
     router.get("/members", authView, (req, res) => {
         res.render("memberList/membersLanding", {
             username: req.username || "",
+            currentUserId: req.userId,
             searchMode: "all",
             searchMembers: true,
         });
@@ -45,7 +47,19 @@ function setupLoginRoutes() {
 
 function setupUpdateStatusRoutes() {
     router.get("/status", authView, (req, res) => {
-        res.render("memberProfile/profileUpdate", { username: req.username || "" });
+        res.render("memberProfile/profileUpdate", { 
+            username: req.username || "",
+            currentUserId: req.userId
+        });
+    });
+}
+
+function setupUpdateSkillsRoutes() {
+    router.get("/skills", authView, (req, res) => {
+        res.render("memberProfile/skillsUpdate", { 
+            username: req.username || "",
+            currentUserId: req.userId
+        });
     });
 }
 
@@ -70,7 +84,37 @@ function setupAnnouncementRoutes() {
     router.get("/postPublicAnnouncements", authView, (req, res) => {
         res.render("announcement/publicAnnouncement", {
             username: req.username || "",
+            currentUserId: req.userId,
             searchMode: "set",
+        });
+    });
+}
+
+function setupCoachingBoardPages() {
+    router.get("/boards", authView, (req, res) => {
+        res.render("coachingBoards/list", {
+            username: req.username || "",
+            searchMode: "set",
+            currentUserId: req.userId,
+        });
+    });
+    router.get("/boards/new", authView, (req, res) => {
+        res.render("coachingBoards/form", {
+            username: req.username || "",
+        });
+    });
+    router.get("/boards/:bid", authView, (req, res) => {
+        res.render("coachingBoards/detail", {
+            username: req.username || "",
+            boardId: req.params.bid,
+            currentUserId: req.userId,
+        });
+    });
+    router.get("/boards/:bid/edit", authView, (req, res) => {
+        res.render("coachingBoards/form", {
+            username: req.username || "",
+            boardId: req.params.bid,
+            currentUserId: req.userId,
         });
     });
 }
@@ -79,7 +123,9 @@ setupJoinCommunityRoutes();
 setupPublicChatRoutes();
 setupLoginRoutes();
 setupUpdateStatusRoutes();
+setupUpdateSkillsRoutes();
 setupPrivateChatRoutes();
 setupAnnouncementRoutes();
+setupCoachingBoardPages();
 
 export default router;

@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>User – Update Skills</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    
+    <%- include('../partials/head') %>
+    <script>
+      window.__CURRENT_USER__ = "<%= username %>";
+      window.__CURRENT_USER_ID__ = "<%= currentUserId %>";
+      console.log("[skills] __CURRENT_USER__ =", window.__CURRENT_USER__);
+    </script>
+    <script type="module" src="/js/userProfile/skillsUpdate.js"></script>
+    <script type="module" src="/js/notify/notify-bootstrap.js"></script>
+    <script type="module" src="/js/notify/notify-listener.js"></script>
+  </head>
+  <body class="bg-stone-50 text-stone-900">
+    <main class="mx-auto px-8 py-6">
+      <!-- Top row: back + page title + (spacer for alignment) -->
+      <div class="mt-3 flex items-center justify-between">
+        <button
+          class="grid h-9 w-9 place-content-center rounded-xl bg-white shadow-sm ring-1 ring-stone-200"
+          aria-label="Back"
+        >
+          <a href="/members" id="back-link">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5 text-stone-600"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+          </a>
+        </button>
+
+        <h1 class="text-2xl font-semibold tracking-wide">Update Skills</h1>
+
+        <!-- spacer to balance the back button -->
+        <span class="h-10 w-10"></span>
+      </div>
+
+      <!-- Avatar -->
+      <section class="mt-8 text-center">
+        <div class="inline-grid place-items-center">
+          <div
+            id="avatar"
+            class="grid h-32 w-32 place-content-center rounded-full text-4xl font-extrabold text-white shadow-md ring-4 ring-white"
+            style="background-color: #3B6A95"
+          >
+            <span id ="avatar-initials"></span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Form -->
+      <form class="mt-10 space-y-8" id="skills-form">
+        <!-- User name -->
+        <div>
+          <label class="block text-lg font-semibold">User Name</label>
+          <div class="mt-3 rounded-2xl bg-white shadow ring-1 ring-stone-200">
+            <input
+              type="text"
+              name="displayName"
+              class="w-full rounded-2xl bg-white px-4 py-4 text-stone-800 placeholder-stone-400 focus:outline-none"
+              placeholder="Enter your name"
+              disabled
+            />
+          </div>
+        </div>
+
+        <!-- Skills section -->
+        <div>
+          <h2 class="text-lg font-semibold mb-2">Your Skills</h2>
+          <div class="mt-3 rounded-2xl bg-white shadow ring-1 ring-stone-200 p-4">
+            <div id="skillsTagList" class="flex flex-wrap gap-2 min-h-[3rem] items-center">
+              <!-- Skills will be rendered here -->
+              <p id="no-skills-message" class="text-stone-400 text-sm hidden w-full">
+                No skills added yet. Select a skill from the dropdown below to add.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Add skill dropdown -->
+        <div>
+          <label class="block text-lg font-semibold mb-2">Add Skill</label>
+          <div class="mt-3 rounded-2xl bg-white shadow ring-1 ring-stone-200">
+            <select
+              id="skillSelect"
+              class="w-full rounded-2xl bg-white px-4 py-4 pr-10 text-stone-800 focus:outline-none appearance-none bg-[url('data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2012%2012%22%3E%3Cpath%20fill%3D%22%23334155%22%20d%3D%22M6%209L1%204h10z%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[length:12px] bg-[right_1rem_center]"
+            >
+              <option value="">Select a skill to add</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Save button -->
+        <div class="pt-2">
+          <button
+            type="submit"
+            class="w-full rounded-2xl bg-[#C35F49] shadow hover:brightness-95 px-6 py-4 text-center text-lg font-semibold text-white"
+          >
+            Save Changes
+          </button>
+        </div>
+      </form>
+
+      <!-- Success modal -->
+      <div
+        id="skills-modal"
+        class="fixed top-0 left-0 right-0 bottom-0 z-50 hidden items-center justify-center bg-black/40 backdrop-blur-sm"
+        aria-hidden="true"
+      >
+        <div
+          class="rounded-3xl bg-white p-8 shadow-2xl text-center w-80 animate-fade-in"
+        >
+          <div
+            class="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-white"
+          >
+            <svg
+              class="h-16 w-16 text-green-500"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+          </div>
+
+          <h2 class="text-lg font-bold text-stone-800 mb-2">
+            Skills Updated!
+          </h2>
+          <p class="text-stone-500 text-xs mb-6">
+            Your skills have been successfully updated.
+          </p>
+
+          <button
+            id="skills-modal-close"
+            class="w-full rounded-2xl bg-[#C35F49] shadow hover:brightness-95 px-6 py-3 text-sm text-white font-semibold"
+          >
+            Great!
+          </button>
+        </div>
+      </div>
+
+      <!-- Exit confirmation modal -->
+      <div
+        id="exit-confirm-modal"
+        class="fixed top-0 left-0 right-0 bottom-0 z-50 hidden items-center justify-center bg-black/40 backdrop-blur-sm"
+        aria-hidden="true"
+      >
+        <div
+          class="rounded-3xl bg-white p-8 shadow-2xl text-center w-80 animate-fade-in"
+        >
+          <div
+            class="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-white"
+          >
+            <svg
+              class="h-16 w-16 text-yellow-500"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
+            </svg>
+          </div>
+
+          <h2 class="text-lg font-bold text-stone-800 mb-2">
+            Are you sure you want to exit?
+          </h2>
+          <p class="text-stone-500 text-xs mb-6">
+            Your edits will not be saved.
+          </p>
+
+          <div class="flex gap-3">
+            <button
+              id="exit-cancel-btn"
+              class="flex-1 rounded-2xl border border-stone-300 bg-white shadow hover:bg-stone-50 px-6 py-3 text-sm text-stone-700 font-semibold"
+            >
+              Cancel
+            </button>
+            <button
+              id="exit-confirm-btn"
+              class="flex-1 rounded-2xl bg-[#C35F49] shadow hover:brightness-95 px-6 py-3 text-sm text-white font-semibold"
+            >
+              Exit
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
+    <%- include('../partials/boardNotificationModal.ejs') %>
+    <script type="module" src="/js/coachingBoards/boardNotifications.js"></script>
+  </body>
+</html>
+

@@ -1,5 +1,5 @@
 export function cleanToken(t = "") {
-  return t.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, "");
+  return t.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, "").toLowerCase();
 }
 
 export function splitTokensForStopwords(raw = "") {

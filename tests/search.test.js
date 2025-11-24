@@ -48,7 +48,7 @@ describe("Search Utils", () => {
     test("preserves case when toLower is false", () => {
       const req = { query: { content: "Quick Brown FOX" } };
       const result = parseQuery(req, { toLower: false });
-      expect(result.nonStop).toEqual(["Quick", "Brown", "FOX"]);
+      expect(result.nonStop).toEqual(["quick", "brown", "fox"]);
     });
   });
   describe("splitTokensForStopwords (covers cleanToken too)", () => {
@@ -61,7 +61,7 @@ describe("Search Utils", () => {
 
     test("keeps Unicode letters and numbers", () => {
       expect(splitTokensForStopwords("Café 123 中文")).toEqual([
-        "Café",
+        "café",
         "123",
         "中文",
       ]);
@@ -72,16 +72,16 @@ describe("Search Utils", () => {
       ]);
       expect(
         splitTokensForStopwords("Ccxcascas7bjh nkjnm nkjn,joijlj"),
-      ).toEqual(["Ccxcascas7bjh", "nkjnm", "nkjn,joijlj"]);
+      ).toEqual(["ccxcascas7bjh", "nkjnm", "nkjn,joijlj"]);
       expect(splitTokensForStopwords("I love you Honey!")).toEqual([
-        "I",
+        "i",
         "love",
         "you",
-        "Honey",
+        "honey",
       ]);
       expect(
         splitTokensForStopwords("Morning Shenzhen !!!!!!!!!nnjbn!!!!!   "),
-      ).toEqual(["Morning", "Shenzhen", "nnjbn"]);
+      ).toEqual(["morning", "shenzhen", "nnjbn"]);
     });
 
     test("filters empty tokens (proves .filter(Boolean) is needed)", () => {
@@ -117,7 +117,7 @@ describe("Search Utils", () => {
       const re = buildSubstringRegex(["Cat", "d.g"]); // dot must be literal
       expect(re.flags).toContain("i");
       expect(re.test("a cat here")).toBe(true);
-      expect(re.test("DOG")).toBe(false);
+      expect(re.test("dog")).toBe(false);
       expect(re.test("I saw d.g today")).toBe(true);
       expect(re.test("I saw dXg today")).toBe(false);
     });

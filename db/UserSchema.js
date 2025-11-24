@@ -19,6 +19,7 @@ export function makeUserModel(conn) {
         sharedstatus: { type: String, enum: Object.values(SHARED_STATUS), default: SHARED_STATUS.UNDEFINED },
         status: { type: String, enum: Object.values(USER_STATUS), default: USER_STATUS.ACTIVE },
         role: { type: String, enum: Object.values(USER_ROLE), default: USER_ROLE.CITIZEN },
+        skills: { type: [String], default: [] },
         createdAt: { type: Date, default: Date.now },
     });
 

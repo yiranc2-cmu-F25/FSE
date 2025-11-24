@@ -16,6 +16,12 @@ import statusDac from "./dacs/statusDac.js";
 import { makeAnnouncementModel } from "./db/AnnouncementSchema.js";
 import { AnnouncementDao } from "./daos/AnnouncementDao.js";
 import AnnouncementDac from "./dacs/announcementDac.js";
+import { makeCoachingBoardModel } from "./db/CoachingBoardSchema.js";
+import { CoachingBoardDao } from "./daos/CoachingBoardDao.js";
+import CoachingBoardDac from "./dacs/coachingBoardDac.js";
+import { makeCategorySkillPresetModel } from "./db/CategorySkillPresetSchema.js";
+import { CategorySkillPresetDao } from "./daos/CategorySkillPresetDao.js";
+import CategorySkillPresetDac from "./dacs/categorySkillPresetDac.js";
 
 async function connectToMongo() {
   // 1. Connect to MongoDB
@@ -31,17 +37,19 @@ async function connectToMongo() {
 }
 
 function setupModels() {
-  // now these use the default connection:
   const UserModel = makeUserModel(mongoose.connection);
   const MessageModel = makeMsgModel(mongoose.connection);
   const AnnouncementModel = makeAnnouncementModel(mongoose.connection);
   const StatusModel = makeStatusModel(mongoose.connection);
+  const CoachingBoardModel = makeCoachingBoardModel(mongoose.connection);
+  const CategorySkillPresetModel = makeCategorySkillPresetModel(mongoose.connection);
 
-  // 2. Inject models into DAOs for persistence operations
   userDac.DAO = new UserDao({ UserModel });
   msgDac.DAO = new MsgDao({ MessageModel });
   AnnouncementDac.DAO = new AnnouncementDao({ AnnouncementModel });
   statusDac.DAO = new StatusDao({ StatusModel, UserModel});
+  CoachingBoardDac.DAO = new CoachingBoardDao({ CoachingBoardModel });
+  CategorySkillPresetDac.DAO = new CategorySkillPresetDao({ CategorySkillPresetModel });
 }
 
 function setupSocket() {
