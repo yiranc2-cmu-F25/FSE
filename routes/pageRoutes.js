@@ -264,6 +264,23 @@ function setupCoachingBoardPages() {
     });
 }
 
+function setupGroupRoutes() {
+    router.get("/groups", authView, (req, res) => {
+        res.render("helpGroup/groupsList", {
+            username: req.username || "",
+        });
+    });
+
+    router.get("/groupchats/:groupId", authView, (req, res) => {
+        const groupId = String(req.params.groupId);
+        res.render("helpGroup/groupChat", {
+            username: req.username || "",
+            currentUserId: req.userId,
+            groupId,
+        });
+    });
+}
+
 setupJoinCommunityRoutes();
 setupPublicChatRoutes();
 setupLoginRoutes();
@@ -277,5 +294,6 @@ setupCreateTaskRoutes();
 setupEditTaskRoutes();
 // setupViewTaskDetailRoutes();
 setupCoachingBoardPages();
+setupGroupRoutes();
 
 export default router;

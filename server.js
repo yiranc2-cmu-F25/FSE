@@ -10,12 +10,18 @@ import { makeStatusModel } from "./db/StatusSchema.js";
 import makeTaskModel from "./db/TaskSchema.js";
 import makeTaskParticipantModel from "./db/TaskParticipantSchema.js";
 import makeTaskLogModel from "./db/TaskLogSchema.js";
+import { makeGroupModel } from "./db/GroupSchema.js";
+import { makeGroupMessageModel } from "./db/GroupMessageSchema.js";
 import { UserDao } from "./daos/UserDao.js";
 import { MsgDao } from "./daos/MsgDao.js";
 import { StatusDao } from "./daos/StatusDao.js";
+import { GroupDao } from "./daos/GroupDao.js";
+import { GroupMessageDao } from "./daos/GroupMessageDao.js";
 import UserDac from "./dacs/userDac.js";
 import MsgDac from "./dacs/msgDac.js";
 import StatusDac from "./dacs/statusDac.js";
+import groupDac from "./dacs/groupDac.js";
+import groupMessageDac from "./dacs/groupMessageDac.js";
 import { makeAnnouncementModel } from "./db/AnnouncementSchema.js";
 import { AnnouncementDao } from "./daos/AnnouncementDao.js";
 import AnnouncementDac from "./dacs/announcementDac.js";
@@ -57,6 +63,8 @@ function setupModels() {
   const TaskModel = makeTaskModel(mongoose.connection);
   const TaskParticipantModel = makeTaskParticipantModel(mongoose.connection);
   const TaskLogModel = makeTaskLogModel(mongoose.connection);
+  const GroupModel = makeGroupModel(mongoose.connection);
+  const GroupMessageModel = makeGroupMessageModel(mongoose.connection);
 
   UserDac.DAO = new UserDao({ UserModel });
   MsgDac.DAO = new MsgDao({ MessageModel });
@@ -69,6 +77,8 @@ function setupModels() {
     TaskParticipantModel,
     TaskLogModel,
   });
+  groupDac.DAO = new GroupDao({ GroupModel });
+  groupMessageDac.DAO = new GroupMessageDao({ GroupMessageModel });
 }
 
 function setupSocket() {

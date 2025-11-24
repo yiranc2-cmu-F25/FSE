@@ -19,6 +19,7 @@ const ui = {
   announcementButton: $("#post-public-announcement-button"),
   myTasksButton: $("#my-tasks-button"),
   updateSkillsButton: $("#update-skills-button"),
+  helpGroupsButton: $("#help-groups-button"),
 };
 const body = document.body;
 ui.body = body;
@@ -131,6 +132,10 @@ function setupSidebarSelection() {
 
     ui.updateSkillsButton?.addEventListener("click", () => {
       window.location.href = "/skills";
+    });
+
+    ui.helpGroupsButton?.addEventListener("click", () => {
+      window.location.href = "/groups";
     });
   });
 }

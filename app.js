@@ -14,6 +14,8 @@ import announcementRoutes from "./routes/announcementRoutes.js";
 import searchRoutes from "./routes/searchRoutes.js";
 import coachingBoardRoutes from "./routes/coachingBoardRoutes.js";
 import categorySkillPresetRoutes from "./routes/categorySkillPresetRoutes.js";
+import groupRoutes from "./routes/groupRoutes.js";
+import callRoutes from "./routes/callRoutes.js";
 import swaggerUi from "swagger-ui-express";
 import swaggerSpec from "./config/swagger/swaggerConfig.js";
 import { blockWhenSpeedTest } from "./middleware/blockWhenSpeedTest.js";
@@ -58,7 +60,6 @@ function setupMiddleware() {
   // Speed Test check
   app.use(blockWhenSpeedTest());
 }
-
 
 function setupDefaultRoute() {
   app.use((req, res) => {
@@ -117,6 +118,8 @@ function setupRoutes() {
   app.use("/api/tasks", taskRoutes); // task Routes
   app.use("/api/coaching-boards", coachingBoardRoutes); // coaching board Routes
   app.use("/api/category-skill-presets", categorySkillPresetRoutes); // category skill preset Routes
+  app.use("/api/groups/", groupRoutes); // group Routes
+  app.use("/api/calls/", callRoutes); // group voice call Routes
 
   // Non-API Routes
   app.use("/speed-test", speedTestRoutes); // Speed Test Routes
