@@ -565,4 +565,3 @@ test("GET /api/queries?type=messages_private returns status history when content
     }
   }
 });
-
