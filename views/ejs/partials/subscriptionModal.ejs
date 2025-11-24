@@ -1,0 +1,36 @@
+<!-- Subscription Success Modal -->
+<div id="subscriptionModal" class="fixed top-0 left-0 right-0 bottom-0 z-[2000] hidden items-center justify-center bg-black/40 backdrop-blur-sm" aria-hidden="true">
+  <div class="rounded-3xl bg-white p-8 shadow-2xl text-center w-80 animate-fade-in">
+    <div class="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-white">
+      <svg class="h-16 w-16 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    </div>
+    <h2 class="text-lg font-bold text-stone-800 mb-2">Successfully Subscribed</h2>
+    <p class="text-stone-500 text-xs mb-6">Now you will be notified when any updates and changes are made.</p>
+    <div class="mb-6 flex items-center justify-center">
+        <input type="checkbox" id="dontShowAgain" class="h-4 w-4 rounded border-gray-300 text-[#C35F49] focus:ring-[#C35F49]">
+      <label for="dontShowAgain" class="ml-2 text-xs text-stone-700">Do not show it again</label>
+    </div>
+    <button id="subscriptionOkBtn" type="button" class="w-full rounded-2xl bg-[#C35F49] shadow hover:brightness-95 px-6 py-3 text-sm text-white font-semibold">OK</button>
+  </div>
+</div>
+
+<!-- Unsubscription Success Modal -->
+<div id="unsubscriptionModal" class="fixed top-0 left-0 right-0 bottom-0 z-[2000] hidden items-center justify-center bg-black/40 backdrop-blur-sm" aria-hidden="true">
+  <div class="rounded-3xl bg-white p-8 shadow-2xl text-center w-80 animate-fade-in">
+    <div class="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-white">
+      <svg class="h-16 w-16 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      </div>
+    <h2 class="text-lg font-bold text-stone-800 mb-2">Successfully Unsubscribed</h2>
+    <p class="text-stone-500 text-xs mb-6">You will no longer receive notifications for updates and changes.</p>
+    <div class="mb-6 flex items-center justify-center">
+        <input type="checkbox" id="dontShowUnsubscribeAgain" class="h-4 w-4 rounded border-gray-300 text-[#C35F49] focus:ring-[#C35F49]">
+      <label for="dontShowUnsubscribeAgain" class="ml-2 text-xs text-stone-700">Do not show it again</label>
+    </div>
+    <button id="unsubscriptionOkBtn" type="button" class="w-full rounded-2xl bg-[#C35F49] shadow hover:brightness-95 px-6 py-3 text-sm text-white font-semibold">OK</button>
+  </div>
+</div>
+

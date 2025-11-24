@@ -1,8 +1,8 @@
 import Msg from "../../entities/Msg.js";
 import Status from "../../entities/Status.js";
-import mongoose from "mongoose";
 import { parseQuery } from "../../utils/search/parseQuery.js";
 import { mapSearchResults } from "../../utils/search/resultMappers.js";
+import { isValidObjectId } from "../../utils/validators.js";
 import { SearchStrategy } from "./SearchStrategy.js";
 
 export class PrivateMessagesStrategy extends SearchStrategy {
@@ -35,7 +35,7 @@ export class PrivateMessagesStrategy extends SearchStrategy {
       // Only validate ObjectId format in production (not for in-memory test DB)
       // In test mode, IDs might be numbers or other formats
       if (process.env.NODE_ENV !== "test") {
-        if (!mongoose.Types.ObjectId.isValid(senderId) || !mongoose.Types.ObjectId.isValid(peerId)) {
+        if (!isValidObjectId(senderId) || !isValidObjectId(peerId)) {
           return { code: 401, error: "Invalid user id(s)" };
         }
       }

@@ -4,6 +4,7 @@ import { announcementsStrategy }      from "../services/search/announcementsStra
 import { publicMessagesStrategy }     from "../services/search/publicMessagesStrategy.js";
 import { privateMessagesStrategy }    from "../services/search/privateMessagesStrategy.js";
 import { SearchStrategy }             from "../services/search/SearchStrategy.js";
+import { boardsStrategy }             from "../services/search/boardsStrategy.js";
 
 const STRATEGIES = {
   citizens:          citizensByUsernameStrategy,
@@ -11,6 +12,7 @@ const STRATEGIES = {
   announcements:     announcementsStrategy,
   messages_public:   publicMessagesStrategy,
   messages_private:  privateMessagesStrategy,
+  boards:            boardsStrategy,
 };
 
 const searchContext = new SearchStrategy(STRATEGIES);
