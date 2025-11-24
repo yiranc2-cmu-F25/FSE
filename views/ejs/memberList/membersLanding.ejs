@@ -162,9 +162,10 @@
           <ul role="list" class="divide-y divide-stone-100"></ul>
         </div>
       </section>
-      <%- include('../partials/featureModal.ejs') %>
-      <%- include('../partials/fixedFAB.ejs') %>
-      <%- include('../partials/searchScreen.ejs') %>
+      <%- include('../partials/featureModal.ejs') %> <%-
+      include('../partials/fixedFAB.ejs') %> <%-
+      include('../partials/searchScreen.ejs') %> <%-
+      include('../partials/nav-bar/absNavBar.ejs') %>
     </main>
     <script type="module" src="/js/extensionFeatures/featureModal.js"></script>
 
@@ -176,6 +177,7 @@
     <script type="module" src="/js/notify/notify-bootstrap.js"></script>
     <script type="module" src="/js/notify/notify-listener.js"></script>
     <script type="module" src="/js/searchInfo/searchCitizens.js"></script>
+    <script type="module" src="/js/nav-bar/nav-bar.js"></script>
     <%- include('../partials/boardNotificationModal.ejs') %>
     <script type="module" src="/js/coachingBoards/boardNotifications.js"></script>
   </body>

@@ -1,0 +1,179 @@
+<% const meta = typeof taskListMeta === "undefined" ? {} : taskListMeta; const
+taskItems = Array.isArray(tasks) ? tasks : []; 
+const gradientClasses = function (categoryType) { 
+    if (categoryType === "temp-repair") { 
+        return "from-indigo-50 to-indigo-100"; 
+    } 
+    if (categoryType === "animal-care") { 
+        return "from-emerald-50 to-emerald-100"; 
+    } 
+    if (categoryType === "debris") { 
+        return "from-amber-50 to-amber-100"; 
+    } 
+    return "from-stone-50 to-stone-100"; 
+}; 
+const statusClasses = function (statusLevel) { 
+    if (statusLevel === "critical") { 
+        return "bg-rose-100 text-rose-700"; 
+    } 
+    if (statusLevel === "urgent") { 
+        return "bg-amber-100 text-amber-700"; 
+    } 
+    return "bg-stone-100 text-stone-700"; 
+}; %>
+
+<section class="pb-28" id="task-list-section">
+  <div
+    class="rounded-3xl border border-stone-200 bg-white px-4 py-5 shadow-sm sm:px-6 sm:py-6"
+  >
+    <!-- Title + controls -->
+    <div class="flex items-center justify-between">
+      <h2 class="text-xl font-semibold tracking-tight text-stone-900">
+        <%= meta.title %>
+      </h2>
+    </div>
+
+    <div class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+      <!-- Search -->
+      <label class="relative flex-1">
+        <span class="sr-only"><%= meta.searchPlaceholder %></span>
+        <span
+          class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-stone-400"
+        >
+          <!-- search icon placeholder -->
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            class="h-4 w-4"
+            aria-hidden="true"
+          >
+            <path
+              fill="currentColor"
+              d="M10.5 4a6.5 6.5 0 0 1 5.147 10.5l3.426 3.427a1 1 0 0 1-1.414 1.414l-3.427-3.426A6.5 6.5 0 1 1 10.5 4Zm0 2a4.5 4.5 0 1 0 0 9a4.5 4.5 0 0 0 0-9Z"
+            />
+          </svg>
+        </span>
+        <input
+          id="task-search-input"
+          type="search"
+          name="taskSearch"
+          placeholder="<%= meta.searchPlaceholder %>"
+          class="w-full rounded-2xl border border-stone-200 bg-white py-2.5 pl-9 pr-3 text-sm text-stone-800 shadow-sm outline-none placeholder:text-stone-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-200"
+        />
+      </label>
+
+      <!-- Filter controls: sort toggle + dropdown -->
+      <div class="flex items-center gap-3 sm:w-auto">
+        <!-- Sort direction toggle -->
+        <button
+          type="button"
+          id="task-sort-toggle"
+          class="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-stone-200 bg-white text-stone-500 shadow-sm transition hover:border-amber-400 hover:text-amber-700"
+          aria-label="Toggle sort direction"
+          data-direction="desc"
+        >
+          <!-- placeholder icon for asc/desc -->
+          <span id="task-sort-toggle-icon" class="text-xs font-semibold">
+            ↓
+          </span>
+        </button>
+
+        <!-- Sort key dropdown -->
+        <div class="relative w-40 sm:w-48">
+          <label class="sr-only"><%= meta.filterLabel %></label>
+          <select
+            id="task-sort-select"
+            name="taskFilter"
+            class="w-full appearance-none rounded-2xl border border-stone-200 bg-white py-2.5 pl-3 pr-8 text-sm text-stone-800 shadow-sm focus:border-amber-400 focus:ring-2 focus:ring-amber-200"
+          >
+            <!-- value keys are used in JS -->
+            <option value="emergency" selected>Emergency level</option>
+            <option value="vacancy">Helpers remaining</option>
+            <option value="category">Category</option>
+            <option value="postedAt">Posted time</option>
+            <option value="status">Task status</option>
+          </select>
+          <span
+            class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-stone-400"
+          >
+            <!-- chevron placeholder -->
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              class="h-4 w-4"
+              aria-hidden="true"
+            >
+              <path
+                fill="currentColor"
+                d="M6.7 9.3a1 1 0 0 1 1.4 0L12 13.17l3.9-3.88a1 1 0 0 1 1.4 1.42l-4.6 4.55a1 1 0 0 1-1.4 0L6.7 10.7a1 1 0 0 1 0-1.4Z"
+              />
+            </svg>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Task list -->
+    <div class="mt-5 space-y-4" id="task-list-items">
+      <% taskItems.forEach(function (task) { %>
+      <article
+        class="<%= gradientClasses(task.categoryType) %> flex items-center justify-between rounded-3xl bg-gradient-to-r px-4 py-4 shadow-sm"
+      >
+        <!-- Left: icon + text -->
+        <div class="flex items-center gap-3">
+          <!-- icon -->
+          <div
+            class="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/70 shadow-sm"
+          >
+            <% if (task.icon && task.icon.src) { %>
+            <img
+              src="<%= task.icon.src %>"
+              alt="<%= task.icon.alt || '' %>"
+              class="h-6 w-6"
+            />
+            <% } else { %>
+            <span class="text-base font-semibold text-stone-700">
+              <%= (task.category || task.title || "").charAt(0) %>
+            </span>
+            <% } %>
+          </div>
+
+          <!-- title + status -->
+          <div class="space-y-1">
+            <p class="text-sm font-semibold text-stone-900">
+              &lt;<%= task.category || task.title %>&gt;
+            </p>
+            <% if (task.statusLabel) { %>
+            <span
+              class="<%= statusClasses(task.statusLevel) %> inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold"
+            >
+              <%= task.statusLabel %>
+            </span>
+            <% } %>
+          </div>
+        </div>
+
+        <!-- Right: chevron button -->
+        <a
+          href="<%= task.href || ('/tasks/' + task.id) %>"
+          class="ml-4 inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/80 text-stone-500 shadow-sm transition hover:bg-amber-600 hover:text-white"
+          aria-label="View task details"
+        >
+          <!-- chevron icon placeholder -->
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            class="h-4 w-4"
+            aria-hidden="true"
+          >
+            <path
+              fill="currentColor"
+              d="M9.29 6.71a1 1 0 0 0 0 1.42L12.17 11L9.3 13.88a1 1 0 0 0 1.4 1.42l3.99-4a1 1 0 0 0 0-1.4l-4-4a1 1 0 0 0-1.4 0Z"
+            />
+          </svg>
+        </a>
+      </article>
+      <% }) %>
+    </div>
+  </div>
+</section>

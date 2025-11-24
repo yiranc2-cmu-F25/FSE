@@ -15,7 +15,9 @@ const colors = [
 
 
 export function getAvatarColor(name) {
-  const charIndex = name.charCodeAt(0) + name.charCodeAt(name.length - 1);
+  const s = (name || "").trim();
+  if (!s) return colors[0]; // Default to first color if empty
+  const charIndex = s.charCodeAt(0) + s.charCodeAt(s.length - 1);
   return colors[charIndex % colors.length];
 }
 

@@ -7,15 +7,20 @@ import Socket from "./middleware/Socket.js";
 import { makeUserModel } from "./db/UserSchema.js";
 import { makeMsgModel } from "./db/MsgSchema.js";
 import { makeStatusModel } from "./db/StatusSchema.js";
+import makeTaskModel from "./db/TaskSchema.js";
+import makeTaskParticipantModel from "./db/TaskParticipantSchema.js";
+import makeTaskLogModel from "./db/TaskLogSchema.js";
 import { UserDao } from "./daos/UserDao.js";
 import { MsgDao } from "./daos/MsgDao.js";
 import { StatusDao } from "./daos/StatusDao.js";
-import userDac from "./dacs/userDac.js";
-import msgDac from "./dacs/msgDac.js";
-import statusDac from "./dacs/statusDac.js";
+import UserDac from "./dacs/userDac.js";
+import MsgDac from "./dacs/msgDac.js";
+import StatusDac from "./dacs/statusDac.js";
 import { makeAnnouncementModel } from "./db/AnnouncementSchema.js";
 import { AnnouncementDao } from "./daos/AnnouncementDao.js";
 import AnnouncementDac from "./dacs/announcementDac.js";
+import TaskDao from "./daos/TaskDao.js";
+import TaskDac from "./dacs/taskDac.js";
 import { makeCoachingBoardModel } from "./db/CoachingBoardSchema.js";
 import { CoachingBoardDao } from "./daos/CoachingBoardDao.js";
 import CoachingBoardDac from "./dacs/coachingBoardDac.js";
@@ -23,16 +28,22 @@ import { makeCategorySkillPresetModel } from "./db/CategorySkillPresetSchema.js"
 import { CategorySkillPresetDao } from "./daos/CategorySkillPresetDao.js";
 import CategorySkillPresetDac from "./dacs/categorySkillPresetDac.js";
 
+/**
+ * Connect to MongoDB
+ */
 async function connectToMongo() {
-  // 1. Connect to MongoDB
   const mongoUri = process.env.MONGO_URI;
   if (!mongoUri) {
     throw new Error(
       "MONGO_URI environment variable is not set. Please create a .env file with MONGO_URI=mongodb://localhost:27017 (or your MongoDB connection string)"
     );
   }
+
+  const useTls = mongoUri.startsWith("mongodb://");
+
   await mongoose.connect(mongoUri, {
-    dbName: process.env.MONGO_DB || "myDatabase",
+    // dbName: process.env.MONGO_DB || "myDatabase",
+    ...(useTls ? { tls: true } : {}),
   });
 }
 
@@ -43,13 +54,21 @@ function setupModels() {
   const StatusModel = makeStatusModel(mongoose.connection);
   const CoachingBoardModel = makeCoachingBoardModel(mongoose.connection);
   const CategorySkillPresetModel = makeCategorySkillPresetModel(mongoose.connection);
+  const TaskModel = makeTaskModel(mongoose.connection);
+  const TaskParticipantModel = makeTaskParticipantModel(mongoose.connection);
+  const TaskLogModel = makeTaskLogModel(mongoose.connection);
 
-  userDac.DAO = new UserDao({ UserModel });
-  msgDac.DAO = new MsgDao({ MessageModel });
+  UserDac.DAO = new UserDao({ UserModel });
+  MsgDac.DAO = new MsgDao({ MessageModel });
   AnnouncementDac.DAO = new AnnouncementDao({ AnnouncementModel });
-  statusDac.DAO = new StatusDao({ StatusModel, UserModel});
+  StatusDac.DAO = new StatusDao({ StatusModel, UserModel });
   CoachingBoardDac.DAO = new CoachingBoardDao({ CoachingBoardModel });
   CategorySkillPresetDac.DAO = new CategorySkillPresetDao({ CategorySkillPresetModel });
+  TaskDac.DAO = new TaskDao({ 
+    TaskModel,
+    TaskParticipantModel,
+    TaskLogModel,
+  });
 }
 
 function setupSocket() {
@@ -71,13 +90,17 @@ function setupSocket() {
   return server;
 }
 
+function getAppPort() {
+  return process.env.PORT || 3000;
+}
+
 function startServer(server) {
-  let serverInstance = server.listen(process.env.PORT || 3000, () => {
+  server.listen(getAppPort(), () => {
     console.log(
-      "Server running at http://localhost:3000/",
+      `Server running at http://localhost:${getAppPort()}/`,
     );
     console.log(
-      "Swagger docs at http://localhost:3000/api-docs",
+      `Swagger docs at http://localhost:${getAppPort()}/api-docs`,
     );
   });
 }
