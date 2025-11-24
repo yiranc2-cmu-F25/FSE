@@ -1,0 +1,106 @@
+<div id="create-group-modal" class="fixed inset-0 z-[1500] h-9/10 w-full max-w-md bg-white/30 backdrop-blur-sm mx-auto hidden items-center justify-center">
+  <div
+    class="min-h-5/6 flex h-4/5 w-11/12 flex-col items-center rounded-md bg-[#D8937F] p-5"
+  >
+    <!-- Search Input -->
+    <div
+      class="mb-4 flex w-full items-center justify-center gap-1 rounded-md bg-white p-4"
+    >
+      <img
+        src="/images/search-info/search-amplify.svg"
+        alt="search-icon-search-input-bar"
+        class="h-4 w-4"
+      />
+      <input
+        type="text"
+        class="w-full bg-white focus:outline-none focus:ring-0"
+        id="create-group-search-input"
+        name="create-group-search-input"
+        placeholder="Search members..."
+      />
+      <img
+        src="/images/search-info/delete-entry-cross.svg"
+        id="clear-create-group-search"
+        alt="clear-search"
+        class="h-4 w-4 cursor-pointer"
+      />
+    </div>
+
+    <!-- Group Name Input -->
+    <div
+      id="group-name-wrapper"
+      class="mb-2 flex w-full items-center justify-center gap-1 rounded-md bg-white p-4"
+    >
+      <input
+        type="text"
+        class="w-full bg-white focus:outline-none focus:ring-0"
+        id="group-name-input"
+        name="group-name-input"
+        placeholder="Group name..."
+      />
+    </div>
+    <p id="group-name-error" class="mb-2 w-full text-xs text-yellow-200 hidden"></p>
+
+    <!-- Results List -->
+    <div
+      id="create-group-result-page" class="flex h-full min-h-0 w-full flex-1 flex-col gap-1 overflow-hidden rounded-md bg-white p-2"
+    >
+      <section class="flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden">
+        <div id="create-group-search-result-scroll" class="flex-1 overflow-y-auto min-h-0 overscroll-contain w-full px-2 py-3">
+          <ul id="create-group-search-result-list" class="space-y-2">
+          </ul>
+        </div>
+      </section>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="mt-4 flex w-full gap-2">
+      <button
+        id="cancel-create-group-btn"
+        type="button"
+        class="flex-1 rounded-md bg-gray-500 px-4 py-2 text-white font-semibold hover:brightness-95"
+      >
+        Cancel
+      </button>
+      <button
+        id="confirm-create-group-btn"
+        type="button"
+        class="flex-1 rounded-md bg-[#D65841] px-4 py-2 text-white font-semibold hover:brightness-95"
+      >
+        Create
+      </button>
+    </div>
+  </div>
+</div>
+
+<template id="create-group-member-item-template">
+  <li class="create-group-member-item rounded-md bg-slate-50 p-3 shadow-sm hover:bg-slate-100 cursor-pointer flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="avatar flex h-10 w-10 shrink-0 items-center justify-center rounded-full">
+        <span class="initials font-poppins font-semibold text-white"></span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="member-name text-sm font-semibold capitalize text-gray-700"></span>
+        <span class="member-status-badge"></span>
+      </div>
+    </div>
+    <img
+      class="check-icon h-6 w-6"
+      src="/images/help-group/icon-uncheck.svg"
+      alt="select"
+    />
+  </li>
+</template>
+
+<template id="status-ok-template">
+  <%- include('../partials/status-search-tag/OK-tag.ejs') %>
+</template>
+<template id="status-help-template">
+  <%- include('../partials/status-search-tag/HELP-tag.ejs') %>
+</template>
+<template id="status-emergency-template">
+  <%- include('../partials/status-search-tag/EMERGENCY-tag.ejs') %>
+</template>
+<template id="status-undefined-template">
+  <%- include('../partials/status-search-tag/UNDEFINED-tag.ejs') %>
+</template>

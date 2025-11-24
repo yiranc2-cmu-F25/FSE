@@ -1,0 +1,49 @@
+<% const nav = typeof navButtons === "undefined" ? {} : navButtons; const
+createTask = nav.createTask || {}; const joinedTasks = nav.joinedTasks || {}; %>
+
+<section class="mt-5 space-y-4">
+  <h1 class="text-3xl font-semibold tracking-tight text-stone-900">
+    <%= nav.pageTitle %>
+  </h1>
+
+  <div class="flex flex-col gap-3 sm:flex-row">
+    <!-- Create a new task -->
+    <a
+      href="<%= createTask.href %>"
+      class="bg-brand-primary inline-flex w-full items-center justify-center rounded-2xl px-6 py-4 text-base font-semibold text-white shadow-md transition hover:bg-amber-700 sm:w-auto"
+    >
+      <%= createTask.label %>
+    </a>
+
+    <!-- View joined tasks -->
+    <a
+      href="<%= joinedTasks.href %>"
+      class="text-brand-primary border-brand-primary hover:bg-brand-secondary inline-flex w-full items-center justify-center rounded-2xl border bg-white px-6 py-4 text-base font-semibold shadow-sm transition sm:w-auto"
+    >
+      <span><%= joinedTasks.label %></span>
+
+      <% if (typeof joinedTasks.activeCount === "number") { %>
+      <span
+        class="ml-3 inline-flex items-center gap-1 rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800"
+      >
+        <!-- placeholder for badge icon -->
+        <span
+          class="flex h-5 w-5 items-center justify-center border-amber-400"
+          aria-hidden="true"
+        >
+          <% if (joinedTasks.badgeIcon) { %>
+          <img
+            src="<%= joinedTasks.badgeIcon %>"
+            alt=""
+            class="h-full w-full"
+          />
+          <% } %>
+        </span>
+        <span class="font-semibold text-amber-400"
+          ><%= joinedTasks.activeCount %></span
+        >
+      </span>
+      <% } %>
+    </a>
+  </div>
+</section>

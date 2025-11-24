@@ -1,0 +1,114 @@
+{
+  "hero": {
+    "title": "My Help Center",
+    "body": "Welcome to your Help Center! Use filter and search to see tasks you have published or are involved in." },
+  "taskList": {
+    "title": "Tasks",
+    "searchPlaceholder": "Search tasks",
+    "filterLabel": "Select option"
+  },
+  "tasks": [
+    {
+      "id": "temp-repair-1",
+      "title": "Temporary roof repair for community shelter",
+      "category": "Temp Repair",
+      "categoryType": "temp-repair",
+      "statusLabel": "Standard",
+      "statusLevel": "standard",
+      "status": "OPEN",
+      "joinedCount": 2,
+      "capacity": 5,
+      "postedAt": "2025-11-15T10:00:00Z",
+      "icon": {
+        "src": "/images/icons/tasks/tools.svg",
+        "alt": "Temporary repair icon"
+      },
+      "href": "/tasks/temp-repair-1"
+    },
+    {
+      "id": "debris-1",
+      "title": "Remove debris near Oak Street school",
+      "category": "Remove Debris",
+      "categoryType": "debris",
+      "statusLabel": "Scheduled",
+      "statusLevel": "scheduled",
+      "status": "OPEN",
+      "joinedCount": 1,
+      "capacity": 6,
+      "postedAt": "2025-11-14T09:00:00Z",
+      "icon": {
+        "src": "/images/icons/tasks/landslide.svg",
+        "alt": "Debris removal icon"
+      },
+      "href": "/tasks/debris-1"
+    },
+    {
+      "id": "animal-1",
+      "title": "Feed stray dogs near Market Street",
+      "category": "Animal Care",
+      "categoryType": "animal-care",
+      "statusLabel": "Critical",
+      "statusLevel": "critical",
+      "status": "OPEN",
+      "joinedCount": 4,
+      "capacity": 8,
+      "postedAt": "2025-11-16T12:00:00Z",
+      "icon": {
+        "src": "/images/icons/tasks/paw.svg",
+        "alt": "Animal care icon"
+      },
+      "href": "/tasks/animal-1"
+    },
+    {
+      "id": "temp-repair-closed-1",
+      "title": "Secure loose balcony railings",
+      "category": "Temp Repair",
+      "categoryType": "temp-repair",
+      "statusLabel": "Standard",
+      "statusLevel": "standard",
+      "status": "CLOSED",
+      "joinedCount": 5,
+      "capacity": 5,
+      "postedAt": "2025-11-10T08:00:00Z",
+      "icon": {
+        "src": "/images/icons/tasks/tools.svg",
+        "alt": "Temporary repair icon"
+      },
+      "href": "/tasks/temp-repair-closed-1"
+    },
+    {
+      "id": "debris-closed-1",
+      "title": "Clear fallen branches from community park",
+      "category": "Remove Debris",
+      "categoryType": "debris",
+      "statusLabel": "Scheduled",
+      "statusLevel": "scheduled",
+      "status": "CLOSED",
+      "joinedCount": 6,
+      "capacity": 6,
+      "postedAt": "2025-11-09T15:00:00Z",
+      "icon": {
+        "src": "/images/icons/tasks/landslide.svg",
+        "alt": "Debris removal icon"
+      },
+      "href": "/tasks/debris-closed-1"
+    },
+    {
+      "id": "animal-closed-1",
+      "title": "Assist with pet reunification at shelter",
+      "category": "Animal Care",
+      "categoryType": "animal-care",
+      "statusLabel": "Critical",
+      "statusLevel": "critical",
+      "status": "CLOSED",
+      "joinedCount": 3,
+      "capacity": 3,
+      "postedAt": "2025-11-08T13:30:00Z",
+      "icon": {
+        "src": "/images/icons/tasks/paw.svg",
+        "alt": "Animal care icon"
+      },
+      "href": "/tasks/animal-closed-1"
+    }
+  ]
+}

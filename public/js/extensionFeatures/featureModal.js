@@ -1,5 +1,5 @@
-import {loadInfo} from "../utils/loadUserInfo.js";
-import { getInitialsSafe,getAvatarColor } from "../utils/avatars.js";
+import { loadInfo } from "../utils/loadUserInfo.js";
+import { getInitialsSafe, getAvatarColor } from "../utils/avatars.js";
 import { statusUpdate } from "../utils/statusPageUpdate.js";
 
 const $ = (s) => document.querySelector(s);
@@ -17,8 +17,14 @@ const ui = {
   statusButton: $("#status-button"),
   speedTestButton: $("#speed-test-button"),
   announcementButton: $("#post-public-announcement-button"),
+<<<<<<< HEAD
   manageHelpCenterBtn: $('#manage-help-center-btn'),
   viewHelpCenterBtn: $('#view-help-center-btn')
+=======
+  myTasksButton: $("#my-tasks-button"),
+  updateSkillsButton: $("#update-skills-button"),
+  helpGroupsButton: $("#help-groups-button"),
+>>>>>>> main
 };
 const body = document.body;
 ui.body = body;
@@ -33,7 +39,8 @@ function setupUserInfo() {
       statusUpdate(user.status);
 
       if (ui.statusText) ui.statusText.textContent = user.status ?? "UNDEFINED";
-      if (ui.avatarColor) ui.avatarColor.style.backgroundColor = getAvatarColor(name);;
+      if (ui.avatarColor)
+        ui.avatarColor.style.backgroundColor = getAvatarColor(name);
       if (ui.avatarInit) ui.avatarInit.textContent = getInitialsSafe(name);
       if (ui.displayInput) ui.displayInput.value = name || "Guest";
     } catch (err) {
@@ -65,7 +72,8 @@ function setupOpenSidebar() {
 
 function setupCloseOnEscape() {
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && !ui.modal.classList.contains("hidden")) closeModal();
+    if (e.key === "Escape" && !ui.modal.classList.contains("hidden"))
+      closeModal();
   });
 }
 
@@ -110,7 +118,6 @@ function bootSidebar() {
   });
 }
 
-
 function setupSidebarSelection() {
   //click esn status link to go to status page
   document.addEventListener("DOMContentLoaded", () => {
@@ -124,12 +131,17 @@ function setupSidebarSelection() {
     ui.announcementButton?.addEventListener("click", () => {
       window.location.href = "/postPublicAnnouncements";
     });
-    ui.manageHelpCenterBtn?.addEventListener('click', () => {
-      window.location.href = "/help-centers/manage"
-    })
-    ui.viewHelpCenterBtn?.addEventListener('click', () => {
-      window.location.href = "/help-centers/view"
-    })
+    ui.myTasksButton?.addEventListener("click", () => {
+      window.location.href = "/my-tasks";
+    });
+
+    ui.updateSkillsButton?.addEventListener("click", () => {
+      window.location.href = "/skills";
+    });
+
+    ui.helpGroupsButton?.addEventListener("click", () => {
+      window.location.href = "/groups";
+    });
   });
 }
 

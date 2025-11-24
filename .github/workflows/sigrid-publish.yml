@@ -3,7 +3,6 @@ on:
   push:
     branches:
       - "main"
-      - "iter4/Ander"
 
 jobs:
   sigridci:
@@ -19,3 +18,8 @@ jobs:
         env:
           SIGRID_CI_TOKEN: "${{ secrets.SIGRID_CI_TOKEN }}"
         run: "./sigridci/sigridci/sigridci.py --customer cmusvfse --system f25-fse-sa2 --source . --publish" 
+      - name: Upload Sigrid CI feedback
+        uses: actions/upload-artifact@v4
+        with:
+          name: sigrid-feedback
+          path: sigrid-ci-output/feedback.md

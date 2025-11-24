@@ -14,9 +14,14 @@ import announcementRoutes from "./routes/announcementRoutes.js";
 import searchRoutes from "./routes/searchRoutes.js";
 import helpcenterRoutes from "./routes/helpcenterRoutes.js";
 import addressRoutes from "./routes/addressRoutes.js"
+import coachingBoardRoutes from "./routes/coachingBoardRoutes.js";
+import categorySkillPresetRoutes from "./routes/categorySkillPresetRoutes.js";
+import groupRoutes from "./routes/groupRoutes.js";
+import callRoutes from "./routes/callRoutes.js";
 import swaggerUi from "swagger-ui-express";
 import swaggerSpec from "./config/swagger/swaggerConfig.js";
 import { blockWhenSpeedTest } from "./middleware/blockWhenSpeedTest.js";
+import taskRoutes from "./routes/taskRoutes.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -56,22 +61,6 @@ function setupMiddleware() {
 
   // Speed Test check
   app.use(blockWhenSpeedTest());
-}
-
-function setupRoutes() {
-  //Routes
-  app.use("/api/authentications", authRoutes); // User Login/logout; Account Info retrieval
-  // console.log("DEBUG messageRoutes typeof =", typeof messageRoutes);
-  // console.log("DEBUG messageRoutes keys   =", Object.keys(messageRoutes || {}));
-  app.use("/api/messages/", messageRoutes); // Get & Post Messages
-  app.use("/api/users/", userInfoRoutes); 
-  app.use("/speed-test", speedTestRoutes); // Speed Test Routes
-  app.use("/api/announcements", announcementRoutes); // announcement Routes
-  app.use("/api/queries", searchRoutes); // search Routes
-  app.use("/api/help-centers", helpcenterRoutes); // help center Routes
-  app.use("/api/addresses", addressRoutes);
-
-  app.use("/", pageRoutes); // All routes for separate pages e.g. public chat wall
 }
 
 function setupDefaultRoute() {
@@ -120,3 +109,23 @@ setupDefaultRoute();
 setupErrorHandling();
 
 export default app;
+
+function setupRoutes() {
+  // API Routes
+  app.use("/api/authentications", authRoutes); // User Login/logout; Account Info retrieval
+  app.use("/api/messages/", messageRoutes); // Get & Post Messages
+  app.use("/api/users/", userInfoRoutes); 
+  app.use("/api/announcements", announcementRoutes); // announcement Routes
+  app.use("/api/queries", searchRoutes); // search Routes
+  app.use("/api/tasks", taskRoutes); // task Routes
+  app.use("/api/coaching-boards", coachingBoardRoutes); // coaching board Routes
+  app.use("/api/category-skill-presets", categorySkillPresetRoutes); // category skill preset Routes
+  app.use("/api/groups/", groupRoutes); // group Routes
+  app.use("/api/calls/", callRoutes); // group voice call Routes
+  app.use("/api/help-centers", helpcenterRoutes); // help center Routes
+  app.use("/api/addresses", addressRoutes);
+
+  // Non-API Routes
+  app.use("/speed-test", speedTestRoutes); // Speed Test Routes
+  app.use("/", pageRoutes); // All routes for separate pages e.g. public chat wall
+}

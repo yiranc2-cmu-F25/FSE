@@ -35,6 +35,16 @@ export function makeMsgModel(conn) {
         }
     });
 
+    MessageSchema.pre("save", function(next) {
+        if (this.isModified("status") && typeof this.status === "string") {
+            const lower = this.status.toLowerCase();
+            if (Object.values(SHARED_STATUS).includes(lower)) {
+                this.status = lower;
+            }
+        }
+        next();
+    });
+
     MessageSchema.index({ content: "text" });
     MessageSchema.index({ timestamp: -1, _id: -1 });
     MessageSchema.index({ sender: 1, receiver: 1, timestamp: -1, _id: -1 });

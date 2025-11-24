@@ -55,7 +55,35 @@ class Socket {
         this.broadcastUserJoin(username);
         this.broadcastUserList();
       }
-      
+
+      // ---- Voice Call WebRTC Signaling ----------------------------------------
+
+      // Relay WebRTC offer
+      socket.on('voice-offer', (data) => {
+        console.log(`[VOICE] Relaying offer from ${socket.id} to ${data.target}`);
+        this.io.to(data.target).emit('voice-offer', {
+          offer: data.offer,
+          from: socket.id
+        });
+      });
+
+      // Relay WebRTC answer
+      socket.on('voice-answer', (data) => {
+        console.log(`[VOICE] Relaying answer from ${socket.id} to ${data.target}`);
+        this.io.to(data.target).emit('voice-answer', {
+          answer: data.answer,
+          from: socket.id
+        });
+      });
+
+      // Relay ICE candidate
+      socket.on('voice-ice-candidate', (data) => {
+        this.io.to(data.target).emit('voice-ice-candidate', {
+          candidate: data.candidate,
+          from: socket.id
+        });
+      });
+
       socket.on("disconnect", () => {
         const info = this.users.get(socket.id);
         console.log("[disconnect] socket.id=", socket.id);
@@ -107,6 +135,26 @@ class Socket {
     this.io.to(receiverRoom).emit("private_message", { ...base, isOwn: false });
   }
 
+  emitGroupMessage(senderUsername, groupMembers, base) {
+    // groupMembers is an array of usernames (including owner and all members)
+    const senderRoom = this.roomFor(senderUsername);
+
+    // Emit to sender with isOwn: true
+    this.io.to(senderRoom).emit("group_message", { ...base, isOwn: true });
+
+    // Emit to all other group members with isOwn: false
+    groupMembers.forEach((memberUsername) => {
+      const normMember = this.normUsername(memberUsername);
+      const normSender = this.normUsername(senderUsername);
+
+      // Skip the sender
+      if (normMember !== normSender) {
+        const memberRoom = this.roomFor(memberUsername);
+        this.io.to(memberRoom).emit("group_message", { ...base, isOwn: false });
+      }
+    });
+  }
+
   broadcastUserJoin(username) {
     this.io.emit("user_join", { username, timestamp: new Date() });
   }
@@ -125,9 +173,28 @@ class Socket {
     this.io.emit("new_status", { username, status });
     console.log("Broadcasting new status:", { username, status });
   }
-  // 1. backend will call this function when user change their status
-  // 2.fronted will listen to this event to update the status of the user in userprofile and memberlist
 
+  emitCoachingBoardComment(boardId, commentData) {
+    this.io.emit("coaching_board_comment", { boardId, comment: commentData });
+  }
+
+  emitCoachingBoardReply(boardId, commentId, replyData) {
+    this.io.emit("coaching_board_reply", { boardId, commentId, reply: replyData });
+  }
+
+  emitCoachingBoardCommentDeleted(boardId, commentId) {
+    this.io.emit("coaching_board_comment_deleted", { boardId, commentId });
+  }
+
+  emitCoachingBoardReplyDeleted(boardId, commentId, replyId) {
+    this.io.emit("coaching_board_reply_deleted", { boardId, commentId, replyId });
+  }
+
+  emitCoachingBoardNotification(userIds, notificationData) {
+    userIds.forEach(userId => {
+      this.io.emit("coaching_board_notification", { userId, ...notificationData });
+    });
+  }
 
   disconnectUser(username) {
     if (!username) return;

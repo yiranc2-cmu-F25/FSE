@@ -22,4 +22,12 @@ export class iUserDao {
     async updateStatusById(id, newStatus) {
         throw new Error("To be implemented!");
     }
+
+    async getSkillsById(id) {
+        throw new Error("To be implemented!");
+    }
+
+    async updateSkillsById(id, skills) {
+        throw new Error("To be implemented!");
+    }
 }

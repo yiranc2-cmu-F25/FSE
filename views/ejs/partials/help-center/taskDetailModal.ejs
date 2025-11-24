@@ -1,0 +1,386 @@
+<%
+  const t = task || {};
+  const v = viewer || {};
+  const helpersRatio = (t.helpersCapacity && t.helpersCapacity > 0)
+    ? Math.min(t.helpersJoined || 0, t.helpersCapacity)
+    : 0;
+
+  const formatDate = function (iso) {
+    if (!iso) return "";
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return "";
+    return d.toLocaleString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit"
+    });
+  };
+%>
+
+<!-- Root overlay (glass blur) -->
+<div
+  id="task-modal-root"
+  class=" fixed inset-0 z-20 hidden bg-stone-900/40 backdrop-blur-sm"
+  aria-hidden="true"
+>
+  <!-- Click-outside area -->
+  <div class="flex min-h-full items-end justify-center py-8 sm:items-center z-30" id="task-modal-wrapper">
+    <!-- ===== Task Detail Panel ===== -->
+    <section
+      id="task-detail-panel"
+      class="pointer-events-auto relative hidden w-full max-w-md rounded-3xl bg-white shadow-xl ring-1 ring-amber-300/40 z-50"
+    >
+      <!-- inner scrollable layout -->
+      <div class="relative max-h-[80vh] overflow-y-auto rounded-3xl bg-amber-700/10 p-4" style="scrollbar-width: thin; overscroll-behavior: contain;">
+        <!-- card itself -->
+        <div class="relative rounded-3xl bg-white px-4 pb-44 pt-5 shadow-md sm:px-6">
+          <!-- Emergency pill and Status tag -->
+          <div class="mb-3 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span
+                class="inline-flex rounded-full bg-rose-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-rose-600"
+              >
+                <%= t.statusLabel || t.emergencyLevel || '' %>
+              </span>
+              <span
+                class="inline-flex rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide <%= t.status === 'OPEN' ? 'bg-emerald-100 text-emerald-700' : 'bg-stone-200 text-stone-600' %>"
+              >
+                <%= t.status || 'OPEN' %>
+              </span>
+            </div>
+            <!-- Category icon -->
+            <div
+              class="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-100"
+            >
+              <img 
+                id="task-category-icon"
+                src="/images/help-tasks/icons/task_category/otherCategory.svg" 
+                alt="Task category" 
+                class="h-full w-full"
+              />
+            </div>
+          </div>
+
+          <!-- Title -->
+          <h2 class="text-lg font-semibold leading-snug text-stone-900">
+            <%= t.title %>
+          </h2>
+
+          <!-- Meta rows -->
+          <dl class="mt-3 space-y-2 text-xs text-stone-600">
+            <div class="flex gap-2">
+              <dt class="w-20 font-semibold text-stone-400">Location:</dt>
+              <dd class="flex-1 text-stone-700"><%= t.location %></dd>
+            </div>
+            <div class="flex gap-2">
+              <dt class="w-20 font-semibold text-stone-400">Post Time:</dt>
+              <dd class="flex-1 text-stone-700"><%= formatDate(t.postTime) %></dd>
+            </div>
+            <div class="flex gap-2">
+              <dt class="w-20 font-semibold text-stone-400">Due Date:</dt>
+              <dd class="flex-1 text-stone-700"><%= formatDate(t.dueDate) %></dd>
+            </div>
+            <div class="flex gap-2">
+              <dt class="w-20 font-semibold text-stone-400">Publisher:</dt>
+              <dd class="flex-1 text-stone-700" id="task-publisher-name">
+                <%= t.creator?.username || 'Unknown' %>
+              </dd>
+            </div>
+            <div class="flex items-start gap-2">
+              <dt class="w-20 pt-1 font-semibold text-stone-400">Helpers:</dt>
+              <dd class="flex-1 space-y-1">
+                <!-- ratio + avatars row -->
+                <div class="flex items-center justify-between gap-3">
+                  <!-- ratio pill + bar -->
+                  <div class="flex items-center gap-2">
+                    <span
+                      class="helpers-ratio-pill inline-flex items-center rounded-full bg-amber-100 px-2 py-1 text-[11px] font-semibold text-amber-700"
+                    >
+                      <%= helpersRatio %> / <%= t.helpersCapacity || 0 %>
+                    </span>
+                    <!-- small bar -->
+                    <span class="relative inline-flex h-1.5 w-20 overflow-hidden rounded-full bg-stone-200">
+                      <span
+                        class="helpers-progress-bar absolute inset-y-0 left-0 rounded-full bg-amber-400"
+                        style="width: <%= t.helpersCapacity ? (100 * helpersRatio / t.helpersCapacity) : 0 %>%"
+                      ></span>
+                    </span>
+                  </div>
+
+                  <!-- mini avatars -->
+                  <div class="helpers-avatars -mr-1 flex items-center">
+                    <% (t.helperAvatars || []).slice(0, 5).forEach(function (h, idx) { %>
+                      <span
+                        class="relative -ml-2 flex h-7 w-7 items-center justify-center rounded-full border border-white text-[9px] font-semibold text-white shadow-sm"
+                        style="background-color: <%= h.color || '#f97316' %>;"
+                      >
+                        <%= h.initials || '' %>
+                      </span>
+                    <% }); %>
+                    <% if ((t.helperAvatars || []).length > 5) { %>
+                      <span
+                        class="-ml-2 flex h-7 w-7 items-center justify-center rounded-full border border-white bg-stone-200 text-[9px] font-semibold text-stone-700"
+                      >
+                        +<%= (t.helperAvatars || []).length - 5 %>
+                      </span>
+                    <% } %>
+                  </div>
+                </div>
+
+                <!-- helper names list (will be updated by JS) -->
+                <div class="helper-names-list mt-1 space-y-0.5 text-[11px] text-stone-600">
+                  <p class="text-[11px] text-stone-500">No helpers yet.</p>
+                </div>
+              </dd>
+            </div>
+          </dl>
+
+          <!-- Description -->
+          <section class="mt-4 space-y-1 text-xs text-stone-700">
+            <h3 class="text-[13px] font-semibold text-stone-900">
+              Description
+            </h3>
+            <p class="leading-relaxed">
+              <%= t.description %>
+            </p>
+          </section>
+
+          <!-- Task logs -->
+          <section class="mt-5 space-y-2 text-xs text-stone-700">
+            <h3 class="text-[13px] font-semibold text-stone-900">
+              Task Logs
+            </h3>
+            <div class="space-y-2">
+              <% (t.taskLogs || []).forEach(function (log) { %>
+                <div class="grid grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] gap-3">
+                  <p class="text-[11px] text-stone-500">
+                    <%= formatDate(log.timestamp) %>
+                  </p>
+                  <p class="text-[11px] leading-snug text-stone-700">
+                    <%= log.summary %>
+                  </p>
+                </div>
+              <% }); %>
+            </div>
+          </section>
+
+          <!-- Resources -->
+          <section class="mt-5 space-y-2 text-xs text-stone-700">
+            <h3 class="text-[13px] font-semibold text-stone-900">
+              Resource Needed
+            </h3>
+            <div class="space-y-1">
+              <% (t.resourcesNeeded || []).forEach(function (r) { %>
+                <label class="flex items-start gap-2 text-[11px]">
+                  <input
+                    type="checkbox"
+                    disabled
+                    <%= r.isFulfilled ? 'checked' : '' %>
+                    class="mt-[2px] h-3.5 w-3.5 rounded border-stone-300 text-amber-500 focus:ring-0"
+                  />
+                  <span class="<%= r.isFulfilled ? 'text-stone-500 line-through' : '' %>">
+                    <%= r.label %>
+                  </span>
+                </label>
+              <% }); %>
+            </div>
+          </section>
+
+          <!-- Skills Required -->
+          <section class="mt-5 mb-2 space-y-2 text-xs text-stone-700">
+            <h3 class="text-[13px] font-semibold text-stone-900">
+              Skills Required
+            </h3>
+            <ul class="space-y-1">
+              <% (t.skillsRequired || []).forEach(function (s) { %>
+                <li class="flex items-start gap-2 text-[11px]">
+                  <span class="mt-[3px] h-1 w-1 rounded-full bg-amber-400"></span>
+                  <span><%= s %></span>
+                </li>
+              <% }); %>
+            </ul>
+          </section>
+
+          <!-- Bottom overlay for buttons (blur + gradient) -->
+          <div
+            id="task-action-overlay"
+            class="absolute inset-x-0 bottom-0 hidden h-32 rounded-b-3xl bg-gradient-to-t from-white/95 via-white/80 to-transparent backdrop-blur-sm"
+          ></div>
+
+          <!-- Button group (shown based on viewer state) -->
+          <div
+            id="task-action-buttons"
+            class="pointer-events-auto absolute inset-x-0 bottom-0 hidden px-5 pb-5 pt-4 space-y-2"
+          >
+            <button
+              type="button"
+              id="btn-upload-log"
+              class="hidden w-full rounded-2xl bg-amber-700 py-3 text-sm font-semibold text-white shadow-md hover:bg-amber-800"
+            >
+              Upload Task Log
+            </button>
+            <button
+              type="button"
+              id="btn-join-task"
+              class="hidden w-full rounded-2xl bg-amber-700 py-3 text-sm font-semibold text-white shadow-md hover:bg-amber-800"
+            >
+              Join Task
+            </button>
+            <button
+              type="button"
+              id="btn-quit-task"
+              class="hidden w-full rounded-2xl border border-amber-300 bg-white py-3 text-sm font-semibold text-amber-700 shadow-sm hover:bg-amber-50"
+              data-modal-open="quit-confirm-modal"
+            >
+              Quit Task
+            </button>
+            <button
+              type="button"
+              id="btn-edit-task"
+              class="hidden w-full rounded-2xl border border-stone-200 bg-white py-3 text-sm font-semibold text-stone-700 shadow-sm hover:bg-stone-50"
+            >
+              Edit Task
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Join Task Modal ===== -->
+    <section
+      id="task-join-panel"
+      class="pointer-events-auto relative hidden w-full max-w-md rounded-3xl bg-white shadow-xl ring-1 ring-amber-300/40"
+    >
+      <div class="max-h-[80vh] overflow-y-auto rounded-3xl p-5">
+        <h2 class="text-lg font-semibold text-stone-900">
+          Join Task
+        </h2>
+        <p class="mt-2 text-sm text-stone-600">
+          You are about to join
+          <span class="font-semibold"><%= t.title %></span>.
+          Please share any relevant information that will help the task owner
+          coordinate with you.
+        </p>
+
+        <!-- placeholder form -->
+        <form class="mt-5 space-y-4">
+          <div class="space-y-1">
+            <label for="join-note" class="text-xs font-semibold text-stone-800">
+              Note to task owner
+            </label>
+            <textarea
+              id="join-note"
+              rows="4"
+              class="w-full rounded-2xl border border-stone-200 px-3 py-2 text-sm text-stone-800 placeholder:text-stone-400 focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-100"
+              placeholder="Briefly describe how you can help, your available time, tools you can bring, etc."
+            ></textarea>
+          </div>
+
+          <div class="space-y-2 pt-2">
+            <button
+              type="button"
+              id="join-confirm-btn"
+              class="w-full rounded-2xl bg-amber-700 py-3 text-sm font-semibold text-white shadow-md hover:bg-amber-800"
+            >
+              Confirm & Join Task
+            </button>
+            <button
+              type="button"
+              class="w-full rounded-2xl border border-stone-200 bg-white py-3 text-sm font-semibold text-stone-700 hover:bg-stone-50"
+              data-modal-cancel
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- ===== Quit Task Modal ===== -->
+    <section
+      id="task-quit-panel"
+      class="pointer-events-auto relative hidden w-full max-w-md rounded-3xl bg-white shadow-xl ring-1 ring-amber-300/40"
+    >
+      <div class="max-h-[80vh] overflow-y-auto rounded-3xl p-5">
+        <h2 class="text-lg font-semibold text-stone-900">
+          Quit Task
+        </h2>
+        <p class="mt-3 text-sm text-stone-700">
+          Are you sure you want to quit
+          <span class="font-semibold"><%= t.title %></span>?
+          Your spot will be released to other volunteers.
+        </p>
+
+        <div class="mt-6 space-y-2">
+          <button
+            type="button"
+            id="quit-confirm-btn"
+            class="w-full rounded-2xl bg-rose-600 py-3 text-sm font-semibold text-white shadow-md hover:bg-rose-700"
+          >
+            Yes, Quit Task
+          </button>
+          <button
+            type="button"
+            class="w-full rounded-2xl border border-stone-200 bg-white py-3 text-sm font-semibold text-stone-700 hover:bg-stone-50"
+            data-modal-cancel
+          >
+            Keep Participating
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Upload / Write Task Log Modal ===== -->
+    <section
+      id="task-log-panel"
+      class="pointer-events-auto relative hidden w-full max-w-md rounded-3xl bg-white shadow-xl ring-1 ring-amber-300/40"
+    >
+      <div class="max-h-[80vh] overflow-y-auto rounded-3xl p-5">
+        <h2 class="text-lg font-semibold text-stone-900">
+          Upload Task Log
+        </h2>
+        <p class="mt-2 text-sm text-stone-600">
+          Share what has happened during your shift so that everyone stays
+          updated.
+        </p>
+
+        <!-- placeholder form -->
+        <form class="mt-5 space-y-4">
+          <div class="space-y-1">
+            <label
+              for="task-log-text"
+              class="text-xs font-semibold text-stone-800"
+            >
+              Task log
+            </label>
+            <textarea
+              id="task-log-text"
+              rows="4"
+              class="w-full rounded-2xl border border-stone-200 px-3 py-2 text-sm text-stone-800 placeholder:text-stone-400 focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-100"
+              placeholder="Describe what you did, what remains, and any blockers."
+            ></textarea>
+          </div>
+
+          <div class="space-y-2 pt-2">
+            <button
+              type="button"
+              id="log-submit-btn"
+              class="w-full rounded-2xl bg-amber-700 py-3 text-sm font-semibold text-white shadow-md hover:bg-amber-800"
+            >
+              Submit Task Log
+            </button>
+            <button
+              type="button"
+              class="w-full rounded-2xl border border-stone-200 bg-white py-3 text-sm font-semibold text-stone-700 hover:bg-stone-50"
+              data-modal-cancel
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+  </div>
+</div>
