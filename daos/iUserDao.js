@@ -15,6 +15,10 @@ export class iUserDao {
         throw new Error("To be implemented!");
     }
 
+    async findById(id) {
+        throw new Error("To be implemented!");
+    }
+
     async getAllUsers() {
         throw new Error("To be implemented!");
     }
@@ -28,6 +32,34 @@ export class iUserDao {
     }
 
     async updateSkillsById(id, skills) {
+        throw new Error("To be implemented!");
+    }
+
+    async updateAccountStatusById(id, newStatus) {
+        throw new Error("To be implemented!");
+    }
+
+    async updatePrivilegeLevelById(id, newPrivilegeLevel) {
+        throw new Error("To be implemented!");
+    }
+
+    async updateUsernameById(id, newUsername) {
+        throw new Error("To be implemented!");
+    }
+
+    async updatePasswordById(id, newPassword) {
+        throw new Error("To be implemented!");
+    }
+
+    async usernameExists(username, excludeUserId = null) {
+        throw new Error("To be implemented!");
+    }
+
+    async getUserProfileByUsername(username) {
+        throw new Error("To be implemented!");
+    }
+
+    async getUserProfileById(id) {
         throw new Error("To be implemented!");
     }
 }

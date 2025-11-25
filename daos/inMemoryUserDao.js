@@ -1,6 +1,7 @@
 import { USER_STATUS } from "../constants/userStatus.js";
 import { SHARED_STATUS } from "../constants/sharedStatus.js";
 import { USER_ROLE } from "../constants/userRole.js";
+import { PRIVILEGE_LEVEL } from "../constants/privilegeLevel.js";
 import { iUserDao } from "./iUserDao.js";
 
 export class inMemoryUserDao extends iUserDao {
@@ -14,6 +15,7 @@ export class inMemoryUserDao extends iUserDao {
       sharedstatus: SHARED_STATUS.UNDEFINED,
       status: USER_STATUS.ACTIVE,
       role: USER_ROLE.CITIZEN,
+      privilegeLevel: PRIVILEGE_LEVEL.CITIZEN,
       skills: [],
       createdAt: new Date(),
     });
@@ -24,6 +26,7 @@ export class inMemoryUserDao extends iUserDao {
       sharedstatus: SHARED_STATUS.OK,
       status: USER_STATUS.ACTIVE,
       role: USER_ROLE.CITIZEN,
+      privilegeLevel: PRIVILEGE_LEVEL.CITIZEN,
       skills: [],
       createdAt: new Date(),
     });
@@ -34,6 +37,7 @@ export class inMemoryUserDao extends iUserDao {
       sharedstatus: SHARED_STATUS.HELP,
       status: USER_STATUS.ACTIVE,
       role: USER_ROLE.CITIZEN,
+      privilegeLevel: PRIVILEGE_LEVEL.CITIZEN,
       skills: [],
       createdAt: new Date(),
     });
@@ -61,6 +65,7 @@ export class inMemoryUserDao extends iUserDao {
       sharedstatus: normalizedShared,
       status: status || USER_STATUS.ACTIVE,
       role: normalizedRole,
+      privilegeLevel: PRIVILEGE_LEVEL.CITIZEN,
       skills: skills || [],
       createdAt: new Date(),
     };
@@ -121,5 +126,78 @@ export class inMemoryUserDao extends iUserDao {
     if (user) {
       user.skills = Array.isArray(skills) ? skills : [];
     }
+  }
+
+  async updateAccountStatusById(id, newStatus) {
+    const user = this.users.find((u) => id == u.id);
+    if (user) {
+      user.status = newStatus;
+    }
+  }
+
+  async updatePrivilegeLevelById(id, newPrivilegeLevel) {
+    const user = this.users.find((u) => id == u.id);
+    if (user) {
+      user.privilegeLevel = newPrivilegeLevel;
+    }
+  }
+
+  async updateUsernameById(id, newUsername) {
+    const user = this.users.find((u) => id == u.id);
+    if (!user) {
+      throw new Error("User not found");
+    }
+    // Check for duplicate username (excluding current user)
+    const existingUser = this.users.find(
+      (u) => u.username.toLowerCase() === newUsername.toLowerCase() && u.id != id
+    );
+    if (existingUser) {
+      throw new Error("Username already exists");
+    }
+    user.username = newUsername.toLowerCase();
+  }
+
+  async updatePasswordById(id, newPassword) {
+    const user = this.users.find((u) => id == u.id);
+    if (!user) {
+      throw new Error("User not found");
+    }
+    user.password = newPassword;
+  }
+
+  async usernameExists(username, excludeUserId = null) {
+    const normalizedUsername = username.toLowerCase();
+    const user = this.users.find(
+      (u) =>
+        u.username.toLowerCase() === normalizedUsername &&
+        (!excludeUserId || u.id != excludeUserId)
+    );
+    return !!user;
+  }
+
+  async getUserProfileByUsername(username) {
+    const user = this.users.find((u) => u.username.toLowerCase() === username.toLowerCase());
+    if (!user) {
+      return null;
+    }
+    return {
+      id: user.id,
+      username: user.username,
+      status: user.status,
+      privilegeLevel: user.privilegeLevel || PRIVILEGE_LEVEL.CITIZEN,
+    };
+  }
+
+  async getUserProfileById(id) {
+    const user = this.users.find((u) => id == u.id);
+    if (!user) {
+      return null;
+    }
+    return {
+      id: user.id,
+      username: user.username,
+      status: user.status,
+      privilegeLevel: user.privilegeLevel || PRIVILEGE_LEVEL.CITIZEN,
+    };
   }
 }

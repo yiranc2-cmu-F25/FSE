@@ -4,7 +4,7 @@ import { ForbiddenUsernames } from "../config/ForbiddenUsernamesConfig.js";
 import { USER_ROLE } from "../constants/userRole.js";
 import { USER_STATUS } from "../constants/userStatus.js";
 import { SHARED_STATUS } from "../constants/sharedStatus.js";
-
+import { PRIVILEGE_LEVEL } from "../constants/privilegeLevel.js";
 
 export function makeUserModel(conn) {
     const UserSchema = new mongoose.Schema({
@@ -21,6 +21,7 @@ export function makeUserModel(conn) {
         role: { type: String, enum: Object.values(USER_ROLE), default: USER_ROLE.CITIZEN },
         skills: { type: [String], default: [] },
         createdAt: { type: Date, default: Date.now },
+        privilegeLevel: {type: String, enum: Object.values(PRIVILEGE_LEVEL), default: PRIVILEGE_LEVEL.CITIZEN},
     });
 
     UserSchema.pre("save", async function () {
