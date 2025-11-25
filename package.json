@@ -19,6 +19,8 @@
     "test:integration:search-information": "npm test tests/searchInformation.test.js",
     "test:integration:update-status": "npm test tests/updateStatus.test.js",
     "test:postAnnouncement": "npm test tests/postAnnouncement.test.js",
+    "unittest:HelpCenter": "npm test tests/helpCenter.unit.test.js",
+    "inttest:HelpCenter": "npm test tests/helpCenter.int.test.js",
     "test:tasks": "cross-env NODE_OPTIONS=\"--experimental-vm-modules --no-warnings\" jest --detectOpenHandles --coverage tests/taskController.test.js tests/taskFrontendUtils.test.js",
     "test:integration:tasks": "cross-env NODE_OPTIONS=\"--experimental-vm-modules --no-warnings\" jest --detectOpenHandles tests/taskIntegration.test.js"
   },

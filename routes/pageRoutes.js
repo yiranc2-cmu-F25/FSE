@@ -99,6 +99,33 @@ function setupAnnouncementRoutes() {
     });
 }
 
+function setupHelpCenterRoutes() {
+    router.get("/help-centers/manage", authView, (req, res) => {
+        res.render("helpCenter/manageHelpCenter")
+    });
+    router.get("/help-centers/manage/register", authView, (req, res) => {
+        res.render("helpCenter/registerHelpCenter")
+    });
+    router.get("/help-centers/manage/edit", authView, (req, res) => {
+        res.render("helpCenter/editHelpCenter")
+    });
+    router.get("/help-centers/manage/edit/:id", authView, async (req, res) => {
+        res.render("helpCenter/editHelpCenterDetail");
+    });
+    router.get("/help-centers/confirm", authView, (req, res) => {
+        res.render("helpCenter/confirmPage")
+    });
+    router.get("/help-centers/view", authView, (req, res) => {
+        res.render("helpCenter/viewHelpCenter")
+    });
+    router.get("/help-centers/view/:id", authView, (req, res) => {
+        res.render("helpCenter/viewHelpCenterDetail")
+    });
+    router.get("/help-centers/map", authView, (req, res) => {
+        res.render("helpCenter/viewHelpCenterMap")
+    });
+}
+
 function setupESNHelpCenterRoutes() {
   console.log("Setting up ESN Help Center Routes...");
   router.get("/esn-help-center", optionalAuth, async (req, res) => {
@@ -288,6 +315,7 @@ setupUpdateStatusRoutes();
 setupUpdateSkillsRoutes();
 setupPrivateChatRoutes();
 setupAnnouncementRoutes();
+setupHelpCenterRoutes();
 setupESNHelpCenterRoutes();
 setupMyHelpCenterRoutes();
 setupCreateTaskRoutes();

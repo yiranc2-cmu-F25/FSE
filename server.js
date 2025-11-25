@@ -25,6 +25,9 @@ import groupMessageDac from "./dacs/groupMessageDac.js";
 import { makeAnnouncementModel } from "./db/AnnouncementSchema.js";
 import { AnnouncementDao } from "./daos/AnnouncementDao.js";
 import AnnouncementDac from "./dacs/announcementDac.js";
+import { makeHelpCenterModel } from "./db/HelpCenterSchema.js";
+import { HelpCenterDao } from "./daos/HelpCenterDao.js";
+import HelpCenterDac from "./dacs/helpCenterDac.js";
 import TaskDao from "./daos/TaskDao.js";
 import TaskDac from "./dacs/taskDac.js";
 import { makeCoachingBoardModel } from "./db/CoachingBoardSchema.js";
@@ -58,6 +61,7 @@ function setupModels() {
   const MessageModel = makeMsgModel(mongoose.connection);
   const AnnouncementModel = makeAnnouncementModel(mongoose.connection);
   const StatusModel = makeStatusModel(mongoose.connection);
+  const HelpCenterModel = makeHelpCenterModel(mongoose.connection);
   const CoachingBoardModel = makeCoachingBoardModel(mongoose.connection);
   const CategorySkillPresetModel = makeCategorySkillPresetModel(mongoose.connection);
   const TaskModel = makeTaskModel(mongoose.connection);
@@ -69,6 +73,7 @@ function setupModels() {
   UserDac.DAO = new UserDao({ UserModel });
   MsgDac.DAO = new MsgDao({ MessageModel });
   AnnouncementDac.DAO = new AnnouncementDao({ AnnouncementModel });
+  HelpCenterDac.DAO = new HelpCenterDao({ HelpCenterModel });
   StatusDac.DAO = new StatusDao({ StatusModel, UserModel });
   CoachingBoardDac.DAO = new CoachingBoardDao({ CoachingBoardModel });
   CategorySkillPresetDac.DAO = new CategorySkillPresetDao({ CategorySkillPresetModel });

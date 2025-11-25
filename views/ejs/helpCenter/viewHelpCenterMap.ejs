@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Help Centers Map</title>
+    <%- include('../partials/head') %>
+
+    <!-- Mapbox GL JS styles -->
+    <link
+      href="https://api.mapbox.com/mapbox-gl-js/v3.0.0/mapbox-gl.css"
+      rel="stylesheet"
+    />
+  </head>
+
+  <body class="min-h-screen bg-white">
+    <div class="mx-auto flex h-screen w-full max-w-md flex-col bg-white">
+      <!-- Header -->
+      <header class="flex items-center bg-[#E5E5E5] px-4 py-3 z-10">
+        <a href="/help-centers/view" class="mr-2">
+          <img
+            src="/images/icons/illustrations/icon-left.svg"
+            alt="Back"
+            class="w-6 h-6"
+          />
+        </a>
+        <h1 class="flex-1 text-center font-poppins text-base font-semibold text-black">
+          Help Centers Map
+        </h1>
+      </header>
+
+      <!-- Map container -->
+      <main class="flex-1 relative">
+        <div id="map" class="h-full w-full"></div>
+
+        <!-- Small status bubble -->
+        <div
+          id="map-message"
+          class="pointer-events-none absolute left-1/2 top-4 z-20 -translate-x-1/2 rounded-full bg-white/90 px-4 py-1 text-xs text-gray-700 shadow"
+        ></div>
+      </main>
+    </div>
+
+    <!-- Mapbox GL JS script -->
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.0.0/mapbox-gl.js"></script>
+
+    <!-- Expose token from server to client (use your existing MAPBOX_TOKEN) -->
+    <script>
+      window.MAPBOX_TOKEN = "<%= process.env.MAPBOX_TOKEN %>";
+    </script>
+
+    <!-- Your page logic -->
+    <script type="module" src="/js/helpCenter/viewHelpCenterMap.js"></script>
+  </body>
+</html>
