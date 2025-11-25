@@ -196,6 +196,11 @@ class Socket {
     });
   }
 
+  broadcastEmergencyProfileUpdate(userId) {
+    this.io.emit("emergency_profile_updated", { userId });
+    console.log("Broadcasting emergency profile update:", { userId });
+  }
+
   disconnectUser(username) {
     if (!username) return;
     const norm = this.normUsername(username);

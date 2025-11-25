@@ -3,7 +3,7 @@ import { parseArrayField, parseNumberField, parseEmergencyContacts, parseHeight,
 import { getVisibilitySetting } from "../utils/emergencyProfile/visibilityUtils.js";
 import { loadProfileData, saveProfile, deleteProfile, uploadPhoto } from "../utils/emergencyProfile/emergencyProfileApi.js";
 import { populateFormFields, collectFormData } from "../utils/emergencyProfile/formUtils.js";
-import { showSuccessModal, closeSuccessModal, showConfirmDeleteModal, closeConfirmDeleteModal, setupModalCloseHandlers } from "../utils/emergencyProfile/modalUtils.js";
+import { showSuccessModal, closeSuccessModal, showConfirmDeleteModal, closeConfirmDeleteModal } from "../utils/emergencyProfile/modalUtils.js";
 import { setupEmergencyContactsValidation, setupHeightValidation, setupWeightValidation } from "../utils/emergencyProfile/validationUtils.js";
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -23,16 +23,51 @@ document.addEventListener("DOMContentLoaded", () => {
   const confirmDeleteOk = document.getElementById("confirm-delete-ok");
   
   // Wrapper functions for modal utilities
-  const showSuccessModalWrapper = (title, description) => {
+  const showSuccessModalWrapper = (title, description, shouldRedirect = false) => {
     showSuccessModal(successModal, successModalTitle, successModalDescription, successModalClose, title, description);
+    // Store redirect flag in modal element
+    if (shouldRedirect) {
+      successModal.dataset.shouldRedirect = "true";
+    } else {
+      delete successModal.dataset.shouldRedirect;
+    }
   };
   
   const showConfirmDeleteModalWrapper = () => {
     return showConfirmDeleteModal(confirmDeleteModal, confirmDeleteCancel, confirmDeleteOk);
   };
   
-  // Setup modal close handlers
-  setupModalCloseHandlers(successModal, successModalClose);
+  // Setup modal close handlers with redirect support
+  if (successModalClose) {
+    successModalClose.addEventListener("click", () => {
+      closeSuccessModal(successModal);
+      // Check if we should redirect after closing
+      if (successModal.dataset.shouldRedirect === "true") {
+        window.location.href = "/emergency-profile";
+      }
+    });
+  }
+  if (successModal) {
+    // Close modal when clicking on the overlay (background)
+    successModal.addEventListener("click", (e) => {
+      if (e.target === successModal) {
+        closeSuccessModal(successModal);
+        // Check if we should redirect after closing
+        if (successModal.dataset.shouldRedirect === "true") {
+          window.location.href = "/emergency-profile";
+        }
+      }
+    });
+  }
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && successModal && !successModal.classList.contains("hidden")) {
+      closeSuccessModal(successModal);
+      // Check if we should redirect after closing
+      if (successModal.dataset.shouldRedirect === "true") {
+        window.location.href = "/emergency-profile";
+      }
+    }
+  });
   
   // Helper function to show error message
   function showPhotoError(message) {
@@ -185,10 +220,11 @@ document.addEventListener("DOMContentLoaded", () => {
         // Exit edit mode
         toggleEditMode();
         
-        // Show success modal
+        // Show success modal with redirect flag
         showSuccessModalWrapper(
           "Emergency Profile Saved!",
-          "Your emergency profile has been updated successfully."
+          "Your emergency profile has been updated successfully.",
+          true // Enable redirect on close
         );
       } catch (err) {
         console.error("Failed to save profile:", err);

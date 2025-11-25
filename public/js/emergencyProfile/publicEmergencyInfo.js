@@ -67,6 +67,11 @@ function setupStatusListener() {
     // Reload all profiles to get updated status
     await loadAllProfiles();
   });
+  
+  socket.on("emergency_profile_updated", async (data) => {
+    // Reload all profiles when emergency profile is created, updated, or deleted
+    await loadAllProfiles();
+  });
 }
 
 async function loadAllProfiles() {

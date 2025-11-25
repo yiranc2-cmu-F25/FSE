@@ -74,6 +74,13 @@ export async function updatePersonalEmergencyProfile(req, res) {
         if (!updatedProfile) {
             return res.status(404).json({ message: "Emergency profile not found" });
         }
+        
+        // Broadcast emergency profile update via socket
+        const socketInstance = req.app.get("socketInstance");
+        if (socketInstance) {
+            socketInstance.broadcastEmergencyProfileUpdate(userId);
+        }
+        
         res.json(updatedProfile);
     } catch (err) {
         console.error("Error updating emergency profile:", err);
@@ -124,6 +131,12 @@ export async function updatePersonalEmergencyProfilePhoto(req, res) {
             });
         }
         
+        // Broadcast emergency profile update via socket (photo update is also a profile update)
+        const socketInstance = req.app.get("socketInstance");
+        if (socketInstance) {
+            socketInstance.broadcastEmergencyProfileUpdate(userId);
+        }
+        
         res.json({ message: "Profile photo updated successfully" });
     } catch (err) {
         console.error("Error updating profile photo:", err);
@@ -169,6 +182,13 @@ export async function deletePersonalEmergencyProfile(req, res) {
     try {
         const userId = req.user.id;
         await EmergencyProfile.deletePersonalEmergencyProfile(userId);
+        
+        // Broadcast emergency profile update via socket
+        const socketInstance = req.app.get("socketInstance");
+        if (socketInstance) {
+            socketInstance.broadcastEmergencyProfileUpdate(userId);
+        }
+        
         res.json({ message: "Emergency profile deleted" });
     } catch (err) {
         console.error("Error deleting emergency profile:", err);
