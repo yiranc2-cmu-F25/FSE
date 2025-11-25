@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Help Groups</title>
+    <%- include('../partials/head') %>
+    <script>window.__CURRENT_USER__ = "<%= username %>";</script>
+    <script type="module" src="/js/notify/notify-bootstrap.js"></script>
+    <script type="module" src="/js/notify/notify-listener.js"></script>
+    <script type="module" src="/js/helpGroup/groupsList.js"></script>
+  </head>
+  <body class="min-h-screen bg-white">
+    <div
+      class="relative mx-auto flex h-screen w-full max-w-md flex-col items-center"
+    >
+      <header
+        class="flex w-full items-center justify-start border-b-2 border-slate-200 pb-4 pt-12"
+      >
+        <figure
+          class="mx-4 cursor-pointer rounded-xl border border-gray-200 p-3"
+          id="back-btn-container"
+        >
+          <a href="/members">
+            <img
+              id="back-btn"
+              src="/images/chat-privately/keyboard_arrow_left.svg"
+              alt="Back"
+              class="h-6 w-6"
+            />
+          </a>
+        </figure>
+        <div class="flex flex-col">
+          <h1 class="font-poppins text-lg font-semibold text-black">
+            Help Groups
+          </h1>
+        </div>
+      </header>
+      <main
+        id="groups-container"
+        class="relative flex w-full flex-grow flex-col overflow-y-auto bg-slate-50"
+      >
+        <div
+          class="pointer-events-none absolute left-0 right-0 top-0 z-10 h-full"
+          style="box-shadow: inset 0 20px 20px -5px #f8fafc"
+        ></div>
+        <ul id="groups-list" class="flex flex-col gap-2 overflow-y-auto p-4">
+        </ul>
+        <div
+          class="pointer-events-none absolute bottom-0 left-0 right-0 z-10 h-full"
+          style="box-shadow: inset 0 -30px 20px -5px #f8fafc"
+        ></div>
+      </main>
+
+      <%- include('../partials/createGroupFAB.ejs') %>
+    </div>
+
+    <template id="group-item">
+      <li class="group-item flex items-start gap-3 cursor-pointer hover:bg-stone-100 p-3 border-b border-gray-200">
+        <div class="avatars-container relative flex shrink-0 h-10" style="width: 60px;">
+          <!-- Avatars will be added here -->
+        </div>
+
+        <div class="content flex min-w-0 flex-col items-start flex-1">
+          <div class="flex w-full items-center justify-between gap-2">
+            <span class="group-name font-poppins font-bold text-black truncate"></span>
+            <span class="timestamp font-poppins text-xs text-gray-500 shrink-0"></span>
+          </div>
+          <p class="members font-poppins text-xs text-gray-500 w-full"></p>
+        </div>
+      </li>
+    </template>
+
+    <%- include('../partials/createGroupModal.ejs') %>
+  </body>
+</html>

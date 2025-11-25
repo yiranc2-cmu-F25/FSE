@@ -1,0 +1,104 @@
+<div class="flex items-start gap-3 p-4 border-b border-stone-200">
+  <!-- Heart Icon (Bookmark) -->
+  <button 
+    class="bookmark-btn flex-shrink-0 mt-1" 
+    data-profile-id="<%= profile._id %>"
+    data-is-bookmarked="<%= isBookmarked ? 'true' : 'false' %>"
+  >
+    <svg 
+      class="w-6 h-6 <%= isBookmarked ? 'fill-red-500' : 'fill-none' %> stroke-2 stroke-stone-400" 
+      viewBox="0 0 24 24"
+    >
+      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+    </svg>
+  </button>
+
+  <!-- User Avatar -->
+  <div class="flex-shrink-0">
+    <% if (profile.facePhoto && profile.facePhoto.data) { %>
+      <img 
+        src="<%= profile.facePhoto.data %>" 
+        alt="<%= profile.username %>" 
+        class="h-12 w-12 rounded-full object-cover"
+      />
+    <% } else { %>
+      <div 
+        class="grid h-12 w-12 place-content-center rounded-full text-base font-bold text-white shadow-md"
+        style="background-color: <%= avatarColor %>"
+      >
+        <%= initials %>
+      </div>
+    <% } %>
+  </div>
+
+  <!-- Profile Info -->
+  <div class="flex-1 min-w-0">
+    <!-- Username and Status Tag -->
+    <div class="flex items-center gap-2 mb-2">
+      <span class="font-semibold text-stone-800"><%= profile.username %></span>
+      <% 
+        const status = profile.userStatus || 'undefined';
+        let statusClass = 'bg-stone-400 text-white';
+        let statusText = 'UNDEFINED';
+        
+        if (status === 'ok') {
+          statusClass = 'bg-green-500 text-white';
+          statusText = 'OK';
+        } else if (status === 'help') {
+          statusClass = 'bg-yellow-400 text-black';
+          statusText = 'HELP';
+        } else if (status === 'emergency') {
+          statusClass = 'bg-red-600 text-white';
+          statusText = 'EMERGENCY';
+        }
+      %>
+      <span class="px-2 py-0.5 rounded text-xs font-semibold <%= statusClass %>">
+        <%= statusText %>
+      </span>
+    </div>
+
+    <!-- Profile Details -->
+    <div class="space-y-1 text-sm text-stone-600">
+      <% if (showFields.bloodType && profile.bloodType) { %>
+        <% 
+          let bloodTypeDisplay = profile.bloodType;
+          if (bloodTypeDisplay === 'A_POS' || bloodTypeDisplay === 'A_POSITIVE') bloodTypeDisplay = 'A+';
+          else if (bloodTypeDisplay === 'A_NEG' || bloodTypeDisplay === 'A_NEGATIVE') bloodTypeDisplay = 'A-';
+          else if (bloodTypeDisplay === 'B_POS' || bloodTypeDisplay === 'B_POSITIVE') bloodTypeDisplay = 'B+';
+          else if (bloodTypeDisplay === 'B_NEG' || bloodTypeDisplay === 'B_NEGATIVE') bloodTypeDisplay = 'B-';
+          else if (bloodTypeDisplay === 'AB_POS' || bloodTypeDisplay === 'AB_POSITIVE') bloodTypeDisplay = 'AB+';
+          else if (bloodTypeDisplay === 'AB_NEG' || bloodTypeDisplay === 'AB_NEGATIVE') bloodTypeDisplay = 'AB-';
+          else if (bloodTypeDisplay === 'O_POS' || bloodTypeDisplay === 'O_POSITIVE') bloodTypeDisplay = 'O+';
+          else if (bloodTypeDisplay === 'O_NEG' || bloodTypeDisplay === 'O_NEGATIVE') bloodTypeDisplay = 'O-';
+          else if (bloodTypeDisplay === 'UNKNOWN') bloodTypeDisplay = 'Unknown';
+        %>
+        <div>Blood Type: <%= bloodTypeDisplay %></div>
+      <% } %>
+
+      <% if (showFields.height && profile.height !== null && profile.height !== undefined) { %>
+        <div>Height: <%= profile.height %>cm</div>
+      <% } %>
+
+      <% if (showFields.allergies !== undefined) { %>
+        <div>Allergies: <%= profile.allergies && profile.allergies.length > 0 && profile.allergies[0] !== 'null' ? profile.allergies.join(', ') : 'NULL' %></div>
+      <% } %>
+
+      <% if (showFields.weight && profile.weight !== null && profile.weight !== undefined) { %>
+        <div>Weight: <%= profile.weight %>kg</div>
+      <% } %>
+
+      <% if (showFields.emergencyContacts && profile.emergencyContacts && profile.emergencyContacts.length > 0) { %>
+        <div>Emergency Contacts: <%= profile.emergencyContacts.join(', ') %></div>
+      <% } %>
+
+      <% if (showFields.currentMedications !== undefined) { %>
+        <div>Current Medications: <%= profile.currentMedications && profile.currentMedications.length > 0 && profile.currentMedications[0] !== 'null' ? profile.currentMedications.join(', ') : 'NULL' %></div>
+      <% } %>
+
+      <% if (showFields.chronicConditions !== undefined) { %>
+        <div>Chronic conditions: <%= profile.chronicConditions && profile.chronicConditions.length > 0 && profile.chronicConditions[0] !== 'null' ? profile.chronicConditions.join(', ') : 'NULL' %></div>
+      <% } %>
+    </div>
+  </div>
+</div>
+

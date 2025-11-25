@@ -9,6 +9,23 @@ const normId = (idLike) => {
   return idLike.toString ? idLike.toString() : String(idLike);
 };
 
+// Helper function to build message payload
+function buildMessagePayload(m, meId) {
+    const msgId = normId(m._id ?? m.id);
+    const sid = normId(m.senderId ?? m.sender);
+    const rid = normId(m.receiverId ?? m.receiver);
+    const own = sid === meId;
+    return {
+        id:         msgId,
+        senderId:   sid,
+        receiverId: rid,
+        content:    m.content,
+        timestamp:  m.timestamp ?? m.createdAt,
+        status:     m.status ?? null,
+        isOwn:      own,
+    };
+}
+
 export async function getPrivateMessages(req, res) {
   try {
     const meIdRaw   = req.user?.id ?? req.userId;
@@ -44,20 +61,8 @@ export async function getPrivateMessages(req, res) {
     dedup.sort((a, b) => ts(a) - ts(b));
 
     const data = dedup.map(m => {
-        const msgId = normId(m._id ?? m.id);
-        const sid = normId(m.senderId ?? m.sender);
-        const rid = normId(m.receiverId ?? m.receiver);
-        const own = sid === meId;
-        const payload = {
-            id:         msgId,
-            senderId:   sid,
-            receiverId: rid,
-            content:    m.content,
-            timestamp:  m.timestamp ?? m.createdAt,
-            status:     m.status ?? null,
-            isOwn:      own,
-        };
-        console.log("playload: ",payload);
+        const payload = buildMessagePayload(m, meId);
+        console.log("playload: ", payload);
         return payload;
     });
 
@@ -165,19 +170,10 @@ export async function getUnreadMessages(req, res) {
         const unreadMessages = await Msg.getUnreadMessages(meId);
 
         const data = unreadMessages.map(m => {
-            const msgId = normId(m._id ?? m.id);
-            const sid = normId(m.senderId ?? m.sender);
-            const rid = normId(m.receiverId ?? m.receiver);
-            const own = sid === meId;
+            const payload = buildMessagePayload(m, meId);
             return {
-                id:         msgId,
-                sender:     m.sender?.username || "Unknown",
-                senderId:   sid,
-                receiverId: rid,
-                content:    m.content,
-                timestamp:  m.timestamp ?? m.createdAt,
-                status:     m.status ?? null,
-                isOwn:      own,
+                ...payload,
+                sender: m.sender?.username || "Unknown",
             };
         });
 

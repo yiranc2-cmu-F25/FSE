@@ -3,7 +3,7 @@ on:
   push:
     branches:
       - main
-      - nicole-i4
+      - I4-YiranChen
   pull_request:
   workflow_dispatch: {}
 

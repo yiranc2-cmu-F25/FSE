@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>View Help Center</title>
+        <%- include('../partials/head') %>
+    </head>
+
+    <body class="min-h-screen bg-white">
+        <div class="relative mx-auto flex h-screen w-full max-w-md flex-col items-center justify-center">
+
+        <!-- Header -->
+        <div class="absolute top-[5%] flex w-11/12 items-center justify-start gap-1">
+            <a href="/members">
+                <img
+                    src="/images/icons/illustrations/icon-left.svg"
+                    alt="Back"
+                    class="w-10"
+                />
+            </a>
+        </div>
+    
+        <p class="font-poppins font-semibold absolute top-[5%] text-center text-xl leading-normal text-black">
+            View Help Center
+        </p>
+
+        <section class="mt-24 flex w-full items-center justify-center px-2 pt-2 pb-2">
+        </section>
+
+        <!-- Illustration area (non-scrollable, sits under header) -->
+        <section class="flex w-full items-center justify-center px-2 pt-2 pb-2">
+            <img
+                src="/images/helpCenter/viewHelpCenter.svg"
+                alt="Image"
+                class="h-20"
+            />
+        </section>
+
+        <section class="mt-4 flex w-full items-center justify-center px-2 pt-2 pb-2">
+        </section>
+
+        <!-- View in Map button -->
+        <a
+          href="/help-centers/map"
+          id="view-map-btn"
+          class="font-poppins font-semibold h-12 w-5/6 bg-theme text-lg text-white flex items-center justify-center rounded-full"
+          type="button"
+        >
+          View in Map
+        </a>
+
+        <section class="mt-2 flex w-full items-center justify-center px-2 pt-2 pb-2">
+        </section>
+
+      <!-- Main content -->
+        <main class="flex-1 overflow-y-auto px-4 pb-6">
+
+        <!-- Status / message -->
+        <div
+          id="public-help-center-message"
+          class="mt-4 min-h-[1.25rem] text-sm text-gray-600 text-center"
+        ></div>
+
+        <!-- List of nearby help centers -->
+        <section
+          id="public-help-center-list"
+          class="mt-4 mb-6 w-full flex flex-col gap-4"
+          tabindex="0"
+        ></section>
+      </main>
+    </div>
+
+    <script type="module" src="/js/helpCenter/viewHelpCenter.js"></script>
+  </body>
+</html>

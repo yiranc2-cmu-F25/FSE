@@ -1,0 +1,64 @@
+<div id="view-members-modal" class="fixed inset-0 z-[1500] h-9/10 w-full max-w-md bg-white/30 backdrop-blur-sm mx-auto hidden items-center justify-center">
+  <div
+    class="min-h-5/6 flex h-4/5 w-11/12 flex-col items-center rounded-md bg-[#D8937F] p-5"
+  >
+    <!-- Title -->
+    <div class="mb-4 flex w-full items-center justify-between">
+      <h2 class="font-poppins text-lg font-semibold text-white">Group Members</h2>
+      <button
+        id="view-members-close"
+        type="button"
+        class="text-white hover:brightness-90"
+      >
+        <img
+          src="/images/search-info/delete-entry-cross.svg"
+          alt="Close"
+          class="h-6 w-6"
+        />
+      </button>
+    </div>
+
+    <!-- Results List -->
+    <div
+      id="view-members-result-page" class="flex h-full min-h-0 w-full flex-1 flex-col gap-1 overflow-hidden rounded-md bg-white p-2"
+    >
+      <section class="flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden">
+        <div id="view-members-scroll" class="flex-1 overflow-y-auto min-h-0 overscroll-contain w-full px-2 py-3">
+          <ul id="view-members-list" class="space-y-2">
+          </ul>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<template id="view-member-item-template">
+  <li class="view-member-item rounded-md bg-slate-50 p-3 shadow-sm cursor-default flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="member-avatar flex h-10 w-10 shrink-0 items-center justify-center rounded-full">
+        <span class="member-initials font-poppins font-semibold text-white"></span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="member-name text-sm font-semibold capitalize text-gray-700"></span>
+        <span class="member-status-badge"></span>
+      </div>
+    </div>
+  </li>
+</template>
+
+<!-- Status badge templates (reused) -->
+<template id="view-status-ok-template">
+  <%- include('../partials/status-search-tag/OK-tag.ejs') %>
+</template>
+
+<template id="view-status-help-template">
+  <%- include('../partials/status-search-tag/HELP-tag.ejs') %>
+</template>
+
+<template id="view-status-emergency-template">
+  <%- include('../partials/status-search-tag/EMERGENCY-tag.ejs') %>
+</template>
+
+<template id="view-status-undefined-template">
+  <%- include('../partials/status-search-tag/UNDEFINED-tag.ejs') %>
+</template>
