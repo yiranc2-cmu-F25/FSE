@@ -308,6 +308,24 @@ function setupGroupRoutes() {
     });
 }
 
+function setupEmergencyProfileRoutes() {
+    router.get("/emergency-profile", authView, (req, res) => {
+        res.render("emergencyProfile/publicEmergencyInfo", {
+            username: req.username || "",
+            searchMode: "set",
+        });
+    });
+}
+
+function setupPersonalEmergencyProfile(){
+    router.get("/personal-emergency-profile", authView, (req, res) =>{
+        res.render("emergencyProfile/personalEmergencyProfile", {
+            username:req.username || "",
+            searchMode: "set",
+        });
+    });
+}
+
 setupJoinCommunityRoutes();
 setupPublicChatRoutes();
 setupLoginRoutes();
@@ -323,5 +341,7 @@ setupEditTaskRoutes();
 // setupViewTaskDetailRoutes();
 setupCoachingBoardPages();
 setupGroupRoutes();
+setupEmergencyProfileRoutes();
+setupPersonalEmergencyProfile();
 
 export default router;

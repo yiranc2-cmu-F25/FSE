@@ -20,6 +20,10 @@ const ui = {
   myTasksButton: $("#my-tasks-button"),
   updateSkillsButton: $("#update-skills-button"),
   helpGroupsButton: $("#help-groups-button"),
+  emergencyProfileButton: $("#emergency-profile-button"),
+  manageHelpCentersButton: $("#manage-help-center-btn"),
+  viewHelpCentersButton: $("#view-help-center-btn"),
+
 };
 const body = document.body;
 ui.body = body;
@@ -130,12 +134,24 @@ function setupSidebarSelection() {
       window.location.href = "/my-tasks";
     });
 
+    ui.emergencyProfileButton?.addEventListener("click", () => {
+      window.location.href = "/emergency-profile";
+    });
+
     ui.updateSkillsButton?.addEventListener("click", () => {
       window.location.href = "/skills";
     });
 
     ui.helpGroupsButton?.addEventListener("click", () => {
       window.location.href = "/groups";
+    });
+
+    ui.manageHelpCentersButton?.addEventListener("click", () => {
+      window.location.href = "/help-centers/manage";
+    });
+
+    ui.viewHelpCentersButton?.addEventListener("click", () => {
+      window.location.href = "/help-centers/view";
     });
   });
 }

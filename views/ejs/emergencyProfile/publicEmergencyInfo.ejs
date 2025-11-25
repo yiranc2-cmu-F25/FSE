@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang = "en">
+    <head>
+        <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1"/>
+        <title>Emergency Information</title>
+        <%- include('../partials/head') %>
+        <script type="module" src="/js/emergencyProfile/publicEmergencyInfo.js"></script>
+        <script src="https://unpkg.com/alpinejs" defer></script>
+    </head>
+
+    <header class="grid grid-cols-[auto_1fr_auto] items-center pt-6 pb-6">
+
+ 
+  <button class="justify-self-start text-xl">
+   <a
+          href="/members"
+          class="flex h-12 w-12 items-center justify-center rounded-full border border-gray-200 bg-white shadow-sm transition hover:bg-gray-100"
+        >
+          <img
+            src="/images/chat-privately/keyboard_arrow_left.svg"
+            alt="Back"
+            class="w-8"
+          />
+        </a>
+  </button>
+
+
+  <h1 class="w-full text-center font-poppins text-xl font-semibold leading-normal text-black whitespace-nowrap">
+    Public Emergency Info Board
+  </h1>
+
+
+  <button class="grid h-12 w-12 place-content-center rounded-full text-base font-bold text-white shadow-md ring-2 ring-white"
+        id="header-avatar"
+        style="background-color: #3b6a95"
+    >
+    <a href ="/personal-emergency-profile">
+    <span id="header-avatar-initials"> </span>
+    </a>
+</button>
+</header>
+
+<!-- 1. Bookmark -->
+<section x-data="{ open: true }" class="border overflow-hidden rounded-lg mb-4">
+  <button @click="open = !open" class="flex w-full items-center justify-between gap-2 p-4 text-sm font-semibold tracking-wide text-stone-700 hover:bg-stone-50">
+    <span>Bookmark Profile</span>
+    <img 
+      src="/images/emergency-profile/up.svg" 
+      alt="toggle"
+      :class="{ 'rotate-180': open }"
+      class="w-8 h-8 transition-transform"
+    />
+  </button>
+  <div x-show="open" id="bookmark-profiles" class="bg-white">
+    <!-- Profiles will be rendered here via EJS partials -->
+  </div>
+  <div x-show="open" id="bookmark-no-profiles" class="hidden bg-white p-4 text-center">
+    <p class="font-poppins text-sm text-stone-600">No bookmarked profiles</p>
+  </div>
+</section>
+
+<!-- 2. Members In EMERGENCY -->
+<section x-data="{ open: true }" class="border overflow-hidden rounded-lg mb-4">
+  <button @click="open = !open" class="flex w-full items-center justify-between gap-2 p-4 text-sm font-semibold tracking-wide text-stone-700 hover:bg-stone-50">
+    <span>Members In EMERGENCY</span>
+    <img 
+      src="/images/emergency-profile/up.svg" 
+      alt="toggle"
+      :class="{ 'rotate-180': open }"
+      class="w-8 h-8 transition-transform"
+    />
+  </button>
+  <div x-show="open" id="emergency-profiles" class="bg-white">
+    <!-- Profiles will be rendered here via EJS partials -->
+  </div>
+  <div x-show="open" id="emergency-no-profiles" class="hidden bg-white p-4 text-center">
+    <p class="font-poppins text-sm text-stone-600">No members in emergency</p>
+  </div>
+</section>
+
+<!-- 3. Members In OK or HELP -->
+<section x-data="{ open: true }" class="border overflow-hidden rounded-lg mb-4">
+  <button @click="open = !open" class="flex w-full items-center justify-between gap-2 p-4 text-sm font-semibold tracking-wide text-stone-700 hover:bg-stone-50">
+    <span>Members In OK or HELP</span>
+     <img 
+      src="/images/emergency-profile/up.svg" 
+      alt="toggle"
+      :class="{ 'rotate-180': open }"
+      class="w-8 h-8 transition-transform"
+    />
+  </button>
+  <div x-show="open" id="ok-help-profiles" class="bg-white">
+    <!-- Profiles will be rendered here via EJS partials -->
+  </div>
+  <div x-show="open" id="ok-help-no-profiles" class="hidden bg-white p-4 text-center">
+    <p class="font-poppins text-sm text-stone-600">No members in OK or HELP status</p>
+  </div>
+</section>
+    
+</html>
