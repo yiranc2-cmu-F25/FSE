@@ -19,6 +19,12 @@ const ui = {
 };
 
 function openModal() {
+  if (ui.search_input) {
+    ui.search_input.value = "";
+  }
+  clearSearchResults();
+  hideFooter();
+  hideNoResultsMessage();
   ui.search_screen?.classList.remove("hidden");
   ui.search_screen?.classList.add("flex");
   ui.search_screen?.querySelector("input")?.focus();
@@ -63,7 +69,7 @@ function setupSearchScreenButton() {
   });
 }
 
-function clearSearchResults() {
+export function clearSearchResults() {
   ["#online-search-result-list", "#offline-search-result-list", "#search-result-list"].forEach((selector) => {
     const list = document.querySelector(selector);
     if (list) {

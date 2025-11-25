@@ -73,6 +73,7 @@ function renderBoardContent(board) {
 	steps.innerHTML = "";
 	(board.steps || []).forEach(s => {
 		const li = document.createElement("li");
+		li.className = "break-words";
 		li.textContent = s;
 		steps.appendChild(li);
 	});

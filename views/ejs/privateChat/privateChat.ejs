@@ -88,7 +88,7 @@
                     <% } %>
                 </div>
                 <p class="font-poppins text-xs text-gray-400"><%= m.time %></p>
-                <p class="font-poppins mt-1 inline-block max-w-full break-words rounded-lg bg-white p-3 shadow">
+                <p class="message-text font-poppins mt-1 inline-block max-w-full break-words rounded-lg bg-white p-3 shadow">
                     <%= m.text %>
                 </p>
                 </div>
@@ -168,5 +168,18 @@
     <%- include('../partials/searchScreen.ejs') %>
     <%- include('../partials/boardNotificationModal.ejs') %>
     <script type="module" src="/js/coachingBoards/boardNotifications.js"></script>
+    <script type="module">
+      import { linkify } from "/js/utils/linkify.js";
+      
+      // Process existing messages on page load
+      document.addEventListener("DOMContentLoaded", () => {
+        const messageTexts = document.querySelectorAll(".message-text");
+        messageTexts.forEach(el => {
+          if (el.textContent && !el.innerHTML.includes("<a ")) {
+            el.innerHTML = linkify(el.textContent);
+          }
+        });
+      });
+    </script>
   </body>
 </html>

@@ -63,11 +63,7 @@ export class CoachingBoardDao {
 
 		const query = {
 			publicationState: "published",
-			$or: [
-				{ title: { $regex: regex } },
-				{ category: { $regex: regex } },
-				{ relatedSkills: { $elemMatch: { $regex: regex } } },
-			],
+			title: { $regex: regex },
 		};
 
 		// Handle cursor for pagination
@@ -78,8 +74,11 @@ export class CoachingBoardDao {
 				{ updatedAt: { $lt: parsed.ts } },
 				{ updatedAt: parsed.ts, _id: { $lt: parsed.idStr } }
 			];
-			query.$and = [{ $or: query.$or }, { $or: cursorClause }];
-			delete query.$or;
+			query.$and = [
+				{ publicationState: "published" },
+				{ title: { $regex: regex } },
+				{ $or: cursorClause }
+			];
 		}
 
 		const itemsPlusOne = await this.CoachingBoardModel.find(query)
@@ -99,11 +98,7 @@ export class CoachingBoardDao {
 
 		const count = await this.CoachingBoardModel.countDocuments({
 			publicationState: "published",
-			$or: [
-				{ title: { $regex: regex } },
-				{ category: { $regex: regex } },
-				{ relatedSkills: { $elemMatch: { $regex: regex } } },
-			],
+			title: { $regex: regex },
 		});
 
 		return { code: 200, count, items, nextCursor };
