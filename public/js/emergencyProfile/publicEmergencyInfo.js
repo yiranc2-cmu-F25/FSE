@@ -90,31 +90,69 @@ async function loadAllProfiles() {
       }),
     ]);
 
+    let allProfilesError = null;
+    let bookmarkedError = null;
+
     if (!allProfilesRes.ok) {
-      console.error("Failed to load all profiles:", allProfilesRes.status, allProfilesRes.statusText);
-      const errorText = await allProfilesRes.text();
-      console.error("Error response:", errorText);
+      const errorText = await allProfilesRes.text().catch(() => "Unknown error");
+      allProfilesError = {
+        status: allProfilesRes.status,
+        statusText: allProfilesRes.statusText,
+        message: errorText
+      };
+      console.error("Failed to load all profiles:", allProfilesError);
     }
 
     if (!bookmarkedRes.ok) {
-      console.error("Failed to load bookmarked profiles:", bookmarkedRes.status, bookmarkedRes.statusText);
-      const errorText = await bookmarkedRes.text();
-      console.error("Error response:", errorText);
+      const errorText = await bookmarkedRes.text().catch(() => "Unknown error");
+      bookmarkedError = {
+        status: bookmarkedRes.status,
+        statusText: bookmarkedRes.statusText,
+        message: errorText
+      };
+      console.error("Failed to load bookmarked profiles:", bookmarkedError);
     }
 
-    if (!allProfilesRes.ok || !bookmarkedRes.ok) {
-      throw new Error("Failed to load profiles");
+    // If both requests failed, throw error
+    if (allProfilesError && bookmarkedError) {
+      throw new Error(`Both requests failed: All profiles (${allProfilesError.status}), Bookmarks (${bookmarkedError.status})`);
     }
 
-    const allProfiles = await allProfilesRes.json();
-    const bookmarkedProfiles = await bookmarkedRes.json();
+    // If only one request failed, try to continue with the successful one
+    let allProfiles = { emergency: [], others: [] };
+    let bookmarkedProfiles = [];
+
+    if (!allProfilesError) {
+      try {
+        allProfiles = await allProfilesRes.json();
+      } catch (parseErr) {
+        console.error("Failed to parse all profiles response:", parseErr);
+        allProfilesError = { message: "Failed to parse response" };
+      }
+    }
+
+    if (!bookmarkedError) {
+      try {
+        bookmarkedProfiles = await bookmarkedRes.json();
+      } catch (parseErr) {
+        console.error("Failed to parse bookmarked profiles response:", parseErr);
+        bookmarkedError = { message: "Failed to parse response" };
+      }
+    }
+
+    // If both failed after parsing, throw error
+    if (allProfilesError && bookmarkedError) {
+      throw new Error(`Failed to load profiles: ${allProfilesError.message || "Unknown error"}`);
+    }
 
     bookmarkedProfileIds = new Set(bookmarkedProfiles.map(p => String(p._id)));
 
     await renderProfiles(allProfiles, bookmarkedProfiles);
   } catch (err) {
     console.error("Failed to load profiles:", err);
-    alert("Failed to load emergency profiles. Please try again later.");
+    const errorMessage = err.message || "Unknown error";
+    console.error("Error details:", errorMessage);
+    alert(`Failed to load emergency profiles: ${errorMessage}. Please check the console for more details.`);
   }
 }
 

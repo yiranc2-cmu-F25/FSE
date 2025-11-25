@@ -290,8 +290,9 @@ document.addEventListener("DOMContentLoaded", () => {
     // Create a file input element
     const fileInput = document.createElement("input");
     fileInput.type = "file";
-    // Accept common image formats, but exclude SVG (note: accept attribute doesn't fully prevent SVG selection)
-    fileInput.accept = "image/jpeg,image/jpg,image/png,image/gif,image/webp,image/bmp";
+    // Accept all image formats (SVG will be filtered out by validation)
+    // Using image/* allows all image types, then we explicitly exclude SVG
+    fileInput.accept = "image/*";
     
     fileInput.addEventListener("change", async (e) => {
       const file = e.target.files[0];
@@ -300,8 +301,15 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       
       // Check file type - must be an image, but exclude SVG for security reasons (matches backend fileFilter)
-      if (!file.type || !file.type.startsWith('image/') || file.type.includes('svg')) {
-        showPhotoError("Only image files are allowed (SVG not supported)");
+      const fileType = (file.type || '').toLowerCase();
+      if (!fileType.startsWith('image/')) {
+        showPhotoError("Only image files are allowed");
+        return;
+      }
+      
+      // Explicitly reject SVG files (image/svg+xml, image/svg, etc.)
+      if (fileType.includes('svg')) {
+        showPhotoError("SVG files are not allowed for security reasons");
         return;
       }
       

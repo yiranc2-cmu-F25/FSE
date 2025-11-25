@@ -9,14 +9,29 @@ export async function getPersonalEmergencyProfile(req, res) {
         if (!profile) {
             return res.status(404).json({ message: "Emergency profile not found" });
         }
+        
+        // Try to get photo, but don't fail if photo doesn't exist or can't be fetched
         try {
             // Use profileId (profile._id) to get photo
             const photo = await ProfilePhoto.getProfilePhoto(profile._id);
-            if (photo) {
-                // Convert Buffer to base64 for frontend use
+            if (photo && photo.photoData) {
+                // Handle Buffer conversion - support both native Buffer and MongoDB serialized format
                 const photoBuffer = photo.photoData;
                 const contentType = photo.contentType || 'image/jpeg';
-                const base64Photo = photoBuffer.toString('base64');
+                
+                let buffer;
+                if (Buffer.isBuffer(photoBuffer)) {
+                    // Native Buffer object
+                    buffer = photoBuffer;
+                } else if (photoBuffer && typeof photoBuffer === 'object' && photoBuffer.type === 'Buffer' && Array.isArray(photoBuffer.data)) {
+                    // MongoDB serialized Buffer format: {type: 'Buffer', data: [...]}
+                    buffer = Buffer.from(photoBuffer.data);
+                } else {
+                    console.error("Invalid photo data format:", typeof photoBuffer);
+                    throw new Error("Invalid photo data format");
+                }
+                
+                const base64Photo = buffer.toString('base64');
                 profile.facePhoto = {
                     data: `data:${contentType};base64,${base64Photo}`,
                     contentType: contentType
@@ -27,11 +42,13 @@ export async function getPersonalEmergencyProfile(req, res) {
                 }
                 profile.visibility.facePhoto = photo.visibility || 'emergencyOnly';
             }
-            res.json(profile);
-        } catch (err) {
-            console.error("Error fetching profile photo:", err);
-            res.status(500).json({ message: "Error fetching profile photo" });
+        } catch (photoErr) {
+            // Log error but continue - photo is optional, profile data should still be returned
+            console.error("Error fetching profile photo (non-fatal):", photoErr);
+            // Don't set facePhoto if there was an error fetching it
         }
+        
+        res.json(profile);
     } catch (err) {
         console.error("Error fetching emergency profile:", err);
         res.status(500).json({ message: "Error fetching emergency profile" });
@@ -159,14 +176,26 @@ export async function getPersonalEmergencyProfilePhoto(req, res) {
 
         const photo = await ProfilePhoto.getProfilePhoto(profile._id);
         
-        if (!photo) {
+        if (!photo || !photo.photoData) {
             return res.status(404).json({ message: "Profile photo not found" });
         }
 
-        // Convert Buffer to base64 and send as image
+        // Handle Buffer conversion - support both native Buffer and MongoDB serialized format
         const photoBuffer = photo.photoData;
         const contentType = photo.contentType || 'image/jpeg';
-        const base64Photo = photoBuffer.toString('base64');
+        
+        let buffer;
+        if (Buffer.isBuffer(photoBuffer)) {
+            // Native Buffer object
+            buffer = photoBuffer;
+        } else if (photoBuffer && typeof photoBuffer === 'object' && photoBuffer.type === 'Buffer' && Array.isArray(photoBuffer.data)) {
+            // MongoDB serialized Buffer format: {type: 'Buffer', data: [...]}
+            buffer = Buffer.from(photoBuffer.data);
+        } else {
+            return res.status(500).json({ message: "Invalid photo data format" });
+        }
+        
+        const base64Photo = buffer.toString('base64');
         
         res.json({
             data: `data:${contentType};base64,${base64Photo}`,

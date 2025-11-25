@@ -30,6 +30,15 @@ function shouldShowPhoto(profile) {
     return false;
   }
   
+  // Get user status (the person whose profile we're viewing)
+  const userStatus = (profile.userStatus || "undefined").toLowerCase();
+  
+  // IMPORTANT: When user status is emergency, always show photo regardless of visibility settings
+  // This ensures all emergency profiles display their photos for better identification
+  if (userStatus === "emergency") {
+    return true;
+  }
+  
   // Get photo visibility (facePhotoId might be an object if populated, or just an ID)
   let photoVisibility = null;
   if (typeof profile.facePhotoId === 'object' && profile.facePhotoId !== null) {
@@ -44,13 +53,10 @@ function shouldShowPhoto(profile) {
   // Normalize visibility to lowercase for comparison
   const normalizedVisibility = (photoVisibility || "").toLowerCase();
   
-  // Get user status (the person whose profile we're viewing)
-  const userStatus = (profile.userStatus || "undefined").toLowerCase();
-  
-  // Check visibility rules
+  // Check visibility rules for non-emergency statuses
   if (normalizedVisibility === "emergencyonly" || normalizedVisibility === "emergency_only") {
-    // Only show in emergency status
-    return userStatus === "emergency";
+    // Only show in emergency status (but we already handled emergency above)
+    return false;
   } else if (normalizedVisibility === "helporok" || normalizedVisibility === "help_or_ok" || normalizedVisibility === "okorhelp") {
     // Show in ok or help status
     return userStatus === "ok" || userStatus === "help";
@@ -69,10 +75,11 @@ function createAvatarElement(profile, initials, avatarColor, cacheVersion) {
   if (shouldShowPhoto(profile)) {
     const img = document.createElement("img");
     const version = cacheVersion || Date.now();
-    img.src = `/api/public/emergency-profiles/${profile._id}/photo?v=${version}`;
+    const photoUrl = `/api/public/emergency-profiles/${profile._id}/photo?v=${version}`;
+    img.src = photoUrl;
     img.alt = profile.username || "";
     img.className = "h-12 w-12 rounded-full object-cover";
-    img.onerror = () => {
+    img.onerror = (e) => {
       img.style.display = "none";
       const avatarDiv = createInitialsAvatar(initials, avatarColor);
       avatarContainer.appendChild(avatarDiv);

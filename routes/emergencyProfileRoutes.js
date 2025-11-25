@@ -272,12 +272,22 @@ const upload = multer({
     fileSize: 10 * 1024 * 1024, // 10MB limit
   },
   fileFilter: (req, file, cb) => {
-    // Accept only image files, but exclude SVG for security reasons
-    if (file.mimetype.startsWith('image/') && !file.mimetype.includes('svg')) {
-      cb(null, true);
-    } else {
-      cb(new Error('Only image files are allowed (SVG not supported)'), false);
+    // Accept all image files except SVG (for security reasons)
+    // SVG files can contain scripts and pose security risks
+    const mimetype = file.mimetype.toLowerCase();
+    
+    // Check if it's an image type
+    if (!mimetype.startsWith('image/')) {
+      return cb(new Error('Only image files are allowed'), false);
     }
+    
+    // Explicitly reject SVG files (image/svg+xml, image/svg, etc.)
+    if (mimetype.includes('svg')) {
+      return cb(new Error('SVG files are not allowed for security reasons'), false);
+    }
+    
+    // Accept all other image formats (jpeg, png, gif, webp, bmp, etc.)
+    cb(null, true);
   },
 });
 
