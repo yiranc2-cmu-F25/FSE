@@ -40,6 +40,9 @@ describe("Personal Emergency Profile Integration Tests", () => {
       emitMessageFrom() {
         console.log("[TEST] emitMessageFrom called");
       },
+      broadcastEmergencyProfileUpdate() {
+        console.log("[TEST] broadcastEmergencyProfileUpdate called");
+      },
     };
     app.set("socketInstance", fakeSocket);
     app.locals.socketInstance = fakeSocket;
