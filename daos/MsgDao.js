@@ -3,6 +3,8 @@ import mongoose from "mongoose";
 import {buildSubstringRegex} from "../utils/search/search.js";
 import { searchByModel } from "../utils/search/searchCommon.js";
 import { pushCursorClause } from "../utils/search/cursor.js";
+import { filterInactiveUsers } from "../utils/filterInactiveUsers.js";
+import { USER_STATUS } from "../constants/userStatus.js";
 
 export class MsgDao extends iMsgDao {
     constructor({ MessageModel }) {
@@ -23,10 +25,10 @@ export class MsgDao extends iMsgDao {
     async getPrivateMsg(sender, receiver) {
         const docs = await this.MessageModel.find({ sender, receiver })
             .sort({ timestamp: 1 })
-            .populate("sender", "username")
-            .populate("receiver", "username")
+            .populate("sender", "username status")
+            .populate("receiver", "username status")
             .lean();
-        return docs.map((doc) => ({
+        const mapped = docs.map((doc) => ({
             id: doc._id,
             sender: doc.sender,
             receiver: doc.receiver,
@@ -34,14 +36,19 @@ export class MsgDao extends iMsgDao {
             status: doc.status,
             content: doc.content,
         }));
+        return filterInactiveUsers(mapped, ['sender', 'receiver']);
     }
 
     async getPublicMsg() {
         const docs = await this.MessageModel.find({ receiver: null })
             .sort({ timestamp: 1 })
-            .populate("sender", "username")
+            .populate({
+                path: "sender",
+                select: "username status",
+                match: { status: USER_STATUS.ACTIVE }
+            })
             .lean();
-        return docs.map((doc) => ({
+        const mapped = docs.map((doc) => ({
             id: doc._id,
             sender: doc.sender,
             receiver: doc.receiver,
@@ -49,17 +56,27 @@ export class MsgDao extends iMsgDao {
             status: doc.status,
             content: doc.content,
         }));
+        // Filter out messages where populate returned null (inactive sender)
+        return mapped.filter(doc => doc.sender !== null);
     }
     
     async searchPublicMsg({ terms = [], phrase = "", limit = 10, cursor } = {}) {
         const regex = buildSubstringRegex(terms, phrase);
-        return searchByModel({
+        const result = await searchByModel({
             Model: this.MessageModel,
             baseFilter: { receiver: null },
             regex,
             limit,
             cursor,
+            populate: {
+                path: "sender",
+                select: "username status",
+                match: { status: USER_STATUS.ACTIVE }
+            }
         });
+        // Filter out messages where populate returned null (inactive sender)
+        result.items = result.items.filter(item => item.sender !== null);
+        return result;
     }
 
     /** instead of getting all unread messages, 
@@ -94,9 +111,11 @@ export class MsgDao extends iMsgDao {
             ]);
             await this.MessageModel.populate(results, {
                 path: "sender",
-                select: "username"
+                select: "username status",
+                match: { status: USER_STATUS.ACTIVE }
             });
-            return results;
+            // Filter out messages where populate returned null (inactive sender)
+            return results.filter(r => r.sender !== null);
 
         } catch (err) {
             console.error("[MessageDAO] Failed to get latest unread messages:", err);
@@ -132,20 +151,27 @@ export class MsgDao extends iMsgDao {
             .sort(sort)
             .limit(safeLimit + 1)
             .select("sender receiver content timestamp status")
-            .populate("sender", "username")
+            .populate({
+                path: "sender",
+                select: "username status",
+                match: { status: USER_STATUS.ACTIVE }
+            })
             .lean();
 
         const hasMore   = itemsPlusOne.length > safeLimit;
         const pageItems = hasMore ? itemsPlusOne.slice(0, safeLimit) : itemsPlusOne;
+        
+        // Filter out messages where populate returned null (inactive sender)
+        const filteredItems = pageItems.filter(item => item.sender !== null);
 
-        const last = pageItems[pageItems.length - 1];
-        const nextCursor = hasMore
+        const last = filteredItems.length > 0 ? filteredItems[filteredItems.length - 1] : pageItems[pageItems.length - 1];
+        const nextCursor = hasMore && filteredItems.length > 0
             ? `${new Date(last.timestamp).toISOString()}|${String(last._id)}`
             : null;
 
         const baseQuery = { $and: [convoOr, contentCond] };
         const count = await this.MessageModel.countDocuments(baseQuery);
 
-        return { items: pageItems, nextCursor, count };
+        return { items: filteredItems, nextCursor, count };
     }
 }

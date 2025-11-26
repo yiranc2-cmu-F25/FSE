@@ -187,26 +187,6 @@ export class UserDao extends iUserDao {
         }
     }
 
-    async getUserProfileByUsername(username) {
-        try {
-            const doc = await this.UserModel.findOne({ username: username.toLowerCase() })
-                .select('username status privilegeLevel')
-                .lean();
-            if (!doc) {
-                return null;
-            }
-            return {
-                id: doc._id.toString(),
-                username: doc.username,
-                status: doc.status,
-                privilegeLevel: doc.privilegeLevel,
-            };
-        } catch (err) {
-            console.error("Error getting user profile by username:", err);
-            throw err;
-        }
-    }
-
     async getUserProfileById(id) {
         try {
             const doc = await this.UserModel.findById(id)
@@ -223,6 +203,33 @@ export class UserDao extends iUserDao {
             };
         } catch (err) {
             console.error("Error getting user profile by ID:", err);
+            throw err;
+        }
+    }
+
+    async getInactiveUsers() {
+        try {
+            const docs = await this.UserModel.find({ status: USER_STATUS.INACTIVE })
+                .sort({ username: 1 })
+                .lean();
+            return docs.map((doc) => ({ ...doc, id: doc._id }));
+        } catch (err) {
+            console.error("Error getting inactive users:", err);
+            throw err;
+        }
+    }
+
+    async getPrivilegeLevelById(id) {
+        try {
+            const doc = await this.UserModel.findById(id)
+                .select('privilegeLevel')
+                .lean();
+            if (!doc) {
+                return null;
+            }
+            return doc.privilegeLevel || PRIVILEGE_LEVEL.CITIZEN;
+        } catch (err) {
+            console.error("Error getting privilege level by ID:", err);
             throw err;
         }
     }

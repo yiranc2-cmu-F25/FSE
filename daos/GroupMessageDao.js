@@ -1,3 +1,5 @@
+import { USER_STATUS } from "../constants/userStatus.js";
+
 export class GroupMessageDao {
     constructor({ GroupMessageModel }) {
         this.GroupMessageModel = GroupMessageModel;
@@ -17,9 +19,13 @@ export class GroupMessageDao {
     async findByGroupId(groupId) {
         const docs = await this.GroupMessageModel.find({ group: groupId })
             .sort({ timestamp: 1 })
-            .populate("sender", "username")
+            .populate({
+                path: "sender",
+                select: "username status",
+                match: { status: USER_STATUS.ACTIVE }
+            })
             .lean();
-        return docs.map((doc) => ({
+        const mapped = docs.map((doc) => ({
             id: doc._id,
             sender: doc.sender,
             group: doc.group,
@@ -27,6 +33,8 @@ export class GroupMessageDao {
             status: doc.status,
             content: doc.content
         }));
+        // Filter out messages where populate returned null (inactive sender)
+        return mapped.filter(doc => doc.sender !== null);
     }
 
     async getLatestMessageTimestamp(groupId) {

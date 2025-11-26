@@ -200,4 +200,18 @@ export class inMemoryUserDao extends iUserDao {
       privilegeLevel: user.privilegeLevel || PRIVILEGE_LEVEL.CITIZEN,
     };
   }
+
+  async getInactiveUsers() {
+    return this.users
+      .filter((u) => u.status === USER_STATUS.INACTIVE)
+      .sort((a, b) => a.username.localeCompare(b.username));
+  }
+
+  async getPrivilegeLevelById(id) {
+    const user = this.users.find((u) => id == u.id);
+    if (!user) {
+      return null;
+    }
+    return user.privilegeLevel || PRIVILEGE_LEVEL.CITIZEN;
+  }
 }

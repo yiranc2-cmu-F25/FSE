@@ -62,4 +62,12 @@ export class iUserDao {
     async getUserProfileById(id) {
         throw new Error("To be implemented!");
     }
+
+    async getInactiveUsers() {
+        throw new Error("To be implemented!");
+    }
+
+    async getPrivilegeLevelById(id) {
+        throw new Error("To be implemented!");
+    }
 }
