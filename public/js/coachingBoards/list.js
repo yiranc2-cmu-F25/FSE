@@ -24,13 +24,18 @@ function groupByCategory(boards) {
 	return grouped;
 }
 
-(async function init() {
-	const container = document.getElementById("boardsList");
-	container.innerHTML = "";
-	const boards = await fetchBoards();
-	const grouped = groupByCategory(boards);
-	const currentUserId = window.__CURRENT_USER_ID__;
+function filterBoards(boards, filter, currentUserId) {
+	if (filter === "all") {
+		return boards;
+	} else if (filter === "my") {
+		return boards.filter(b => String(b.author) === String(currentUserId));
+	} else if (filter === "subscribed") {
+		return boards.filter(b => (b.subscribers || []).includes(String(currentUserId)));
+	}
+	return boards;
+}
 
+function createSubscriptionHelpers(currentUserId) {
 	function isSubscribed(board) {
 		return (board.subscribers || []).includes(String(currentUserId));
 	}
@@ -50,11 +55,63 @@ function groupByCategory(boards) {
 		return false;
 	}
 
+	return { isSubscribed, toggleSubscription };
+}
+
+function createBoardListItem(b, currentUserId, { isSubscribed, toggleSubscription, onSubscriptionChange }) {
+	const li = document.createElement("li");
+	li.className = "flex items-center justify-between px-2 py-3";
+	const left = document.createElement("a");
+	left.href = `/boards/${b.id}`;
+	left.className = "min-w-0 flex-1";
+	left.innerHTML = `<h3 class="truncate text-base font-semibold text-stone-900">${b.title}</h3>`;
+
+	const btn = document.createElement("button");
+	btn.className = "ml-3 inline-flex h-9 w-9 items-center justify-center rounded-full";
+	const setIcon = () => {
+		btn.innerHTML = isSubscribed(b)
+			? `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-6 w-6 fill-yellow-400 stroke-yellow-500"><path d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.702.663.321.988l-4.203 3.573a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.563.563 0 0 0-.586 0L6.984 20.51a.562.562 0 0 1-.84-.61l1.285-5.386a.563.563 0 0 0-.182-.557l-4.203-3.572a.563.563 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345l2.125-5.111Z"/></svg>`
+			: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-6 w-6 fill-stone-300 stroke-stone-400"><path d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.702.663.321.988l-4.203 3.573a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.563.563 0 0 0-.586 0L6.984 20.51a.562.562 0 0 1-.84-.61l1.285-5.386a.563.563 0 0 0-.182-.557l-4.203-3.572a.563.563 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345l2.125-5.111Z"/></svg>`;
+	};
+	setIcon();
+	btn.addEventListener("click", async (e) => {
+		e.preventDefault();
+		e.stopPropagation();
+		btn.disabled = true;
+		const wasSubscribed = isSubscribed(b);
+		const ok = await toggleSubscription(b);
+		if (ok) {
+			setIcon();
+			if (onSubscriptionChange) {
+				onSubscriptionChange();
+			}
+			if (!wasSubscribed && shouldShowSubscriptionModal(String(currentUserId))) {
+				showSubscriptionModal(String(currentUserId));
+			}
+			if (wasSubscribed && shouldShowUnsubscriptionModal(String(currentUserId))) {
+				showUnsubscriptionModal(String(currentUserId));
+			}
+		}
+		btn.disabled = false;
+	});
+
+	li.appendChild(left);
+	li.appendChild(btn);
+	return li;
+}
+
+function renderBoards(boards, currentUserId, onSubscriptionChange) {
+	const container = document.getElementById("boardsList");
+	container.innerHTML = "";
+	const grouped = groupByCategory(boards);
+
 	const sortedCategories = Object.keys(grouped).sort((a, b) => {
 		const catA = (a || "").toLowerCase();
 		const catB = (b || "").toLowerCase();
 		return catA.localeCompare(catB);
 	});
+	
+	const { isSubscribed, toggleSubscription } = createSubscriptionHelpers(currentUserId);
 	
 	sortedCategories.forEach(category => {
 		const items = grouped[category];
@@ -68,48 +125,52 @@ function groupByCategory(boards) {
 		const ul = document.createElement("ul");
 		ul.className = "divide-y divide-stone-100";
 		items.forEach(b => {
-			const li = document.createElement("li");
-			li.className = "flex items-center justify-between px-2 py-3";
-			const left = document.createElement("a");
-			left.href = `/boards/${b.id}`;
-			left.className = "min-w-0 flex-1";
-			left.innerHTML = `<h3 class="truncate text-base font-semibold text-stone-900">${b.title}</h3>`;
-
-			const btn = document.createElement("button");
-			btn.className = "ml-3 inline-flex h-9 w-9 items-center justify-center rounded-full";
-			const setIcon = () => {
-				btn.innerHTML = isSubscribed(b)
-					? `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-6 w-6 fill-yellow-400 stroke-yellow-500"><path d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.702.663.321.988l-4.203 3.573a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.563.563 0 0 0-.586 0L6.984 20.51a.562.562 0 0 1-.84-.61l1.285-5.386a.563.563 0 0 0-.182-.557l-4.203-3.572a.563.563 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345l2.125-5.111Z"/></svg>`
-					: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-6 w-6 fill-stone-300 stroke-stone-400"><path d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.702.663.321.988l-4.203 3.573a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.563.563 0 0 0-.586 0L6.984 20.51a.562.562 0 0 1-.84-.61l1.285-5.386a.563.563 0 0 0-.182-.557l-4.203-3.572a.563.563 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345l2.125-5.111Z"/></svg>`;
-			};
-			setIcon();
-			btn.addEventListener("click", async (e) => {
-				e.preventDefault();
-				e.stopPropagation();
-				btn.disabled = true;
-				const wasSubscribed = isSubscribed(b);
-				const ok = await toggleSubscription(b);
-				if (ok) {
-					setIcon();
-					if (!wasSubscribed && shouldShowSubscriptionModal(String(currentUserId))) {
-						showSubscriptionModal(String(currentUserId));
-					}
-					if (wasSubscribed && shouldShowUnsubscriptionModal(String(currentUserId))) {
-						showUnsubscriptionModal(String(currentUserId));
-					}
-				}
-				btn.disabled = false;
-			});
-
-			li.appendChild(left);
-			li.appendChild(btn);
+			const li = createBoardListItem(b, currentUserId, { isSubscribed, toggleSubscription, onSubscriptionChange });
 			ul.appendChild(li);
 		});
 
 		section.appendChild(ul);
 		container.appendChild(section);
 	});
-	
+}
+
+(async function init() {
+	const currentUserId = window.__CURRENT_USER_ID__;
+	let allBoards = [];
+	let currentFilter = "all";
+
+	async function loadBoards() {
+		allBoards = await fetchBoards();
+		applyFilter(currentFilter);
+	}
+
+	function applyFilter(filter) {
+		currentFilter = filter;
+		const filtered = filterBoards(allBoards, filter, currentUserId);
+		renderBoards(filtered, currentUserId, () => {
+			applyFilter(currentFilter);
+		});
+
+		document.querySelectorAll(".filter-btn").forEach(btn => {
+			if (btn.dataset.filter === filter) {
+				btn.classList.add("active");
+			} else {
+				btn.classList.remove("active");
+			}
+		});
+	}
+
+	function setupFilterButtons() {
+		document.querySelectorAll(".filter-btn").forEach(btn => {
+			btn.addEventListener("click", () => {
+				const filter = btn.dataset.filter;
+				applyFilter(filter);
+			});
+		});
+	}
+
+	await loadBoards();
+	setupFilterButtons();
 	getSocket();
 })(); 
 
