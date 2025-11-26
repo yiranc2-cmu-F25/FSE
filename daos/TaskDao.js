@@ -3,6 +3,7 @@ import { transformTaskDoc, transformTaskDocSimple, generateHelperAvatars, extrac
 import { buildTaskFilter, buildTaskSort, buildParticipantCountMap } from "../utils/task/filterBuilders.js";
 import { queryTasksWithParticipantCounts, queryTasksWithParticipantStatus } from "../utils/task/daoHelpers.js";
 import { buildBaseTaskData } from "../utils/task/taskCreators.js";
+import { USER_STATUS } from "../constants/userStatus.js";
 
 export default class TaskDao extends iTaskDao {
   constructor({ TaskModel, TaskParticipantModel, TaskLogModel }) {
@@ -44,10 +45,14 @@ export default class TaskDao extends iTaskDao {
 
   async getTask(id, userId = null) {
     const doc = await this.TaskModel.findById(id)
-      .populate("creator", "username")
+      .populate({
+        path: "creator",
+        select: "username status",
+        match: { status: USER_STATUS.ACTIVE }
+      })
       .lean();
 
-    if (!doc) return null;
+    if (!doc || !doc.creator) return null; // Return null if creator is inactive
 
     // Get participant count and check if user is participant
     const participantCount = await this.TaskParticipantModel.countDocuments({ task: id });
@@ -62,27 +67,39 @@ export default class TaskDao extends iTaskDao {
 
     // Get task logs
     const logs = await this.TaskLogModel.find({ task: id })
-      .populate("user", "username")
+      .populate({
+        path: "user",
+        select: "username status",
+        match: { status: USER_STATUS.ACTIVE }
+      })
       .sort({ timestamp: -1 })
       .lean();
+    // Filter out logs where populate returned null (inactive user)
+    const filteredLogs = logs.filter(log => log.user !== null);
 
     // Get participants with user info for avatars and names
     const participants = await this.TaskParticipantModel.find({ task: id })
-      .populate("user", "username")
+      .populate({
+        path: "user",
+        select: "username status",
+        match: { status: USER_STATUS.ACTIVE }
+      })
       .sort({ joinedAt: 1 })
       .limit(10)
       .lean();
+    // Filter out participants where populate returned null (inactive user)
+    const filteredParticipants = participants.filter(p => p.user !== null);
 
     // Format helper avatars and participant names
-    const helperAvatars = generateHelperAvatars(participants);
-    const participantNames = extractParticipantNames(participants);
+    const helperAvatars = generateHelperAvatars(filteredParticipants);
+    const participantNames = extractParticipantNames(filteredParticipants);
 
     return transformTaskDoc(doc, {
       participantCount,
       isParticipant,
       helperAvatars,
       participantNames,
-      taskLogs: logs,
+      taskLogs: filteredLogs,
     });
   }
 
@@ -204,10 +221,14 @@ export default class TaskDao extends iTaskDao {
       { $set: updateData },
       { new: true, runValidators: true },
     )
-      .populate("creator", "username")
+      .populate({
+        path: "creator",
+        select: "username status",
+        match: { status: USER_STATUS.ACTIVE }
+      })
       .lean();
 
-    if (!doc) return null;
+    if (!doc || !doc.creator) return null; // Return null if creator is inactive
 
     return transformTaskDocSimple(doc);
   }

@@ -1,5 +1,7 @@
 import { iMsgDao } from "./iMsgDao.js";
 import { applyCursorFilter, sortByTimestampDesc, applyPagination, populateSender } from "../utils/search/inMemorySearchHelpers.js";
+import { filterInactiveUsers } from "../utils/filterInactiveUsers.js";
+import { USER_STATUS } from "../constants/userStatus.js";
 
 export class inMemoryMsgDao extends iMsgDao {
   constructor() {
@@ -28,27 +30,41 @@ export class inMemoryMsgDao extends iMsgDao {
   }
 
   async getPublicMsg() {
-    return this.messages
+    const UserDac = (await import("../dacs/userDac.js")).default;
+    const { USER_STATUS } = await import("../constants/userStatus.js");
+    
+    const publicMessages = this.messages
       .filter((m) => m.receiver === null || m.receiver === "public")
       .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+    
+    // Filter out messages from inactive users
+    const filteredMessages = await Promise.all(
+      publicMessages.map(async (msg) => {
+        try {
+          const user = await UserDac.DAO?.findById?.(msg.sender);
+          if (user && user.status === USER_STATUS.ACTIVE) {
+            return msg;
+          }
+        } catch (e) {
+          // User not found or error, skip this message
+        }
+        return null;
+      })
+    );
+    
+    return filteredMessages.filter(msg => msg !== null);
   }
 
   async getPrivateMsg(sender, receiver) {
     const senderId = String(sender);
     const receiverId = String(receiver);
+    const UserDac = (await import("../dacs/userDac.js")).default;
+    const { USER_STATUS } = await import("../constants/userStatus.js");
 
     console.log(
       `[inMemoryMsgDao] getPrivateMsg called: sender=${senderId}, receiver=${receiverId}`,
     );
     console.log(`[inMemoryMsgDao] Total messages in DB: ${this.messages.length}`);
-
-    this.messages.forEach((m, idx) => {
-      console.log(`[inMemoryMsgDao] Message ${idx}:`, {
-        sender: m.sender,
-        receiver: m.receiver,
-        content: m.content,
-      });
-    });
 
     const privateMessages = this.messages.filter((m) => {
       const msgSender = String(m.sender);
@@ -69,7 +85,26 @@ export class inMemoryMsgDao extends iMsgDao {
 
     console.log(`[inMemoryMsgDao] Returning ${privateMessages.length} messages`);
 
-    return privateMessages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+    const sorted = privateMessages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+    
+    // Filter out messages from inactive users
+    const filteredMessages = await Promise.all(
+      sorted.map(async (msg) => {
+        try {
+          const senderUser = await UserDac.DAO?.findById?.(msg.sender);
+          const receiverUser = await UserDac.DAO?.findById?.(msg.receiver);
+          if (senderUser && senderUser.status === USER_STATUS.ACTIVE &&
+              receiverUser && receiverUser.status === USER_STATUS.ACTIVE) {
+            return msg;
+          }
+        } catch (e) {
+          // User not found or error, skip this message
+        }
+        return null;
+      })
+    );
+    
+    return filteredMessages.filter(msg => msg !== null);
   }
 
   async markMessagesAsRead(senderId, receiverId) {

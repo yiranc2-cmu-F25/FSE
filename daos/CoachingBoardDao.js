@@ -1,5 +1,8 @@
 import { buildSubstringRegex } from "../utils/search/search.js";
 import { parseCursor } from "../utils/search/cursor.js";
+import { getActiveUserIds } from "../utils/filterInactiveUsers.js";
+import User from "../entities/User.js";
+import { USER_STATUS } from "../constants/userStatus.js";
 
 export class CoachingBoardDao {
 	constructor({ CoachingBoardModel }) {
@@ -53,7 +56,12 @@ export class CoachingBoardDao {
 			.sort({ updatedAt: -1, _id: -1 })
 			.select("-comments")
 			.lean();
-		return docs.map(d => this.#toBoard(d));
+		const boards = docs.map(d => this.#toBoard(d));
+		
+		// Filter out boards where author is inactive
+		const authorIds = boards.map(b => b.author);
+		const activeAuthorIds = await getActiveUserIds(authorIds);
+		return boards.filter(b => activeAuthorIds.has(b.author));
 	}
 
 	async searchBoards({ terms = [], phrase = "", limit = 10, cursor } = {}) {
@@ -63,11 +71,7 @@ export class CoachingBoardDao {
 
 		const query = {
 			publicationState: "published",
-			$or: [
-				{ title: { $regex: regex } },
-				{ category: { $regex: regex } },
-				{ relatedSkills: { $elemMatch: { $regex: regex } } },
-			],
+			title: { $regex: regex },
 		};
 
 		// Handle cursor for pagination
@@ -78,35 +82,39 @@ export class CoachingBoardDao {
 				{ updatedAt: { $lt: parsed.ts } },
 				{ updatedAt: parsed.ts, _id: { $lt: parsed.idStr } }
 			];
-			query.$and = [{ $or: query.$or }, { $or: cursorClause }];
-			delete query.$or;
+			query.$and = [
+				{ publicationState: "published" },
+				{ title: { $regex: regex } },
+				{ $or: cursorClause }
+			];
 		}
 
 		const itemsPlusOne = await this.CoachingBoardModel.find(query)
 			.sort(sort)
 			.limit(safeLimit + 1)
-			.select({ title: 1, category: 1, updatedAt: 1, _id: 1 })
+			.select({ title: 1, category: 1, updatedAt: 1, _id: 1, author: 1 })
 			.lean();
 
 		const hasMore = itemsPlusOne.length > safeLimit;
 		const items = hasMore ? itemsPlusOne.slice(0, safeLimit) : itemsPlusOne;
 
+		// Filter out boards where author is inactive
+		const authorIds = [...new Set(items.map(item => String(item.author)).filter(Boolean))];
+		const activeAuthorIds = await getActiveUserIds(authorIds);
+		const filteredItems = items.filter(item => activeAuthorIds.has(String(item.author)));
+
 		let nextCursor = null;
-		if (hasMore && items.length > 0) {
-			const last = items[items.length - 1];
+		if (hasMore && filteredItems.length > 0) {
+			const last = filteredItems[filteredItems.length - 1];
 			nextCursor = `${new Date(last.updatedAt).toISOString()}|${String(last._id)}`;
 		}
 
 		const count = await this.CoachingBoardModel.countDocuments({
 			publicationState: "published",
-			$or: [
-				{ title: { $regex: regex } },
-				{ category: { $regex: regex } },
-				{ relatedSkills: { $elemMatch: { $regex: regex } } },
-			],
+			title: { $regex: regex },
 		});
 
-		return { code: 200, count, items, nextCursor };
+		return { code: 200, count, items: filteredItems, nextCursor };
 	}
 
 	async findPublishedByTitleCategory({ title, category }) {
@@ -151,7 +159,37 @@ export class CoachingBoardDao {
 
 	async getById({ id }) {
 		const doc = await this.CoachingBoardModel.findById(id).lean();
-		return doc ? this.#toBoard(doc) : null;
+		if (!doc) return null;
+		
+		const board = this.#toBoard(doc);
+		
+		// Check if author is active
+		const author = await User.findById(board.author);
+		if (!author || author.status !== USER_STATUS.ACTIVE) {
+			return null; // Board author is inactive, don't return the board
+		}
+		
+		// Filter out comments and replies from inactive users
+		const allUserIds = new Set([board.author]);
+		board.comments.forEach(comment => {
+			allUserIds.add(comment.author);
+			comment.replies.forEach(reply => {
+				allUserIds.add(reply.author);
+			});
+		});
+		
+		const activeUserIds = await getActiveUserIds([...allUserIds]);
+		
+		// Filter comments and replies
+		board.comments = board.comments.filter(comment => {
+			if (!activeUserIds.has(comment.author)) return false;
+			comment.replies = comment.replies.filter(reply => 
+				activeUserIds.has(reply.author)
+			);
+			return true;
+		});
+		
+		return board;
 	}
 
 	async updateBoard({ id, author, update }) {

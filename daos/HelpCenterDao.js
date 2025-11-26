@@ -1,4 +1,7 @@
 import { iHelpCenterDao } from "./iHelpCenterDao.js";
+import { getActiveUserIds } from "../utils/filterInactiveUsers.js";
+import User from "../entities/User.js";
+import { USER_STATUS } from "../constants/userStatus.js";
 
 export class HelpCenterDao extends iHelpCenterDao {
     constructor({ HelpCenterModel }) {
@@ -18,11 +21,17 @@ export class HelpCenterDao extends iHelpCenterDao {
     }
 
     async getHelpCenterByUserId( userId ) {
-        return this.HelpCenterModel.find({ owner: userId });
+        const centers = await this.HelpCenterModel.find({ owner: userId }).lean();
+        // Filter out help centers where owner is inactive
+        const owner = await User.findById(userId);
+        if (!owner || owner.status !== USER_STATUS.ACTIVE) {
+            return [];
+        }
+        return centers;
     }
 
     async getClosestHelpCenters({ coordinates, limit = 10 }) {
-        return this.HelpCenterModel.find({
+        const centers = await this.HelpCenterModel.find({
             coordinates: {
                 $near: {
                     $geometry: {
@@ -31,7 +40,12 @@ export class HelpCenterDao extends iHelpCenterDao {
                     }
                 }
             }
-        }).limit(limit);
+        }).limit(limit).lean();
+        
+        // Filter out help centers where owner is inactive
+        const ownerIds = centers.map(c => String(c.owner));
+        const activeOwnerIds = await getActiveUserIds(ownerIds);
+        return centers.filter(c => activeOwnerIds.has(String(c.owner)));
     }
 
     async updateHelpCenter({ id, name, type, location, description, coordinates }) {
@@ -51,6 +65,15 @@ export class HelpCenterDao extends iHelpCenterDao {
     }
 
     async getHelpCenterById(id) {
-        return this.HelpCenterModel.findById(id);
+        const center = await this.HelpCenterModel.findById(id).lean();
+        if (!center) return null;
+        
+        // Check if owner is active
+        const owner = await User.findById(center.owner);
+        if (!owner || owner.status !== USER_STATUS.ACTIVE) {
+            return null;
+        }
+        
+        return center;
     }
 }

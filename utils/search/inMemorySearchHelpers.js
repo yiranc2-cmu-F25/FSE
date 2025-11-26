@@ -50,23 +50,33 @@ export function applyPagination(filtered, limit = 10) {
 
 export async function populateSender(items, logPrefix = "[inMemoryDao]") {
   const UserDac = (await import("../../dacs/userDac.js")).default;
+  const { USER_STATUS } = await import("../../constants/userStatus.js");
   
   return await Promise.all(
     items.map(async (item) => {
       let senderUsername = null;
+      let senderStatus = null;
       try {
         const user = await UserDac.DAO?.findById?.(item.sender);
-        senderUsername = user?.username || null;
+        if (user && user.status === USER_STATUS.ACTIVE) {
+          senderUsername = user?.username || null;
+          senderStatus = user?.status || null;
+        }
       } catch (e) {
         console.log(`${logPrefix} Could not populate sender:`, e.message);
+      }
+      
+      // Return null if sender is inactive (will be filtered out)
+      if (!senderUsername || senderStatus !== USER_STATUS.ACTIVE) {
+        return null;
       }
       
       return {
         ...item,
         _id: item.id || item._id,
-        sender: senderUsername ? { username: senderUsername } : item.sender,
+        sender: senderUsername ? { username: senderUsername, status: senderStatus } : item.sender,
       };
     })
-  );
+  ).then(results => results.filter(item => item !== null)); // Filter out null items
 }
 

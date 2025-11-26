@@ -1,5 +1,6 @@
 import { formatDate, toStr } from "../utils/dateFormatter.js";
 import { getAvatarColor, getInitialsSafe } from "../utils/avatars.js";
+import { linkify } from "../utils/linkify.js";
 const STATUS = {
     undefined: "gray",
     ok: "green",
@@ -17,7 +18,7 @@ export function renderMessage({ name, text, status, timestamp, isOwn }) {
 
     li.querySelector(".name").textContent = safeName;
     li.querySelector(".time").textContent = formatDate(timestamp || new Date());
-    li.querySelector(".bubble").textContent = safeText;
+    li.querySelector(".bubble").innerHTML = linkify(safeText);
 
     const badge = li.querySelector(".status-badge");
     badge.textContent = (

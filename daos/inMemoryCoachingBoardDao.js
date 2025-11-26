@@ -141,28 +141,65 @@ export class inMemoryCoachingBoardDao {
 	}
 
 	async searchBoards({ terms = [], phrase = "", limit = 10, cursor } = {}) {
-		// Simplified search implementation
-		const published = this.boards.filter(b => b.publicationState === "published");
-		const items = published
-			.sort((a, b) => {
-				const timeA = new Date(a.updatedAt || 0).getTime();
-				const timeB = new Date(b.updatedAt || 0).getTime();
-				if (timeB !== timeA) return timeB - timeA;
-				return String(b.id).localeCompare(String(a.id));
-			})
-			.slice(0, limit)
-			.map(b => ({
-				title: b.title,
-				category: b.category,
-				updatedAt: b.updatedAt,
-				_id: b.id
-			}));
+		if ((!terms || terms.length === 0) && (!phrase || phrase.trim() === "")) {
+			return {
+				code: 200,
+				count: 0,
+				items: [],
+				nextCursor: null
+			};
+		}
+		
+		const { buildSubstringRegex } = await import("../utils/search/search.js");
+		const regex = buildSubstringRegex(terms, phrase);
+		
+		const published = this.boards.filter(b => 
+			b.publicationState === "published" && regex.test(b.title)
+		);
+		
+		const sorted = published.sort((a, b) => {
+			const timeA = new Date(a.updatedAt || 0).getTime();
+			const timeB = new Date(b.updatedAt || 0).getTime();
+			if (timeB !== timeA) return timeB - timeA;
+			return String(b.id).localeCompare(String(a.id));
+		});
+		
+		const safeLimit = Math.min(Math.max(1, +limit || 10), 100);
+		
+		let items = sorted;
+		if (cursor) {
+			const { parseCursor } = await import("../utils/search/cursor.js");
+			const parsed = parseCursor(cursor);
+			if (parsed) {
+				const cursorTime = parsed.ts.getTime();
+				items = sorted.filter(b => {
+					const bTime = new Date(b.updatedAt || 0).getTime();
+					if (bTime < cursorTime) return true;
+					if (bTime === cursorTime) {
+						return String(b.id) < parsed.idStr;
+					}
+					return false;
+				});
+			}
+		}
+		
+		const itemsToReturn = items.slice(0, safeLimit).map(b => ({
+			title: b.title,
+			category: b.category,
+			updatedAt: b.updatedAt,
+			_id: b.id
+		}));
+		
+		const hasMore = items.length > safeLimit;
+		const last = itemsToReturn[itemsToReturn.length - 1];
+		const nextCursor = hasMore && last ? 
+			`${new Date(last.updatedAt).toISOString()}|${String(last._id)}` : null;
 
 		return {
 			code: 200,
 			count: published.length,
-			items,
-			nextCursor: null
+			items: itemsToReturn,
+			nextCursor
 		};
 	}
 

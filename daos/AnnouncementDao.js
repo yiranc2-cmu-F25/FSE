@@ -1,6 +1,7 @@
 import { iAnnouncementDao } from "./iAnnouncementDao.js";
 import {buildSubstringRegex} from "../utils/search/search.js";
 import { searchByModel } from "../utils/search/searchCommon.js";
+import { USER_STATUS } from "../constants/userStatus.js";
 
 export class AnnouncementDao extends iAnnouncementDao {
     constructor({ AnnouncementModel }) {
@@ -20,15 +21,21 @@ export class AnnouncementDao extends iAnnouncementDao {
     async getAnnouncement() {
         const docs = await this.AnnouncementModel.find({})
             .sort({ timestamp: 1 })
-            .populate("sender", "username")
+            .populate({
+                path: "sender",
+                select: "username status",
+                match: { status: USER_STATUS.ACTIVE }
+            })
             .lean();
-        return docs.map((doc) => ({
+        const mapped = docs.map((doc) => ({
             id: doc._id,
             sender: doc.sender,
             timestamp: doc.timestamp,
             status: doc.status,
             content: doc.content,
         }));
+        // Filter out announcements where populate returned null (inactive sender)
+        return mapped.filter(doc => doc.sender !== null);
     }
 
     async searchAnnouncement({ terms = [], phrase = "", limit = 10, cursor } = {}) {
@@ -39,6 +46,11 @@ export class AnnouncementDao extends iAnnouncementDao {
             regex,
             limit,
             cursor,
+            populate: {
+                path: "sender",
+                select: "username status",
+                match: { status: USER_STATUS.ACTIVE }
+            }
         });
     }
 }

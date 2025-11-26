@@ -37,14 +37,22 @@ export async function searchByModel({
 
   const hasMore = itemsPlusOne.length > safeLimit;
   const pageItems = hasMore ? itemsPlusOne.slice(0, safeLimit) : itemsPlusOne;
+  
+  // Filter out items where populate returned null (inactive user)
+  // This happens when populate has a match condition that filters inactive users
+  const filteredItems = pageItems.filter(item => {
+    // Check if populate field exists and is not null
+    const populatePath = typeof populate === 'object' ? populate.path : 'sender';
+    return item[populatePath] !== null && item[populatePath] !== undefined;
+  });
 
   let nextCursor = null;
-  if (hasMore && pageItems.length > 0) {
-    const last = pageItems[pageItems.length - 1];
+  if (hasMore && filteredItems.length > 0) {
+    const last = filteredItems[filteredItems.length - 1];
     nextCursor = `${new Date(last.timestamp).toISOString()}|${String(last._id)}`;
   }
 
   const count = await Model.countDocuments({ ...baseFilter, content: { $regex: regex } });
 
-  return { code: 200, count, items: pageItems, nextCursor };
+  return { code: 200, count, items: filteredItems, nextCursor };
 }

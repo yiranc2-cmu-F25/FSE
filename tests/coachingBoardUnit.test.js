@@ -1,10 +1,14 @@
 import { CoachingBoardDao } from "../daos/CoachingBoardDao.js";
+import User from "../entities/User.js";
+import userDac from "../dacs/userDac.js";
+import { inMemoryUserDao } from "../daos/inMemoryUserDao.js";
+import { USER_STATUS } from "../constants/userStatus.js";
 
 describe("Coaching Board DAO - Unit Tests", () => {
 	let dao;
 	let mockModel;
 
-	beforeEach(() => {
+	beforeEach(async () => {
 		const createChainableMock = (result) => ({
 			lean: () => Promise.resolve(result),
 			select: () => createChainableMock(result),
@@ -23,6 +27,27 @@ describe("Coaching Board DAO - Unit Tests", () => {
 			updateOne: async () => {}
 		};
 		dao = new CoachingBoardDao({ CoachingBoardModel: mockModel });
+		
+		// Inject User DAO for filtering inactive users
+		userDac.DAO = new inMemoryUserDao();
+		
+		// Create active test users
+		const user1 = new User({
+			username: "user1",
+			password: "pass1",
+			sharedstatus: "undefined",
+			status: USER_STATUS.ACTIVE,
+			role: "citizen"
+		});
+		await user1.create();
+		const user2 = new User({
+			username: "user2",
+			password: "pass2",
+			sharedstatus: "undefined",
+			status: USER_STATUS.ACTIVE,
+			role: "citizen"
+		});
+		await user2.create();
 	});
 
 	describe("checkDuplicateTitle", () => {
@@ -238,9 +263,15 @@ describe("Coaching Board DAO - Unit Tests", () => {
 
 	describe("listPublished", () => {
 		test("returns only published boards (positive test)", async () => {
+			// Get active user IDs
+			const user1 = await User.findByUsername("user1");
+			const user2 = await User.findByUsername("user2");
+			const user1Id = String(user1.id || user1._id);
+			const user2Id = String(user2.id || user2._id);
+			
 			const mockDocs = [
-				{ _id: "1", title: "Published 1", publicationState: "published" },
-				{ _id: "2", title: "Published 2", publicationState: "published" }
+				{ _id: "1", title: "Published 1", publicationState: "published", author: user1Id },
+				{ _id: "2", title: "Published 2", publicationState: "published", author: user2Id }
 			];
 			mockModel.find = () => ({
 				sort: () => ({
@@ -272,7 +303,11 @@ describe("Coaching Board DAO - Unit Tests", () => {
 
 	describe("getById", () => {
 		test("returns board when board exists (positive test)", async () => {
-			const mockDoc = { _id: "123", title: "Test Board", author: "user1" };
+			// Get active user ID
+			const user1 = await User.findByUsername("user1");
+			const user1Id = String(user1.id || user1._id);
+			
+			const mockDoc = { _id: "123", title: "Test Board", author: user1Id, comments: [] };
 			mockModel.findById = () => ({
 				lean: () => Promise.resolve(mockDoc)
 			});
