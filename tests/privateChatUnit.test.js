@@ -55,53 +55,72 @@ describe("Private Message constructor and instance methods", () => {
 });
 
 describe("Private Message create flow", () => {
-  beforeEach(() => {
+  let user1Id, user2Id, aliceId, bobId;
+  
+  beforeEach(async () => {
     // inject a fresh in-memory DAO for test isolation
     MsgDac.DAO = new inMemoryMsgDao();
+    userDac.DAO = new inMemoryUserDao();
+    
+    // Create active users for testing and get their IDs
+    const user1 = new User(buildUserProps({ username: "user1" }));
+    const user1Result = await user1.create();
+    const user2 = new User(buildUserProps({ username: "user2" }));
+    const user2Result = await user2.create();
+    const alice = new User(buildUserProps({ username: "alice" }));
+    const aliceResult = await alice.create();
+    const bob = new User(buildUserProps({ username: "bob" }));
+    const bobResult = await bob.create();
+    
+    // Store user IDs for use in tests
+    user1Id = String(user1Result.id || user1Result._id);
+    user2Id = String(user2Result.id || user2Result._id);
+    aliceId = String(aliceResult.id || aliceResult._id);
+    bobId = String(bobResult.id || bobResult._id);
   });
 
   test("successful create persists private message", async () => {
     const props = buildPrivateMsgProps({
-      sender: "1",
-      receiver: "2",
+      sender: user1Id,
+      receiver: user2Id,
       content: `private_msg_${Date.now()}`,
     });
     const msg = new Msg(props);
     await msg.create();
 
-    const privateMessages = await Msg.getPrivateMsg("1", "2");
+    const privateMessages = await Msg.getPrivateMsg(user1Id, user2Id);
     const found = privateMessages.find((m) => m.content === props.content);
     expect(found).toBeDefined();
-    expect(found.receiver).toBe("2");
+    expect(found.receiver).toBe(user2Id);
   });
 
   test("create stores message with correct sender and receiver", async () => {
     const props = buildPrivateMsgProps({
-      sender: "alice",
-      receiver: "bob",
+      sender: aliceId,
+      receiver: bobId,
       content: "Hello Bob",
     });
     const msg = new Msg(props);
     await msg.create();
 
-    const messages = await Msg.getPrivateMsg("alice", "bob");
+    const messages = await Msg.getPrivateMsg(aliceId, bobId);
     const found = messages.find((m) => m.content === "Hello Bob");
     expect(found).toBeDefined();
-    expect(found.sender).toBe("alice");
-    expect(found.receiver).toBe("bob");
+    expect(found.sender).toBe(aliceId);
+    expect(found.receiver).toBe(bobId);
   });
 
   test("create preserves message content and status", async () => {
     const props = buildPrivateMsgProps({
-      sender: "1",
-      receiver: "2",
+      sender: user1Id,
+      receiver: user2Id,
       content: "Test private message",
       status: "help",
     });
     const msg = new Msg(props);
     await msg.create();
 
-    const messages = await Msg.getPrivateMsg("1", "2");
+    const messages = await Msg.getPrivateMsg(user1Id, user2Id);
     const found = messages.find((m) => m.content === "Test private message");
     expect(found).toBeDefined();
     expect(found.status).toBe("help");
@@ -233,18 +252,30 @@ describe("Private Message static methods", () => {
 });
 
 describe("Bidirectional private message conversation", () => {
-  beforeEach(() => {
+  let aliceId, bobId;
+  
+  beforeEach(async () => {
     // inject a fresh in-memory DAO for test isolation
     MsgDac.DAO = new inMemoryMsgDao();
     userDac.DAO = new inMemoryUserDao();
+    
+    // Create active users for testing and get their IDs
+    const alice = new User(buildUserProps({ username: "alice" }));
+    const aliceResult = await alice.create();
+    const bob = new User(buildUserProps({ username: "bob" }));
+    const bobResult = await bob.create();
+    
+    // Store user IDs for use in tests
+    aliceId = String(aliceResult.id || aliceResult._id);
+    bobId = String(bobResult.id || bobResult._id);
   });
 
   test("getPrivateMsg returns messages in both directions", async () => {
     // Alice sends to Bob
     const msg1 = new Msg(
       buildPrivateMsgProps({
-        sender: "alice",
-        receiver: "bob",
+        sender: aliceId,
+        receiver: bobId,
         content: "Alice to Bob",
       }),
     );
@@ -253,16 +284,16 @@ describe("Bidirectional private message conversation", () => {
     // Bob sends to Alice
     const msg2 = new Msg(
       buildPrivateMsgProps({
-        sender: "bob",
-        receiver: "alice",
+        sender: bobId,
+        receiver: aliceId,
         content: "Bob to Alice",
       }),
     );
     await msg2.create();
 
     // Get conversation from Alice's perspective
-    const aliceToBob = await Msg.getPrivateMsg("alice", "bob");
-    const bobToAlice = await Msg.getPrivateMsg("bob", "alice");
+    const aliceToBob = await Msg.getPrivateMsg(aliceId, bobId);
+    const bobToAlice = await Msg.getPrivateMsg(bobId, aliceId);
 
     expect(aliceToBob.length).toBeGreaterThanOrEqual(1);
     expect(bobToAlice.length).toBeGreaterThanOrEqual(1);
@@ -278,8 +309,8 @@ describe("Bidirectional private message conversation", () => {
     // First message
     const msg1 = new Msg(
       buildPrivateMsgProps({
-        sender: "1",
-        receiver: "2",
+        sender: aliceId,
+        receiver: bobId,
         content: "First",
         timestamp: new Date("2024-01-01T10:00:00Z"),
       }),
@@ -291,8 +322,8 @@ describe("Bidirectional private message conversation", () => {
     // Second message (reverse direction)
     const msg2 = new Msg(
       buildPrivateMsgProps({
-        sender: "2",
-        receiver: "1",
+        sender: bobId,
+        receiver: aliceId,
         content: "Second",
         timestamp: new Date("2024-01-01T10:01:00Z"),
       }),
@@ -304,16 +335,16 @@ describe("Bidirectional private message conversation", () => {
     // Third message (original direction)
     const msg3 = new Msg(
       buildPrivateMsgProps({
-        sender: "1",
-        receiver: "2",
+        sender: aliceId,
+        receiver: bobId,
         content: "Third",
         timestamp: new Date("2024-01-01T10:02:00Z"),
       }),
     );
     await msg3.create();
 
-    const messages1to2 = await Msg.getPrivateMsg("1", "2");
-    const messages2to1 = await Msg.getPrivateMsg("2", "1");
+    const messages1to2 = await Msg.getPrivateMsg(aliceId, bobId);
+    const messages2to1 = await Msg.getPrivateMsg(bobId, aliceId);
 
     // Both directions should have messages in order
     expect(messages1to2.length).toBeGreaterThanOrEqual(1);

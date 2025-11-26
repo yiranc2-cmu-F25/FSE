@@ -29,6 +29,7 @@ export async function getActiveUserIds(userIds) {
                     return id;
                 }
             } catch (err) {
+                // User not found or error, skip this user
             }
             return null;
         })

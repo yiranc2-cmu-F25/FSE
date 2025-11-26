@@ -79,14 +79,27 @@ describe("Msg constructor and instance methods", () => {
 });
 
 describe("Msg create flow", () => {
-  beforeEach(() => {
+  let user1Id, user2Id;
+  
+  beforeEach(async () => {
     // inject a fresh in-memory DAO for test isolation
     MsgDac.DAO = new inMemoryMsgDao();
+    userDac.DAO = new inMemoryUserDao();
+    
+    // Create active users for testing and get their IDs
+    const user1 = new User(buildUserProps({ username: "user1" }));
+    const user1Result = await user1.create();
+    const user2 = new User(buildUserProps({ username: "user2" }));
+    const user2Result = await user2.create();
+    
+    // Store user IDs for use in tests
+    user1Id = String(user1Result.id || user1Result._id);
+    user2Id = String(user2Result.id || user2Result._id);
   });
 
   test("successful create persists message", async () => {
     const props = buildMsgProps({
-      sender: "1",
+      sender: user1Id,
       content: `msg_${Date.now()}`,
     });
     const msg = new Msg(props);
@@ -100,7 +113,7 @@ describe("Msg create flow", () => {
 
   test("create stores message with null receiver as public", async () => {
     const props = buildMsgProps({
-      sender: "1",
+      sender: user1Id,
       receiver: null,
       content: "Public message",
     });
@@ -115,8 +128,8 @@ describe("Msg create flow", () => {
 
   test("create stores message with non-null receiver as private", async () => {
     const props = buildMsgProps({
-      sender: "1",
-      receiver: "2",
+      sender: user1Id,
+      receiver: user2Id,
       content: "Private message",
     });
     const msg = new Msg(props);
@@ -130,7 +143,7 @@ describe("Msg create flow", () => {
 
   test("create preserves message content and status", async () => {
     const props = buildMsgProps({
-      sender: "1",
+      sender: user1Id,
       content: "Test message",
       status: "help",
     });
