@@ -5,17 +5,16 @@ import { USER_STATUS } from "../constants/userStatus.js";
 
 /**
  * Middleware to check if the current user is an administrator
+ * Reads role from JWT token (req.user.role or req.role) instead of querying database
  */
 async function requireAdmin(req, res, next) {
     try {
-        const currentUser = await User.findById(req.user.id);
-        if (!currentUser) {
-            return res.status(404).json({ error: "Current user not found" });
-        }
+        // Get role from JWT token (set by auth middleware)
+        const role = req.user?.role || req.role;
         
-        // Handle both Mongoose document and plain object
-        const userObj = currentUser.toObject ? currentUser.toObject() : currentUser;
-        const role = userObj.role;
+        if (!role) {
+            return res.status(401).json({ error: "Unauthorized: User role not found" });
+        }
         
         if (role !== USER_ROLE.ADMIN) {
             return res.status(403).json({ error: "Forbidden: Administrator privileges required" });

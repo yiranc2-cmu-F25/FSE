@@ -75,6 +75,12 @@ describe("Announcements Test", () => {
         // Update user role to COORDINATOR so they can post announcements
         await User.updateRoleById(userId, USER_ROLE.COORDINATOR);
         
+        // Re-login to get a new JWT token with updated role
+        await agent
+            .post("/api/authentications/login")
+            .send({ username: "testUser", password: "testPassword" })
+            .expect(200);
+        
         const postAnnouncementRes = await agent
             .post("/api/announcements")
             .send({

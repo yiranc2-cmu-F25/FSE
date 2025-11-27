@@ -479,6 +479,11 @@ describe("Announcement API status codes", () => {
           timestamp: new Date().toISOString(),
         },
         app: mockApp,
+        user: {
+          id: foundUser.id,
+          role: USER_ROLE.COORDINATOR,
+        },
+        role: USER_ROLE.COORDINATOR,
       };
       const res = {
         status(code) {
@@ -520,6 +525,11 @@ describe("Announcement API status codes", () => {
           timestamp: new Date().toISOString(),
         },
         app: mockApp,
+        user: {
+          id: foundUser.id,
+          role: USER_ROLE.COORDINATOR,
+        },
+        role: USER_ROLE.COORDINATOR,
       };
       const res = {
         status(code) {
@@ -571,6 +581,11 @@ describe("Announcement API status codes", () => {
           timestamp: new Date().toISOString(),
         },
         app: mockApp,
+        user: {
+          id: foundUser.id,
+          role: USER_ROLE.COORDINATOR,
+        },
+        role: USER_ROLE.COORDINATOR,
       };
       const res = {
         status(code) {
@@ -625,6 +640,11 @@ describe("Announcement API status codes", () => {
           timestamp: new Date().toISOString(),
         },
         app: mockApp,
+        user: {
+          id: foundUser.id,
+          role: USER_ROLE.COORDINATOR,
+        },
+        role: USER_ROLE.COORDINATOR,
       };
       const res = {
         status(code) {
@@ -683,6 +703,11 @@ describe("Announcement API status codes", () => {
           timestamp: timestamp,
         },
         app: mockApp,
+        user: {
+          id: foundUser.id,
+          role: USER_ROLE.COORDINATOR,
+        },
+        role: USER_ROLE.COORDINATOR,
       };
       const res = {
         status(code) {
@@ -737,6 +762,11 @@ describe("Announcement API status codes", () => {
           timestamp: new Date().toISOString(),
         },
         app: mockApp,
+        user: {
+          id: foundUser.id,
+          role: USER_ROLE.COORDINATOR,
+        },
+        role: USER_ROLE.COORDINATOR,
       };
       const res = {
         status(code) {
@@ -782,6 +812,11 @@ describe("Announcement API status codes", () => {
           timestamp: new Date().toISOString(),
         },
         app: mockApp,
+        user: {
+          id: foundUser.id,
+          role: USER_ROLE.COORDINATOR,
+        },
+        role: USER_ROLE.COORDINATOR,
       };
       const res = {
         status(code) {
