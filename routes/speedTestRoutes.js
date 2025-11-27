@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { auth, authView } from "../middleware/JWT.js";
+import { requireAdmin } from "../middleware/privilegeCheck.js";
 import {
   getFromSpeedTest,
   getSpeedTestStatus,
@@ -8,6 +9,7 @@ import {
   stopSpeedTest,
   switchTestPhase,
 } from "./../controllers/speedTestController.js";
+import { PRIVILEGE_LEVEL } from "../constants/privilegeLevel.js";
 const router = Router();
 
 /**
@@ -181,11 +183,17 @@ router.post("/stop", auth, stopSpeedTest);
  */
 router.get("/status", auth, getSpeedTestStatus);
 
-router.get("/", authView, (req, res) => {
+router.get("/", authView, requireAdmin, (req, res) => {
+  if (req.privilege !== PRIVILEGE_LEVEL.ADMIN) {
+    return res.render("errorPages/403-forbidden");
+  }
   res.render("speedTest/speedTestBegin", { username: req.username || "" });
 });
 
-router.get("/reports", authView, (req, res) => {
+router.get("/reports", authView, requireAdmin, (req, res) => {
+  if (req.privilege !== PRIVILEGE_LEVEL.ADMIN) {
+    return res.render("errorPages/403-forbidden");
+  }
   res.render("speedTest/speedTestReport", { username: req.username || "" });
 });
 

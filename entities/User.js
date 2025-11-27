@@ -59,6 +59,10 @@ class User {
     static async updateSkillsById(id, skills) {
         await User.DAO.updateSkillsById(id, skills);
     }
+
+    static async getPrivilegeLevelById(id) {
+        return await User.DAO.getPrivilegeLevelById(id);
+    }
 }
 
 export default User;

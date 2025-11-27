@@ -2,6 +2,7 @@ import express from "express";
 import { authView, optionalAuth } from "../middleware/JWT.js";
 import { se } from "date-fns/locale";
 import { setup } from "swagger-ui-express";
+import { requireAdmin } from "../middleware/privilegeCheck.js";
 
 // Static JSON Testing Config
 
@@ -44,12 +45,13 @@ function setupPublicChatRoutes() {
 }
 
 function setupLoginRoutes() {
-    router.get("/members", authView, (req, res) => {
+    router.get("/members", authView, requireAdmin, (req, res) => {
         res.render("memberList/membersLanding", {
             username: req.username || "",
             currentUserId: req.userId,
             searchMode: "all",
             searchMembers: true,
+            privilege: req.privilege
         });
     });
 }
@@ -90,11 +92,12 @@ function setupPrivateChatRoutes() {
 }
 
 function setupAnnouncementRoutes() {
-    router.get("/postPublicAnnouncements", authView, (req, res) => {
+    router.get("/postPublicAnnouncements", authView, requireAdmin, (req, res) => {
         res.render("announcement/publicAnnouncement", {
             username: req.username || "",
             currentUserId: req.userId,
             searchMode: "set",
+            privilege: req.privilege
         });
     });
 }
