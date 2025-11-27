@@ -20,6 +20,12 @@ export default {
         theme: "#d65841",
         "brand-primary": "#d65841",
         "brand-secondary": "#f7e8e2",
+        primary: '#D8553E', // 截图中的橙红色按钮
+        softRed: '#FEE2E2',
+        softBlue: '#E0F2FE',
+        softGray: '#F3F4F6',
+        activeGreen: '#DCFCE7',
+        inactiveGray: '#E5E7EB'
       },
       fontFamily: {
         poppins: ["Poppins", "Helvetica", "sans-serif"],

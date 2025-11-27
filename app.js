@@ -134,5 +134,22 @@ function setupRoutes() {
 
   // Non-API Routes
   app.use("/speed-test", speedTestRoutes); // Speed Test Routes
+  
+  // Testing User Profile Page - must be before pageRoutes to avoid 404
+  app.get('/admin/users/:id/edit', (req, res) => {
+    const dummyUserFromDB = {
+        id: "u123",
+        username: "Pikachu",
+        passwordHash: "********", 
+        privilege: "Administrator", 
+        status: "Active"            
+    };
+
+    res.render('adminUserProfile/pages/edit-profile', { 
+        user: dummyUserFromDB,
+        pageTitle: 'Edit User Profile'
+    });
+  });
+  
   app.use("/", pageRoutes); // All routes for separate pages e.g. public chat wall
 }
