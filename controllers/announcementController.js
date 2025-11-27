@@ -1,5 +1,6 @@
 import User from "../entities/User.js";
 import Announcement from "../entities/Announcement.js";
+import { USER_ROLE } from "../constants/userRole.js";
 
 
 export async function getAnnouncements(req, res) {
@@ -26,6 +27,16 @@ export async function postAnnouncement(req, res) {
 
     try {
         const { sender, content, status, timestamp } = req.body;
+        const user = await User.findById(sender);
+        if (!user) {
+            return res.status(404).json({ status: "error", message: "User not found" });
+        }
+        // Handle both Mongoose document and plain object
+        const userObj = user.toObject ? user.toObject() : user;
+        const role = userObj.role;
+        if(role === USER_ROLE.CITIZEN) {
+            return res.status(403).json({ status: "error", message: "You are not authorized to post announcements" });
+        }
         const announcement = new Announcement({ sender, content: content.trim(), status:status.toLowerCase(), timestamp });
         console.log("Creating announcement:", announcement);
 

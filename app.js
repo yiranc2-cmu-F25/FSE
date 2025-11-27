@@ -20,6 +20,7 @@ import groupRoutes from "./routes/groupRoutes.js";
 import callRoutes from "./routes/callRoutes.js";
 import emergencyProfileRoutes from "./routes/emergencyProfileRoutes.js";
 import publicEmergencyInfoRoutes from "./routes/publicEmergencyInfoRoutes.js";
+import administratorProfileRoutes from "./routes/administratorProfileRoutes.js";
 import swaggerUi from "swagger-ui-express";
 import swaggerSpec from "./config/swagger/swaggerConfig.js";
 import { blockWhenSpeedTest } from "./middleware/blockWhenSpeedTest.js";
@@ -129,6 +130,7 @@ function setupRoutes() {
   app.use("/api/addresses", addressRoutes);
   app.use("/api/emergency-profiles", emergencyProfileRoutes); // emergency profile Routes
   app.use("/api/public/emergency-profiles", publicEmergencyInfoRoutes); // public emergency profile Routes
+  app.use("/api/admin/profiles", administratorProfileRoutes); // administrator profile management Routes
 
   // Non-API Routes
   app.use("/speed-test", speedTestRoutes); // Speed Test Routes

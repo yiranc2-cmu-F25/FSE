@@ -8,6 +8,8 @@ import Announcement from "../entities/Announcement.js";
 
 import { inMemoryUserDao } from "../daos/inMemoryUserDao.js";
 import UserDac from "../dacs/userDac.js";
+import User from "../entities/User.js";
+import { USER_ROLE } from "../constants/userRole.js";
 import { setupTestDb, cleanupTestDb } from "../config/testDbConfig.js";
 
 describe("Announcements Test", () => {
@@ -69,6 +71,9 @@ describe("Announcements Test", () => {
         if (!userId) {
             throw new Error("User ID not found");
         }
+        
+        // Update user role to COORDINATOR so they can post announcements
+        await User.updateRoleById(userId, USER_ROLE.COORDINATOR);
         
         const postAnnouncementRes = await agent
             .post("/api/announcements")

@@ -1,7 +1,6 @@
 import { USER_STATUS } from "../constants/userStatus.js";
 import { SHARED_STATUS } from "../constants/sharedStatus.js";
 import { USER_ROLE } from "../constants/userRole.js";
-import { PRIVILEGE_LEVEL } from "../constants/privilegeLevel.js";
 import { iUserDao } from "./iUserDao.js";
 
 export class inMemoryUserDao extends iUserDao {
@@ -15,7 +14,6 @@ export class inMemoryUserDao extends iUserDao {
       sharedstatus: SHARED_STATUS.UNDEFINED,
       status: USER_STATUS.ACTIVE,
       role: USER_ROLE.CITIZEN,
-      privilegeLevel: PRIVILEGE_LEVEL.CITIZEN,
       skills: [],
       createdAt: new Date(),
     });
@@ -26,7 +24,6 @@ export class inMemoryUserDao extends iUserDao {
       sharedstatus: SHARED_STATUS.OK,
       status: USER_STATUS.ACTIVE,
       role: USER_ROLE.CITIZEN,
-      privilegeLevel: PRIVILEGE_LEVEL.CITIZEN,
       skills: [],
       createdAt: new Date(),
     });
@@ -37,7 +34,6 @@ export class inMemoryUserDao extends iUserDao {
       sharedstatus: SHARED_STATUS.HELP,
       status: USER_STATUS.ACTIVE,
       role: USER_ROLE.CITIZEN,
-      privilegeLevel: PRIVILEGE_LEVEL.CITIZEN,
       skills: [],
       createdAt: new Date(),
     });
@@ -65,7 +61,6 @@ export class inMemoryUserDao extends iUserDao {
       sharedstatus: normalizedShared,
       status: status || USER_STATUS.ACTIVE,
       role: normalizedRole,
-      privilegeLevel: PRIVILEGE_LEVEL.CITIZEN,
       skills: skills || [],
       createdAt: new Date(),
     };
@@ -135,10 +130,10 @@ export class inMemoryUserDao extends iUserDao {
     }
   }
 
-  async updatePrivilegeLevelById(id, newPrivilegeLevel) {
+  async updateRoleById(id, newRole) {
     const user = this.users.find((u) => id == u.id);
     if (user) {
-      user.privilegeLevel = newPrivilegeLevel;
+      user.role = newRole;
     }
   }
 
@@ -184,7 +179,7 @@ export class inMemoryUserDao extends iUserDao {
       id: user.id,
       username: user.username,
       status: user.status,
-      privilegeLevel: user.privilegeLevel || PRIVILEGE_LEVEL.CITIZEN,
+      role: user.role || USER_ROLE.CITIZEN,
     };
   }
 
@@ -197,7 +192,7 @@ export class inMemoryUserDao extends iUserDao {
       id: user.id,
       username: user.username,
       status: user.status,
-      privilegeLevel: user.privilegeLevel || PRIVILEGE_LEVEL.CITIZEN,
+      role: user.role || USER_ROLE.CITIZEN,
     };
   }
 
@@ -207,11 +202,11 @@ export class inMemoryUserDao extends iUserDao {
       .sort((a, b) => a.username.localeCompare(b.username));
   }
 
-  async getPrivilegeLevelById(id) {
+  async getRoleById(id) {
     const user = this.users.find((u) => id == u.id);
     if (!user) {
       return null;
     }
-    return user.privilegeLevel || PRIVILEGE_LEVEL.CITIZEN;
+    return user.role || USER_ROLE.CITIZEN;
   }
 }

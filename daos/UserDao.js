@@ -1,6 +1,6 @@
 import bcrypt from "bcrypt";
 import { USER_STATUS } from "../constants/userStatus.js";
-import { PRIVILEGE_LEVEL } from "../constants/privilegeLevel.js";
+import { USER_ROLE } from "../constants/userRole.js";
 import { iUserDao } from "./iUserDao.js";
 
 export class UserDao extends iUserDao {
@@ -124,15 +124,15 @@ export class UserDao extends iUserDao {
         }
     }
 
-    async updatePrivilegeLevelById(id, newPrivilegeLevel) {
+    async updateRoleById(id, newRole) {
         try {
             await this.UserModel.findByIdAndUpdate(
                 id,
-                { privilegeLevel: newPrivilegeLevel },
+                { role: newRole },
                 { new: true },
             );
         } catch (err) {
-            console.error("Error updating privilege level for user ID:", id, err);
+            console.error("Error updating role for user ID:", id, err);
             throw err;
         }
     }
@@ -190,7 +190,7 @@ export class UserDao extends iUserDao {
     async getUserProfileById(id) {
         try {
             const doc = await this.UserModel.findById(id)
-                .select('username status privilegeLevel')
+                .select('username status role')
                 .lean();
             if (!doc) {
                 return null;
@@ -199,7 +199,7 @@ export class UserDao extends iUserDao {
                 id: doc._id.toString(),
                 username: doc.username,
                 status: doc.status,
-                privilegeLevel: doc.privilegeLevel,
+                role: doc.role,
             };
         } catch (err) {
             console.error("Error getting user profile by ID:", err);
@@ -219,17 +219,17 @@ export class UserDao extends iUserDao {
         }
     }
 
-    async getPrivilegeLevelById(id) {
+    async getRoleById(id) {
         try {
             const doc = await this.UserModel.findById(id)
-                .select('privilegeLevel')
+                .select('role')
                 .lean();
             if (!doc) {
                 return null;
             }
-            return doc.privilegeLevel || PRIVILEGE_LEVEL.CITIZEN;
+            return doc.role || USER_ROLE.CITIZEN;
         } catch (err) {
-            console.error("Error getting privilege level by ID:", err);
+            console.error("Error getting role by ID:", err);
             throw err;
         }
     }
