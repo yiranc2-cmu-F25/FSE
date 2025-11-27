@@ -134,7 +134,7 @@ async function loadMe() {
   const statustext = document.getElementById("header-status-text");
   statusUpdate(status);
 
-  if (statustext) statustext.textContent = status;
+  if (statustext) statustext.textContent = status.toUpperCase();
   if (avatar) avatar.style.backgroundColor = color;
   if (avatarInit) avatarInit.textContent = initials;
   if (nameEl) nameEl.textContent = name || "Guest";

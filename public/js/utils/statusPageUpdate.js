@@ -24,6 +24,7 @@ const STATUS_STYLES = {
 
 //status-color , status-icon
 export function statusUpdate(status) {
+  status = status.toUpperCase();
   const style = STATUS_STYLES[status] || STATUS_STYLES["UNDEFINED"];
   document.querySelectorAll("#status-color, #partial-status-color").forEach((el) => {
     el.classList.add(style.color, style.textColor);
