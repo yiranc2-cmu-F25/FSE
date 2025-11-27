@@ -2,33 +2,105 @@
 <%- include('./../partials/userProfileHeader') %>
 
 <form action="/admin/users/update" method="POST" class="px-8 py-4 flex flex-col gap-y-6">
-    <div class="flex flex-col gap-y-2">
+    <div class="username_section flex flex-col gap-y-2">
         <div class="flex items-center justify-start gap-x-2">
             <label for="username" class="text-sm font-medium text-gray-900">Username</label>
-            <%- include('./../partials/icons/user-id-svgrepo-com', {classes: 'w-4 h-4 text-white'}) %>
+            <%- include('./../partials/icons/user-id-svgrepo-com', {classes: 'w-6 h-6 text-white'}) %>
         </div>
         <input type="text" name="username" value="<%=user.username%>" class="w-full rounded-sm border-gray-300 border-b-2 focus:outline-none focus:ring-0 focus:border-primary sm:text-sm" placeholder="Enter your username">
     </div>
+    <div class="password_section flex flex-col gap-y-2">
+        <div class="flex items-center justify-start gap-x-2">
+            <label for="password" class="text-sm font-medium text-gray-900">Password</label>
+            <%- include('./../partials/icons/password-key', {classes: 'w-4 h-4 text-white'}) %>
+        </div>
+        <input type="text" name="password" value="<%=user.passwordHash%>" class="w-full rounded-sm border-gray-300 border-b-2 focus:outline-none focus:ring-0 focus:border-primary sm:text-sm" placeholder="Enter your password">
+    </div>
+    <div class="privilege_section flex flex-col gap-y-2">
+        <div class="flex justify-between items-center">
+            <label class="text-sm font-medium text-gray-900 flex items-center gap-2">
+                Privilege Level 
+                <span>
+                    <%- include('./../partials/icons/p_lvl_text_cloud', {classes: 'w-4 h-4 text-white'}) %></span>
+            </label>
+            <span class="text-gray-400 text-sm">?</span>
+        </div>
 
-    
+        <div class="grid grid-cols-2 gap-4">
+            <label class="cursor-pointer relative group">
+                <input type="radio" name="privilege" value="Administrator" class="peer hidden" 
+                    <%= user.privilege === 'Administrator' ? 'checked' : '' %> >
+                <div class="flex items-center gap-2 p-3 rounded-lg border border-transparent bg-gray-50 text-gray-400 peer-checked:bg-red-50 peer-checked:text-red-500 peer-checked:border-red-100 transition-all">
+                    
+                     <div class="w-8 h-8">
+                        <img src="/images/admin-user-profile/icons/admin_icon.svg" alt="selected admin icon" class="w-full h-full opacity-60 group-has-[:checked]:opacity-100 transition-all">
+                     </div>
+                    <span class="text-sm font-medium">Administrator</span>
+                </div>
+            </label>
+
+            <label class="cursor-pointer relative group">
+                <input type="radio" name="privilege" value="Coordinator" class="peer hidden"
+                    <%= user.privilege === 'Coordinator' ? 'checked' : '' %> >
+                <div class="flex items-center gap-2 p-3 rounded-lg border border-transparent bg-gray-50 text-gray-400 peer-checked:bg-blue-50 peer-checked:text-blue-500 peer-checked:border-blue-100 transition-all">
+                    <div class="w-8 h-8">
+                        <img src="/images/admin-user-profile/icons/coord_icon.svg" alt="selected coordinator icon" class="w-full h-full opacity-60 group-has-[:checked]:opacity-100 transition-all">
+                     </div>
+                    <span class="text-sm font-medium">Coordinator</span>
+                </div>
+            </label>
+        </div>
+        
+        <label class="cursor-pointer block group">
+            <input type="radio" name="privilege" value="Citizen" class="peer hidden"
+                <%= user.privilege === 'Citizen' ? 'checked' : '' %> >
+            <div class="flex items-center gap-2 p-3 rounded-lg border border-transparent bg-gray-50 text-gray-400 peer-checked:bg-gray-200 peer-checked:text-gray-700 transition-all">
+                <div class="w-8 h-8">
+                    <img src="/images/admin-user-profile/icons/citizen_icon.svg" alt="selected citizen icon" class="w-full h-full opacity-60 group-has-[:checked]:opacity-100 transition-all">
+                 </div>
+                <span class="text-sm font-medium">Citizen</span>
+            </div>
+        </label>
+    </div>
+
+    <div class="status_section flex flex-col gap-y-2">
+        <div class="flex justify-between items-center">
+            <label class="text-sm font-medium text-gray-900 flex items-center gap-2">
+                Account Status 
+                <span>
+                    <%- include('./../partials/icons/account_status', {classes: 'w-4 h-4 text-white'}) %></span>
+            </label>
+            <span class="text-gray-400 text-sm">?</span>
+        </div>
+
+        <div class="flex bg-gray-100 rounded-full p-1 relative">
+            <label class="flex-1 text-center cursor-pointer z-10">
+                <input type="radio" name="status" value="Active" class="peer hidden"
+                    <%= user.status === 'Active' ? 'checked' : '' %> >
+                <div class="py-2 rounded-full text-xs font-bold text-gray-400 peer-checked:bg-green-100 peer-checked:text-green-600 transition-all uppercase tracking-wide">
+                    Active
+                </div>
+            </label>
+
+            <label class="flex-1 text-center cursor-pointer z-10">
+                <input type="radio" name="status" value="Inactive" class="peer hidden"
+                    <%= user.status === 'Inactive' ? 'checked' : '' %> >
+                <div class="py-2 rounded-full text-xs font-bold text-gray-400 peer-checked:bg-gray-300 peer-checked:text-gray-600 transition-all uppercase tracking-wide">
+                    Inactive
+                </div>
+            </label>
+        </div>
+    </div>
+
+    <div class="pt-4">
+        <button type="submit" class="w-full text-white bg-brand-primary md:bg-white md:text-brand-primary font-bold py-4 rounded-xl md:border-primary border-2 transition-transform active:scale-95">
+            Update User Profile
+        </button>
+    </div>
+
+
 </form>
 
 
 
 <%- include('./../partials/userProfileLayoutFooter') %>
-
-<!-- <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= pageTitle %></title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-</head>
-<body class="bg-gray-50 min-h-screen flex justify-center items-center font-sans text-gray-800">
-    <div class="w-full max-w-md bg-white min-h-screen shadow-lg sm:min-h-0 sm:h-auto sm:rounded-xl overflow-hidden">       
-
-    </div>
-</body>
-</html> -->
