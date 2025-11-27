@@ -1,29 +1,38 @@
 <%- include('./../partials/userProfileLayoutHeader', {pageTitle: 'Edit User Profile'}) %>
 <%- include('./../partials/userProfileHeader') %>
 
-<form action="/admin/users/update" method="POST" class="px-8 py-4 flex flex-col gap-y-6">
-    <div class="username_section flex flex-col gap-y-2">
+<form id="edit-profile-form" action="/admin/users/update" method="POST" class="px-8 py-4 flex flex-col gap-y-6">
+    <div id="username-section" class="username_section flex flex-col gap-y-2">
         <div class="flex items-center justify-start gap-x-2">
             <label for="username" class="text-sm font-medium text-gray-900">Username</label>
             <%- include('./../partials/icons/user-id-svgrepo-com', {classes: 'w-6 h-6 text-white'}) %>
         </div>
-        <input type="text" name="username" value="<%=user.username%>" class="w-full rounded-sm border-gray-300 border-b-2 focus:outline-none focus:ring-0 focus:border-primary sm:text-sm" placeholder="Enter your username">
+        <input id="input-username" type="text" name="username" value="<%=user.username%>" class="w-full rounded-sm border-gray-300 border-b-2 focus:outline-none focus:ring-0 focus:border-primary sm:text-sm" placeholder="Enter your username">
+        <p id="input-username-error" class="hidden text-xs text-red-500 font-medium mt-1">
+        </p>
     </div>
-    <div class="password_section flex flex-col gap-y-2">
+    <div id="password-section" class="password_section flex flex-col gap-y-2">
         <div class="flex items-center justify-start gap-x-2">
             <label for="password" class="text-sm font-medium text-gray-900">Password</label>
             <%- include('./../partials/icons/password-key', {classes: 'w-4 h-4 text-white'}) %>
         </div>
-        <input type="text" name="password" value="<%=user.passwordHash%>" class="w-full rounded-sm border-gray-300 border-b-2 focus:outline-none focus:ring-0 focus:border-primary sm:text-sm" placeholder="Enter your password">
+        <input id="input-password" type="text" name="password" value="<%=user.passwordHash%>" class="w-full rounded-sm border-gray-300 border-b-2 focus:outline-none focus:ring-0 focus:border-primary sm:text-sm" placeholder="Enter your password">
+        <p id="input-password-error" class="hidden text-xs text-red-500 font-medium mt-1"></p> 
     </div>
     <div class="privilege_section flex flex-col gap-y-2">
-        <div class="flex justify-between items-center">
+        <div class="flex justify-start items-center">
             <label class="text-sm font-medium text-gray-900 flex items-center gap-2">
                 Privilege Level 
                 <span>
                     <%- include('./../partials/icons/p_lvl_text_cloud', {classes: 'w-4 h-4 text-white'}) %></span>
             </label>
-            <span class="text-gray-400 text-sm">?</span>
+            <%- include('./../partials/tooltip', { content: `
+                <ul class="list-disc pl-3 space-y-1 text-left">
+                    <li><strong class="text-red-300">Administrator:</strong> Full access including User Profiles & Speed Tests.</li>
+                    <li><strong class="text-blue-300">Coordinator:</strong> Can post Announcements + Citizen features.</li>
+                    <li><strong class="text-gray-300">Citizen:</strong> Standard community access.</li>
+                </ul>
+            `}) %>
         </div>
 
         <div class="grid grid-cols-2 gap-4">
@@ -64,13 +73,15 @@
     </div>
 
     <div class="status_section flex flex-col gap-y-2">
-        <div class="flex justify-between items-center">
+        <div class="flex justify-start items-center">
             <label class="text-sm font-medium text-gray-900 flex items-center gap-2">
                 Account Status 
                 <span>
                     <%- include('./../partials/icons/account_status', {classes: 'w-4 h-4 text-white'}) %></span>
             </label>
-            <span class="text-gray-400 text-sm">?</span>
+            <%- include('./../partials/tooltip', { 
+                content: "Inactive users are <span class='text-red-300 font-bold'>immediately logged out</span> and denied system access." 
+            }) %>
         </div>
 
         <div class="flex bg-gray-100 rounded-full p-1 relative">
@@ -100,6 +111,18 @@
 
 
 </form>
+<style>
+@keyframes wiggle {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
+}
+
+.wiggle {
+  animation: wiggle 0.4s ease-in-out;
+}
+</style>
+<script src="/js/adminUserProfile/editProfileValidation.js"></script>
 
 
 
