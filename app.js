@@ -135,7 +135,27 @@ function setupRoutes() {
   // Non-API Routes
   app.use("/speed-test", speedTestRoutes); // Speed Test Routes
   
-  // Testing User Profile Page - must be before pageRoutes to avoid 404
+  // Admin User Profile Pages - must be before pageRoutes to avoid 404
+  app.get('/admin/users', (req, res) => {
+    // Mock data for member list
+    const mockMembers = [
+      { id: "u1", username: "Pikachu", status: "Active", privilege: "Administrator" },
+      { id: "u2", username: "Pikachu", status: "Active", privilege: "Administrator" },
+      { id: "u3", username: "Pikachu", status: "Active", privilege: "Coordinator" },
+      { id: "u4", username: "Pikachu", status: "Active", privilege: "Coordinator" },
+      { id: "u5", username: "Pikachu", status: "Inactive", privilege: "Coordinator" },
+      { id: "u6", username: "Pikachu", status: "Active", privilege: "Coordinator" },
+      { id: "u7", username: "Pikachu", status: "Active", privilege: "Citizen" },
+      { id: "u8", username: "Pikachu", status: "Inactive", privilege: "Citizen" },
+      { id: "u9", username: "Pikachu", status: "Active", privilege: "Citizen" },
+    ];
+
+    res.render('adminUserProfile/pages/member-list', { 
+        members: mockMembers,
+        pageTitle: 'Administer User Profile'
+    });
+  });
+
   app.get('/admin/users/:id/edit', (req, res) => {
     const dummyUserFromDB = {
         id: "u123",

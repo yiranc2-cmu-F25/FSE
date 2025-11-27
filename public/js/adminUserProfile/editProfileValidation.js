@@ -89,7 +89,14 @@ const validationState = {
 let isSubmitting = false;
 
 // --- Wiggle Animation Helper ---
-function triggerWiggle(sectionId) {
+function triggerWiggle(inputId) {
+  // Map input IDs to section IDs
+  const inputToSectionMap = {
+    "input-username": "username-section",
+    "input-password": "password-section",
+  };
+  
+  const sectionId = inputToSectionMap[inputId] || inputId;
   const section = document.getElementById(sectionId);
   if (!section) return;
   
