@@ -99,7 +99,7 @@ function renderGroupItem(group) {
 async function loadGroups() {
   try {
     // Small delay to allow sendBeacon from group chat page to complete
-    await new Promise(resolve => setTimeout(resolve, 300));
+    await new Promise(resolve => setTimeout(resolve, 500));
 
     const res = await fetch("/api/groups", {
       credentials: "include",

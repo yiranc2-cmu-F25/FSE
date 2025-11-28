@@ -178,6 +178,7 @@ function setupESNHelpCenterRoutes() {
       // Task detail modal will be populated from API when clicked
       task: null,
       viewer: null,
+      privilege: req.role
     });
   });
 }
@@ -202,6 +203,7 @@ function setupMyHelpCenterRoutes() {
       currentUserId: currentUserId,
       task: null,
       viewer: null,
+      privilege: req.role
     });
   });
 }
@@ -270,6 +272,7 @@ function setupCoachingBoardPages() {
             username: req.username || "",
             searchMode: "set",
             currentUserId: req.userId,
+            privilege: req.role
         });
     });
     router.get("/boards/new", authView, (req, res) => {
