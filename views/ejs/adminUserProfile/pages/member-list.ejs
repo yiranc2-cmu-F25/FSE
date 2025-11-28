@@ -97,15 +97,17 @@
                         />
                     </label>
 
-                    <!-- Filter icon (placeholder) -->
+                    <!-- Sort direction toggle -->
                     <button
                         type="button"
+                        id="member-sort-toggle"
                         class="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-stone-200 bg-white text-stone-500 shadow-sm transition hover:border-amber-400 hover:text-amber-700"
-                        aria-label="Filter"
+                        aria-label="Toggle sort direction"
+                        data-direction="desc"
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-5 w-5">
-                            <path fill="currentColor" d="M14 12v7.88c.04.3-.06.62-.29.83a.996.996 0 0 1-1.41 0l-2.01-2.01a.989.989 0 0 1-.29-.83V12H3.08a.998.998 0 0 1-.76-1.64L10 2.27c.57-.7 1.86-.7 2.43 0l7.25 8.09c.57.7.29 1.64-.48 1.64H14Z" />
-                        </svg>
+                        <span id="member-sort-toggle-icon" class="text-xs font-semibold">
+                            ↓
+                        </span>
                     </button>
 
                     <!-- Sort dropdown -->
@@ -128,14 +130,14 @@
                 </div>
 
                 <!-- Column Headers -->
-                <div class="flex items-center gap-4 mb-4 px-2">
-                    <button type="button" class="member-sort-header flex-1 text-left px-3 py-2 rounded-xl bg-stone-50 text-sm font-semibold text-stone-700  transition pointer-events-none" data-sort="username">
+                <div class="flex items-center gap-0.5 mb-4 px-1">
+                    <button type="button" class="member-sort-header flex-1 text-center px-1 py-2 rounded-xl bg-stone-50 text-sm font-semibold text-stone-700  transition pointer-events-none" data-sort="username">
                         User Name
                     </button>
-                    <button type="button" class="member-sort-header flex-1 text-left px-3 py-2 rounded-xl bg-stone-50 text-sm font-semibold text-stone-700  transition pointer-events-none" data-sort="status">
+                    <button type="button" class="member-sort-header flex-1 text-center px-1 py-2 rounded-xl bg-stone-50 text-sm font-semibold text-stone-700  transition pointer-events-none" data-sort="status">
                         Account Status
                     </button>
-                    <button type="button" class="member-sort-header flex-1 text-left px-3 py-2 rounded-xl bg-stone-50 text-sm font-semibold text-stone-700  transition pointer-events-none" data-sort="privilege">
+                    <button type="button" class="member-sort-header flex-1 text-center px-1 py-2 rounded-xl bg-stone-50 text-sm font-semibold text-stone-700  transition pointer-events-none" data-sort="privilege">
                         Privilege
                     </button>
                 </div>
@@ -145,15 +147,15 @@
                     <% if (typeof members !== 'undefined' && Array.isArray(members) && members.length > 0) { %>
                         <% members.forEach(function(member) { %>
                             <a href="/admin/users/<%= member.id %>/edit" class="member-item flex items-center gap-4 px-2 py-3 rounded-xl hover:bg-stone-50 transition cursor-pointer" data-member-id="<%= member.id %>">
-                                <div class="flex-1 text-sm font-medium text-stone-900">
+                                <div class="flex-1 flex items-center justify-center text-sm font-medium text-stone-900">
                                     <%= member.username %>
                                 </div>
-                                <div class="flex-1">
+                                <div class="flex-1 flex items-center justify-center">
                                     <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold uppercase <%= member.status === 'Active' ? 'bg-green-100 text-green-600' : 'bg-gray-300 text-gray-600' %>">
                                         <%= member.status %>
                                     </span>
                                 </div>
-                                <div class="flex-1">
+                                <div class="flex-1 flex items-center justify-center">
                                     <% 
                                         let privilegeClass = 'bg-stone-100 text-stone-700';
                                         if (member.privilege === 'Administrator') privilegeClass = 'bg-red-100 text-red-600';
@@ -183,6 +185,7 @@
         initHeaderAvatar();
     </script>
     <script type="module" src="/js/extensionFeatures/featureModal.js"></script>
+    <script type="module" src="/js/nav-bar/nav-bar.js"></script>
     <script type="module" src="/js/adminUserProfile/memberList.js"></script>
 </body>
 </html>

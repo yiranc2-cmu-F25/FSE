@@ -23,7 +23,7 @@ const ui = {
   emergencyProfileButton: $("#emergency-profile-button"),
   manageHelpCentersButton: $("#manage-help-center-btn"),
   viewHelpCentersButton: $("#view-help-center-btn"),
-
+  administerUserProfileButton: $("#administer-user-profile-button"),  
 };
 const body = document.body;
 ui.body = body;
@@ -152,6 +152,10 @@ function setupSidebarSelection() {
 
     ui.viewHelpCentersButton?.addEventListener("click", () => {
       window.location.href = "/help-centers/view";
+    });
+
+    ui.administerUserProfileButton?.addEventListener("click", () => {
+      window.location.href = "/admin/users";
     });
   });
 }

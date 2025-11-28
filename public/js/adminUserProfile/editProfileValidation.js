@@ -235,14 +235,12 @@ async function handleFormSubmit(e) {
     return false; // Prevent form submission
   }
   
-  // All validations passed, submit the form
-  // Remove the event listener temporarily to allow submission
-  const form = e.target;
-  form.removeEventListener("submit", handleFormSubmit);
-  isSubmitting = true;
-  
-  // Submit the form
-  form.submit();
+  // All validations passed, show confirm modal instead of submitting directly
+  if (window.showConfirmModal) {
+    window.showConfirmModal();
+  } else {
+    console.error("Modal workflow not loaded");
+  }
 }
 
 // --- Initialize ---

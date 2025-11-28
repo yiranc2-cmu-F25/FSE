@@ -9,6 +9,8 @@ let members = Array.isArray(window.__MEMBERS__) ? window.__MEMBERS__ : [];
 
 const searchInput = document.querySelector("#member-search-input");
 const sortSelect = document.querySelector("#member-sort-select");
+const sortToggle = document.querySelector("#member-sort-toggle");
+const sortToggleIcon = document.querySelector("#member-sort-toggle-icon");
 const listContainer = document.querySelector("#member-list-items");
 
 // Privilege level order (higher = more privileged)
@@ -45,7 +47,7 @@ function compareMembers(a, b) {
     case "privilege": {
       const aOrder = getPrivilegeOrder(a);
       const bOrder = getPrivilegeOrder(b);
-      if (aOrder !== bOrder) return bOrder - aOrder; // Descending (Admin first)
+      if (aOrder !== bOrder) return aOrder - bOrder; // Ascending (will be flipped for desc)
       // If same privilege, sort by username alphabetically
       const aName = normalizeString(a.username);
       const bName = normalizeString(b.username);
@@ -54,11 +56,11 @@ function compareMembers(a, b) {
     case "status": {
       const aStatus = getStatusOrder(a);
       const bStatus = getStatusOrder(b);
-      if (aStatus !== bStatus) return bStatus - aStatus; // Descending (Active first)
+      if (aStatus !== bStatus) return aStatus - bStatus; // Ascending (will be flipped for desc)
       // If same status, sort by privilege, then username
       const aPriv = getPrivilegeOrder(a);
       const bPriv = getPrivilegeOrder(b);
-      if (aPriv !== bPriv) return bPriv - aPriv;
+      if (aPriv !== bPriv) return aPriv - bPriv;
       const aName = normalizeString(a.username);
       const bName = normalizeString(b.username);
       return aName.localeCompare(bName);
@@ -108,15 +110,15 @@ function renderMemberList(items) {
 
       return `
         <a href="${href}" class="member-item flex items-center gap-4 px-2 py-3 rounded-xl hover:bg-stone-50 transition cursor-pointer" data-member-id="${member.id}">
-          <div class="flex-1 text-sm font-medium text-stone-900">
+          <div class="flex-1 flex items-center justify-center text-sm font-medium text-stone-900">
             ${member.username || "Unknown"}
           </div>
-          <div class="flex-1">
+          <div class="flex-1 flex items-center justify-center">
             <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold uppercase ${statusClass}">
               ${member.status || "Inactive"}
             </span>
           </div>
-          <div class="flex-1">
+          <div class="flex-1 flex items-center justify-center">
             <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold uppercase ${privilegeClass}">
               ${privilegeDisplay}
             </span>
@@ -133,6 +135,8 @@ function applyFiltersAndRender() {
   if (!searchInput || !sortSelect) return;
 
   const keyword = normalizeString(searchInput.value);
+  const currentDirection =
+    sortToggle?.dataset.direction === "asc" ? "asc" : "desc";
 
   let filtered = members.filter((member) => {
     if (!keyword) return true;
@@ -140,8 +144,22 @@ function applyFiltersAndRender() {
     return username.includes(keyword);
   });
 
-  filtered.sort(compareMembers);
+  filtered.sort((a, b) => {
+    const base = compareMembers(a, b);
+    if (currentDirection === "asc") {
+      return base;
+    }
+    return -base;
+  });
+
   renderMemberList(filtered);
+}
+
+function updateToggleIcon() {
+  if (!sortToggleIcon || !sortToggle) return;
+  const currentDirection =
+    sortToggle.dataset.direction === "asc" ? "asc" : "desc";
+  sortToggleIcon.textContent = currentDirection === "asc" ? "↑" : "↓";
 }
 
 // Initialize members from server-rendered data
@@ -180,11 +198,14 @@ function initializeMembersFromDOM() {
   });
 }
 
-if (searchInput && sortSelect && listContainer) {
+if (searchInput && sortSelect && sortToggle && listContainer) {
   // Initialize members from DOM if not already set
   if (members.length === 0) {
     initializeMembersFromDOM();
   }
+
+  // Initialize toggle icon
+  updateToggleIcon();
 
   // Event listeners
   searchInput.addEventListener("input", () => {
@@ -192,6 +213,15 @@ if (searchInput && sortSelect && listContainer) {
   });
 
   sortSelect.addEventListener("change", () => {
+    applyFiltersAndRender();
+  });
+
+  sortToggle.addEventListener("click", () => {
+    const currentDirection =
+      sortToggle.dataset.direction === "asc" ? "asc" : "desc";
+    const newDirection = currentDirection === "asc" ? "desc" : "asc";
+    sortToggle.dataset.direction = newDirection;
+    updateToggleIcon();
     applyFiltersAndRender();
   });
 

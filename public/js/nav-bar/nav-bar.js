@@ -16,33 +16,45 @@ const helpPath = "/esn-help-center";
 const boardsPath = "/boards";
 
 function setAllThin() {
-  membersIcon.src = "images/help-tasks/icons/Members-Thin.svg";
-  helpIcon.src = "images/help-tasks/icons/Help-Center-Thin.svg";
-  boardsIcon.src = "images/help-tasks/icons/Boards-Thin.svg";
+  if (membersIcon) membersIcon.src = "/images/help-tasks/icons/Members-Thin.svg";
+  if (helpIcon) helpIcon.src = "/images/help-tasks/icons/Help-Center-Thin.svg";
+  if (boardsIcon) boardsIcon.src = "/images/help-tasks/icons/Boards-Thin.svg";
 
-  membersLabel.classList.remove("font-bold");
-  membersLabel.classList.add("font-normal");
-  helpLabel.classList.remove("font-bold");
-  helpLabel.classList.add("font-normal");
-  boardsLabel.classList.remove("font-bold");
-  boardsLabel.classList.add("font-normal");
+  if (membersLabel) {
+    membersLabel.classList.remove("font-bold");
+    membersLabel.classList.add("font-normal");
+  }
+  if (helpLabel) {
+    helpLabel.classList.remove("font-bold");
+    helpLabel.classList.add("font-normal");
+  }
+  if (boardsLabel) {
+    boardsLabel.classList.remove("font-bold");
+    boardsLabel.classList.add("font-normal");
+  }
 }
 
 function activate(tab) {
   setAllThin();
 
   if (tab === "members") {
-    membersIcon.src = "images/help-tasks/icons/Members-Bold.svg";
-    membersLabel.classList.remove("font-normal");
-    membersLabel.classList.add("font-bold");
+    if (membersIcon) membersIcon.src = "/images/help-tasks/icons/Members-Bold.svg";
+    if (membersLabel) {
+      membersLabel.classList.remove("font-normal");
+      membersLabel.classList.add("font-bold");
+    }
   } else if (tab === "help") {
-    helpIcon.src = "images/help-tasks/icons/Help-Center-Bold.svg";
-    helpLabel.classList.remove("font-normal");
-    helpLabel.classList.add("font-bold");
+    if (helpIcon) helpIcon.src = "/images/help-tasks/icons/Help-Center-Bold.svg";
+    if (helpLabel) {
+      helpLabel.classList.remove("font-normal");
+      helpLabel.classList.add("font-bold");
+    }
   } else if (tab === "boards") {
-    boardsIcon.src = "images/help-tasks/icons/Boards-Bold.svg";
-    boardsLabel.classList.remove("font-normal");
-    boardsLabel.classList.add("font-bold");
+    if (boardsIcon) boardsIcon.src = "/images/help-tasks/icons/Boards-Bold.svg";
+    if (boardsLabel) {
+      boardsLabel.classList.remove("font-normal");
+      boardsLabel.classList.add("font-bold");
+    }
   }
 }
 

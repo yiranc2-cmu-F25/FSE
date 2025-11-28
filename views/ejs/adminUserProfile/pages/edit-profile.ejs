@@ -1,5 +1,8 @@
 <%- include('./../partials/userProfileLayoutHeader', {pageTitle: 'Edit User Profile'}) %>
 <%- include('./../partials/userProfileHeader') %>
+<%- include('./../partials/modals/base-modal') %>
+<%- include('./../partials/modals/success-content') %>
+<%- include('./../partials/modals/confirm-content') %>
 
 <form id="edit-profile-form" action="/admin/users/update" method="POST" class="px-8 py-4 flex flex-col gap-y-6">
     <div id="username-section" class="username_section flex flex-col gap-y-2">
@@ -122,6 +125,7 @@
   animation: wiggle 0.4s ease-in-out;
 }
 </style>
+<script src="/js/adminUserProfile/modalWorkflow.js"></script>
 <script src="/js/adminUserProfile/editProfileValidation.js"></script>
 
 

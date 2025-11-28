@@ -140,14 +140,14 @@ function setupRoutes() {
     // Mock data for member list
     const mockMembers = [
       { id: "u1", username: "Pikachu", status: "Active", privilege: "Administrator" },
-      { id: "u2", username: "Pikachu", status: "Active", privilege: "Administrator" },
-      { id: "u3", username: "Pikachu", status: "Active", privilege: "Coordinator" },
-      { id: "u4", username: "Pikachu", status: "Active", privilege: "Coordinator" },
-      { id: "u5", username: "Pikachu", status: "Inactive", privilege: "Coordinator" },
-      { id: "u6", username: "Pikachu", status: "Active", privilege: "Coordinator" },
-      { id: "u7", username: "Pikachu", status: "Active", privilege: "Citizen" },
-      { id: "u8", username: "Pikachu", status: "Inactive", privilege: "Citizen" },
-      { id: "u9", username: "Pikachu", status: "Active", privilege: "Citizen" },
+      { id: "u2", username: "Oteh", status: "Active", privilege: "Administrator" },
+      { id: "u3", username: "Sau", status: "Active", privilege: "Coordinator" },
+      { id: "u4", username: "Chimhu", status: "Active", privilege: "Coordinator" },
+      { id: "u5", username: "MMK", status: "Inactive", privilege: "Coordinator" },
+      { id: "u6", username: "Lilil", status: "Active", privilege: "Coordinator" },
+      { id: "u7", username: "Garen", status: "Active", privilege: "Citizen" },
+      { id: "u8", username: "Xia", status: "Inactive", privilege: "Citizen" },
+      { id: "u9", username: "Luo", status: "Active", privilege: "Citizen" },
     ];
 
     res.render('adminUserProfile/pages/member-list', { 
