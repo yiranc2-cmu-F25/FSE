@@ -19,11 +19,16 @@ export function makeGroupModel(conn) {
         timestamp: {
             type: Date,
             default: null
-        }
+        },
+        unreadBy: [{
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User"
+        }]
     });
 
     GroupSchema.index({ owner: 1 });
     GroupSchema.index({ members: 1 });
+    GroupSchema.index({ unreadBy: 1 });
 
     return conn.model("Group", GroupSchema);
 }

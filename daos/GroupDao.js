@@ -89,4 +89,22 @@ export class GroupDao {
         if (!group) return false;
         return String(group.owner) === String(userId);
     }
+
+    async markUnreadForAll(groupId, userIds) {
+        const result = await this.GroupModel.findByIdAndUpdate(
+            groupId,
+            { $addToSet: { unreadBy: { $each: userIds } } },
+            { new: true }
+        );
+        return result;
+    }
+
+    async clearUnreadForUser(groupId, userId) {
+        const result = await this.GroupModel.findByIdAndUpdate(
+            groupId,
+            { $pull: { unreadBy: userId } },
+            { new: true }
+        );
+        return result;
+    }
 }

@@ -859,6 +859,37 @@ async function addSelectedMembers() {
   }
 }
 
+// Mark group as read when user leaves the page
+function markGroupAsRead() {
+  if (!groupId) return;
+
+  const url = `/api/groups/${groupId}/read`;
+  const data = JSON.stringify({});
+
+  // Use sendBeacon for reliable delivery even when page is unloading
+  if (navigator.sendBeacon) {
+    const blob = new Blob([data], { type: "application/json" });
+    navigator.sendBeacon(url, blob);
+  } else {
+    // Fallback for browsers without sendBeacon
+    fetch(url, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: data,
+      keepalive: true,
+    }).catch(err => console.error("Failed to mark as read:", err));
+  }
+}
+
+// Mark as read when user leaves or hides the page
+window.addEventListener("beforeunload", markGroupAsRead);
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    markGroupAsRead();
+  }
+});
+
 // Initialize
 document.addEventListener("DOMContentLoaded", async () => {
   await loadCurrentUserStatus();
