@@ -226,6 +226,47 @@ export async function removeGroupMembers(req, res) {
 }
 
 /**
+ * Mark group as read for current user
+ * @route POST /api/groups/:groupId/read
+ */
+export async function markGroupAsRead(req, res) {
+  try {
+    const { groupId } = req.params;
+    const userId = normId(req.user?.id ?? req.userId);
+
+    const group = await Group.findById(groupId);
+    if (!group) {
+      return res.status(404).json({
+        status: "error",
+        message: "Group not found"
+      });
+    }
+
+    // Check if user is a member of the group
+    const isMember = await Group.isUserInGroup(groupId, userId);
+    if (!isMember) {
+      return res.status(403).json({
+        status: "error",
+        message: "You are not a member of this group"
+      });
+    }
+
+    // Clear unread status for this user
+    await Group.clearUnreadForUser(groupId, userId);
+
+    return res.status(200).json({
+      message: "Group marked as read"
+    });
+  } catch (err) {
+    console.error("Error marking group as read:", err);
+    return res.status(500).json({
+      status: "error",
+      message: "Server error"
+    });
+  }
+}
+
+/**
  * Get group details
  * @route GET /api/groups/:groupId
  */
@@ -353,11 +394,15 @@ export async function getGroupsList(req, res) {
       const memberUsernames = group.members.map(member => member.username);
       const allUsernames = [ownerUsername, ...memberUsernames];
 
+      // Check if current user has unread messages in this group
+      const hasUnread = group.unreadBy && group.unreadBy.some(id => normId(id) === userId);
+
       return {
         groupId: String(group._id),
         groupName: group.groupName,
         timestamp: group.timestamp,
-        usernames: allUsernames
+        usernames: allUsernames,
+        hasUnread: hasUnread || false
       };
     }));
 
@@ -473,6 +518,10 @@ export async function sendGroupMessage(req, res) {
 
     // Update group's timestamp to latest message timestamp
     await Group.updateTimestamp(groupId, msgTimestamp);
+
+    // Mark all group members as having unread messages
+    const allMemberIds = [normId(group.owner), ...group.members.map(m => normId(m))];
+    await Group.markUnreadForAll(groupId, allMemberIds);
 
     // Emit socket event to all group members
     const socketInstance = req.app?.get("socketInstance");

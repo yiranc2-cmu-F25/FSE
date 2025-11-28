@@ -10,7 +10,8 @@ export class inMemoryGroupDao {
             groupName,
             owner,
             members: members || [],
-            timestamp: null
+            timestamp: null,
+            unreadBy: []
         };
         this.groups.push(group);
         return group;
@@ -97,5 +98,37 @@ export class inMemoryGroupDao {
         const group = this.groups.find(g => String(g._id) === String(groupId));
         if (!group) return false;
         return String(group.owner) === String(userId);
+    }
+
+    async markUnreadForAll(groupId, userIds) {
+        const group = this.groups.find(g => String(g._id) === String(groupId));
+        if (!group) return null;
+
+        if (!group.unreadBy) {
+            group.unreadBy = [];
+        }
+
+        userIds.forEach(userId => {
+            if (!group.unreadBy.some(uid => String(uid) === String(userId))) {
+                group.unreadBy.push(userId);
+            }
+        });
+
+        return { ...group };
+    }
+
+    async clearUnreadForUser(groupId, userId) {
+        const group = this.groups.find(g => String(g._id) === String(groupId));
+        if (!group) return null;
+
+        if (!group.unreadBy) {
+            group.unreadBy = [];
+        }
+
+        group.unreadBy = group.unreadBy.filter(
+            uid => String(uid) !== String(userId)
+        );
+
+        return { ...group };
     }
 }

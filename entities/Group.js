@@ -56,6 +56,14 @@ class Group {
     static async isUserOwner(groupId, userId) {
         return await Group.DAO.isUserOwner(groupId, userId);
     }
+
+    static async markUnreadForAll(groupId, userIds) {
+        return await Group.DAO.markUnreadForAll(groupId, userIds);
+    }
+
+    static async clearUnreadForUser(groupId, userId) {
+        return await Group.DAO.clearUnreadForUser(groupId, userId);
+    }
 }
 
 export default Group;

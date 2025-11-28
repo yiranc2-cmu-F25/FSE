@@ -178,6 +178,7 @@
       </button>
 
       <p class="mb-2 mt-4 text-sm font-semibold text-stone-500">System Tools</p>
+      <% if (privilege === "admin") { %>
       <button
         id="speed-test-button"
         type="button"
@@ -230,6 +231,7 @@
           />
         </svg>
       </button>
+      <% } %>
 
       <button
         id="post-public-announcement-button"
@@ -263,37 +265,6 @@
       </button>
 
       <%- include('./feature-modal/help-tools/myTasks.ejs') %>
-
-      <button
-        id="help-groups-button"
-        type="button"
-        class="mb-6 flex w-full items-center justify-between rounded-2xl border border-stone-200 bg-white px-4 py-4 text-left shadow-sm hover:bg-stone-50"
-      >
-        <span class="flex items-center gap-3">
-          <span
-            class="grid h-10 w-10 place-content-center rounded-xl bg-stone-100"
-          >
-            <img
-              src = "/images/help-group/icon-groups.svg"
-              alt="Help Groups"
-              class="h-6 w-6 brightness-50"
-              />
-          </span>
-          <span class="text-base font-semibold">Help Groups</span>
-        </span>
-        <svg
-          viewBox="0 0 24 24"
-          class="h-5 w-5 stroke-stone-500"
-          fill="none"
-          stroke-width="2"
-        >
-          <path
-            d="M9 6l6 6-6 6"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          />
-        </svg>
-      </button>
 
       <p class="mb-2 mt-4 text-sm font-semibold text-stone-500">Help Center</p>
       <button

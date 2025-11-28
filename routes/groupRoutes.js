@@ -8,6 +8,7 @@ import {
   getGroupDetails,
   getGroupMessages,
   sendGroupMessage,
+  markGroupAsRead,
 } from "../controllers/groupChatController.js";
 import { auth } from "../middleware/JWT.js";
 
@@ -682,5 +683,39 @@ router.get("/:groupId/messages", auth, getGroupMessages);
  *                 message: { type: string, example: "Server error" }
  */
 router.post("/:groupId/messages", auth, sendGroupMessage);
+
+/**
+ * @openapi
+ * /api/groups/{groupId}/read:
+ *   post:
+ *     tags: [Groups]
+ *     summary: Mark group as read
+ *     description: Clears unread message status for the current user in the specified group
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: groupId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID of the group to mark as read
+ *     responses:
+ *       200:
+ *         description: Group marked as read successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message: { type: string, example: "Group marked as read" }
+ *       403:
+ *         description: Forbidden - user is not a member of the group
+ *       404:
+ *         description: Group not found
+ *       500:
+ *         description: Server error
+ */
+router.post("/:groupId/read", auth, markGroupAsRead);
 
 export default router;
