@@ -5,6 +5,7 @@ import userDac from "../dacs/userDac.js";
 import { inMemoryAnnouncementDao } from "../daos/inMemoryAnnouncementDao.js";
 import { inMemoryUserDao } from "../daos/inMemoryUserDao.js";
 import { getAnnouncements, postAnnouncement } from "../controllers/announcementController.js";
+import { USER_ROLE } from "../constants/userRole.js";
 
 const BASE_ANNOUNCEMENT_PROPS = Object.freeze({
   sender: "1",
@@ -454,6 +455,8 @@ describe("Announcement API status codes", () => {
       const user = new User(userProps);
       await user.create();
       const foundUser = await User.findByUsername(userProps.username);
+      // Update user role to COORDINATOR so they can post announcements
+      await User.updateRoleById(foundUser.id || foundUser._id, USER_ROLE.COORDINATOR);
 
       // Mock socket instance
       let emitCalled = false;
@@ -476,6 +479,11 @@ describe("Announcement API status codes", () => {
           timestamp: new Date().toISOString(),
         },
         app: mockApp,
+        user: {
+          id: foundUser.id,
+          role: USER_ROLE.COORDINATOR,
+        },
+        role: USER_ROLE.COORDINATOR,
       };
       const res = {
         status(code) {
@@ -501,6 +509,8 @@ describe("Announcement API status codes", () => {
       const user = new User(userProps);
       await user.create();
       const foundUser = await User.findByUsername(userProps.username);
+      // Update user role to COORDINATOR so they can post announcements
+      await User.updateRoleById(foundUser.id || foundUser._id, USER_ROLE.COORDINATOR);
 
       // Don't set socket instance
       mockApp.set("socketInstance", null);
@@ -515,6 +525,11 @@ describe("Announcement API status codes", () => {
           timestamp: new Date().toISOString(),
         },
         app: mockApp,
+        user: {
+          id: foundUser.id,
+          role: USER_ROLE.COORDINATOR,
+        },
+        role: USER_ROLE.COORDINATOR,
       };
       const res = {
         status(code) {
@@ -542,6 +557,8 @@ describe("Announcement API status codes", () => {
       const user = new User(userProps);
       await user.create();
       const foundUser = await User.findByUsername(userProps.username);
+      // Update user role to COORDINATOR so they can post announcements
+      await User.updateRoleById(foundUser.id || foundUser._id, USER_ROLE.COORDINATOR);
 
       const mockSocket = {
         emitMessageFrom() {},
@@ -564,6 +581,11 @@ describe("Announcement API status codes", () => {
           timestamp: new Date().toISOString(),
         },
         app: mockApp,
+        user: {
+          id: foundUser.id,
+          role: USER_ROLE.COORDINATOR,
+        },
+        role: USER_ROLE.COORDINATOR,
       };
       const res = {
         status(code) {
@@ -594,6 +616,8 @@ describe("Announcement API status codes", () => {
       const user = new User(userProps);
       await user.create();
       const foundUser = await User.findByUsername(userProps.username);
+      // Update user role to COORDINATOR so they can post announcements
+      await User.updateRoleById(foundUser.id || foundUser._id, USER_ROLE.COORDINATOR);
 
       const mockSocket = {
         emitMessageFrom() {},
@@ -616,6 +640,11 @@ describe("Announcement API status codes", () => {
           timestamp: new Date().toISOString(),
         },
         app: mockApp,
+        user: {
+          id: foundUser.id,
+          role: USER_ROLE.COORDINATOR,
+        },
+        role: USER_ROLE.COORDINATOR,
       };
       const res = {
         status(code) {
@@ -646,6 +675,8 @@ describe("Announcement API status codes", () => {
       const user = new User(userProps);
       await user.create();
       const foundUser = await User.findByUsername(userProps.username);
+      // Update user role to COORDINATOR so they can post announcements
+      await User.updateRoleById(foundUser.id || foundUser._id, USER_ROLE.COORDINATOR);
 
       // Mock socket instance
       let emitCalled = false;
@@ -672,6 +703,11 @@ describe("Announcement API status codes", () => {
           timestamp: timestamp,
         },
         app: mockApp,
+        user: {
+          id: foundUser.id,
+          role: USER_ROLE.COORDINATOR,
+        },
+        role: USER_ROLE.COORDINATOR,
       };
       const res = {
         status(code) {
@@ -706,6 +742,8 @@ describe("Announcement API status codes", () => {
       const user = new User(userProps);
       await user.create();
       const foundUser = await User.findByUsername(userProps.username);
+      // Update user role to COORDINATOR so they can post announcements
+      await User.updateRoleById(foundUser.id || foundUser._id, USER_ROLE.COORDINATOR);
 
       const mockSocket = {
         emitMessageFrom() {},
@@ -724,6 +762,11 @@ describe("Announcement API status codes", () => {
           timestamp: new Date().toISOString(),
         },
         app: mockApp,
+        user: {
+          id: foundUser.id,
+          role: USER_ROLE.COORDINATOR,
+        },
+        role: USER_ROLE.COORDINATOR,
       };
       const res = {
         status(code) {
@@ -751,6 +794,8 @@ describe("Announcement API status codes", () => {
       const user = new User(userProps);
       await user.create();
       const foundUser = await User.findByUsername(userProps.username);
+      // Update user role to COORDINATOR so they can post announcements
+      await User.updateRoleById(foundUser.id || foundUser._id, USER_ROLE.COORDINATOR);
 
       const mockSocket = {
         emitMessageFrom() {},
@@ -767,6 +812,11 @@ describe("Announcement API status codes", () => {
           timestamp: new Date().toISOString(),
         },
         app: mockApp,
+        user: {
+          id: foundUser.id,
+          role: USER_ROLE.COORDINATOR,
+        },
+        role: USER_ROLE.COORDINATOR,
       };
       const res = {
         status(code) {

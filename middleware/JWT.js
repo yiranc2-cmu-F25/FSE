@@ -22,7 +22,8 @@ export function auth(req, res, next) {
         const userId = String(payload.userId ?? payload.sub ?? "");
         req.username = payload.username;
         req.userId = userId;
-        req.user = { id: userId, username: payload.username };
+        req.role = payload.role;
+        req.user = { id: userId, username: payload.username, role: payload.role };
         next();
     } catch (err){
         return res.status(403).json({ error: "Forbidden", reason: err.name });
@@ -39,17 +40,18 @@ export function authView(req, res, next) {
     const userId = String(payload.userId ?? payload.sub ?? "");
     req.username = payload.username;
     req.userId = userId;
-    req.user = { id: userId, username: payload.username };
+    req.role = payload.role;
+    req.user = { id: userId, username: payload.username, role: payload.role };
     next();
   } catch (err) {
     return res.redirect("/");
   }
 }
 
-export function setAuthCookie(res, userId, username, expiresInHr) {
+export function setAuthCookie(res, userId, username, role, expiresInHr) {
     const expiresIn = `${expiresInHr}h`;
     const token = jwt.sign(
-        { userId: String(userId), username },
+        { userId: String(userId), username, role },
         JWT_SECRET,
         { expiresIn }
     );
@@ -88,7 +90,8 @@ export function optionalAuth(req, res, next) {
         const userId = String(payload.userId ?? payload.sub ?? "");
         req.username = payload.username;
         req.userId = userId;
-        req.user = { id: userId, username: payload.username };
+        req.role = payload.role;
+        req.user = { id: userId, username: payload.username, role: payload.role };
     } catch (err) {
         // Invalid token, continue without user info
         // Don't set req.userId

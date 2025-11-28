@@ -1,6 +1,7 @@
 import { isUsernameValid, isPasswordValid } from "../utils/validators.js";
 import { setAuthCookie, clearAuthCookie } from "../middleware/JWT.js";
 import User from "../entities/User.js";
+import { USER_ROLE } from "../constants/userRole.js";
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -22,7 +23,11 @@ export async function register(req, res) {
 			return res.status(500).json({ error: "register_failed_no_id" });
 		}
 
-		setAuthCookie(res, userId, username, EXPIRATION_TIME);
+		// Get user role from database (new users default to CITIZEN)
+		const userObj = created.toObject ? created.toObject() : created;
+		const role = userObj.role || USER_ROLE.CITIZEN;
+
+		setAuthCookie(res, userId, username, role, EXPIRATION_TIME);
 		return res.status(201).json({
 			message: "User successfully registered",
 			username
