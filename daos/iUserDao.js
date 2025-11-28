@@ -39,7 +39,7 @@ export class iUserDao {
         throw new Error("To be implemented!");
     }
 
-    async updatePrivilegeLevelById(id, newPrivilegeLevel) {
+    async updateRoleById(id, newRole) {
         throw new Error("To be implemented!");
     }
 
@@ -67,7 +67,7 @@ export class iUserDao {
         throw new Error("To be implemented!");
     }
 
-    async getPrivilegeLevelById(id) {
+    async getRoleById(id) {
         throw new Error("To be implemented!");
     }
 }

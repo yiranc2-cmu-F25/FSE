@@ -130,6 +130,14 @@ export async function updatePersonalEmergencyProfilePhoto(req, res) {
         const contentType = photoFile.mimetype || 'image/jpeg';
         const visibility = req.body.visibility || 'emergencyOnly';
 
+        console.log(`[updatePersonalEmergencyProfilePhoto] Uploading photo:`, {
+            profileId: String(profileId),
+            contentType: contentType,
+            mimetype: photoFile.mimetype,
+            size: photoFile.size,
+            originalname: photoFile.originalname
+        });
+
         const photo = new ProfilePhoto({
             profileId, // This is the EmergencyProfile's _id
             photoData,

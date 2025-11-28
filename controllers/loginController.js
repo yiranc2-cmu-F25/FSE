@@ -24,7 +24,11 @@ export async function login(req, res) {
       return res.status(500).json({ error: "login_failed_no_user_id" });
     }
     
-    setAuthCookie(res, userId, username, EXPIRATION_TIME);
+    // Get user role from database (only during login)
+    const userObj = user.toObject ? user.toObject() : user;
+    const role = userObj.role;
+    
+    setAuthCookie(res, userId, username, role, EXPIRATION_TIME);
     return res.json({ username: username, ok: true });
   } catch (err) {
     console.error("Login error:", err);

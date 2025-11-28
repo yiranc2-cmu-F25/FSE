@@ -25,7 +25,7 @@ function renderInfo() {
 const root = document.querySelector("#esn-status");
 if (!root) throw new Error("Missing #esn-status");
 
-let currentStatus = (root.dataset.default || "UNDEFINED").toUpperCase();
+let currentStatus = (root.dataset.default || "UNDEFINED").toLowerCase();
 
 const tabs = [...root.querySelectorAll(".status-tab")];
 
@@ -38,7 +38,7 @@ function clearActive() {
 function setActive(status) {
   clearActive();
   const selected = tabs.find(
-    (tab) => (tab.dataset.status || "UNDEFINED").toUpperCase() === status,
+    (tab) => (tab.dataset.status || "UNDEFINED").toLowerCase() === status,
   );
   if (selected) selected.classList.add("active");
 }
@@ -47,7 +47,7 @@ function attachClickHandlers() {
   // attach click handlers
   tabs.forEach((btn) => {
     btn.addEventListener("click", () => {
-      currentStatus = (btn.dataset.status || "UNDEFINED").toUpperCase();
+      currentStatus = (btn.dataset.status || "UNDEFINED").toLowerCase();
       console.log("new status", currentStatus);
       setActive(currentStatus);
     });

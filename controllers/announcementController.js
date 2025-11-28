@@ -1,5 +1,6 @@
 import User from "../entities/User.js";
 import Announcement from "../entities/Announcement.js";
+import { USER_ROLE } from "../constants/userRole.js";
 
 
 export async function getAnnouncements(req, res) {
@@ -26,6 +27,23 @@ export async function postAnnouncement(req, res) {
 
     try {
         const { sender, content, status, timestamp } = req.body;
+        
+        // Get role from JWT token (set by auth middleware) instead of querying database
+        const role = req.user?.role || req.role;
+        
+        if (!role) {
+            return res.status(401).json({ status: "error", message: "User role not found" });
+        }
+        
+        if(role === USER_ROLE.CITIZEN) {
+            return res.status(403).json({ status: "error", message: "You are not authorized to post announcements" });
+        }
+        
+        // Verify sender matches current user (security check)
+        if (sender !== req.user.id) {
+            return res.status(403).json({ status: "error", message: "You can only post announcements as yourself" });
+        }
+        
         const announcement = new Announcement({ sender, content: content.trim(), status:status.toLowerCase(), timestamp });
         console.log("Creating announcement:", announcement);
 

@@ -37,7 +37,7 @@ function setupUserInfo() {
 
       statusUpdate(user.status);
 
-      if (ui.statusText) ui.statusText.textContent = user.status ?? "UNDEFINED";
+      if (ui.statusText) ui.statusText.textContent = user.status.toUpperCase() ?? "UNDEFINED";
       if (ui.avatarColor)
         ui.avatarColor.style.backgroundColor = getAvatarColor(name);
       if (ui.avatarInit) ui.avatarInit.textContent = getInitialsSafe(name);

@@ -60,8 +60,28 @@ class User {
         await User.DAO.updateSkillsById(id, skills);
     }
 
-    static async getPrivilegeLevelById(id) {
-        return await User.DAO.getPrivilegeLevelById(id);
+    static async getInactiveUsers() {
+        return await User.DAO.getInactiveUsers();
+    }
+
+    static async updateAccountStatusById(id, newStatus) {
+        await User.DAO.updateAccountStatusById(id, newStatus);
+    }
+
+    static async updateRoleById(id, newRole) {
+        await User.DAO.updateRoleById(id, newRole);
+    }
+
+    static async updateUsernameById(id, newUsername) {
+        await User.DAO.updateUsernameById(id, newUsername);
+    }
+
+    static async updatePasswordById(id, newPassword) {
+        await User.DAO.updatePasswordById(id, newPassword);
+    }
+
+    static async usernameExists(username, excludeUserId = null) {
+        return await User.DAO.usernameExists(username, excludeUserId);
     }
 }
 

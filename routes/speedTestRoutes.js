@@ -1,6 +1,5 @@
 import { Router } from "express";
 import { auth, authView } from "../middleware/JWT.js";
-import { requireAdmin } from "../middleware/privilegeCheck.js";
 import {
   getFromSpeedTest,
   getSpeedTestStatus,
@@ -9,6 +8,7 @@ import {
   stopSpeedTest,
   switchTestPhase,
 } from "./../controllers/speedTestController.js";
+import { requireAdmin } from "../controllers/administratorProfileController.js";
 import { PRIVILEGE_LEVEL } from "../constants/privilegeLevel.js";
 const router = Router();
 
@@ -35,7 +35,7 @@ const router = Router();
  *       500:
  *         description: Server error
  */
-router.post("/start", auth, startSpeedTest);
+router.post("/start", auth, requireAdmin, startSpeedTest);
 
 /**
  * @openapi
@@ -64,7 +64,7 @@ router.post("/start", auth, startSpeedTest);
  *       500:
  *         description: Server error
  */
-router.post("/messages", auth, postToSpeedTest);
+router.post("/messages", auth, requireAdmin, postToSpeedTest);
 
 /**
  * @openapi
@@ -107,7 +107,7 @@ router.post("/messages", auth, postToSpeedTest);
  *       500:
  *         description: Server error
  */
-router.get("/messages", auth, getFromSpeedTest);
+router.get("/messages", auth, requireAdmin, getFromSpeedTest);
 
 /**
  * @openapi
@@ -126,7 +126,7 @@ router.get("/messages", auth, getFromSpeedTest);
  *       500:
  *         description: Server error
  */
-router.post("/next-phase", auth, switchTestPhase);
+router.post("/next-phase", auth, requireAdmin, switchTestPhase);
 
 /**
  * @openapi
@@ -151,7 +151,7 @@ router.post("/next-phase", auth, switchTestPhase);
  *       500:
  *         description: Server error
  */
-router.post("/stop", auth, stopSpeedTest);
+router.post("/stop", auth, requireAdmin, stopSpeedTest);
 
 /**
  * @openapi
@@ -181,17 +181,17 @@ router.post("/stop", auth, stopSpeedTest);
  *       500:
  *         description: Server error
  */
-router.get("/status", auth, getSpeedTestStatus);
+router.get("/status", auth, requireAdmin, getSpeedTestStatus);
 
-router.get("/", authView, requireAdmin, (req, res) => {
-  if (req.privilege !== PRIVILEGE_LEVEL.ADMIN) {
+router.get("/", authView, (req, res) => {
+  if (req.role !== PRIVILEGE_LEVEL.ADMIN) {
     return res.render("errorPages/403-forbidden");
   }
   res.render("speedTest/speedTestBegin", { username: req.username || "" });
 });
 
-router.get("/reports", authView, requireAdmin, (req, res) => {
-  if (req.privilege !== PRIVILEGE_LEVEL.ADMIN) {
+router.get("/reports", authView, (req, res) => {
+  if (req.role !== PRIVILEGE_LEVEL.ADMIN) {
     return res.render("errorPages/403-forbidden");
   }
   res.render("speedTest/speedTestReport", { username: req.username || "" });
