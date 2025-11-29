@@ -131,6 +131,7 @@
 
                 <!-- Column Headers -->
                 <div class="flex items-center gap-0.5 mb-4 px-1">
+                    <div class="w-12"></div>
                     <button type="button" class="member-sort-header flex-1 text-center px-1 py-2 rounded-xl bg-stone-50 text-sm font-semibold text-stone-700  transition pointer-events-none" data-sort="username">
                         User Name
                     </button>
@@ -146,7 +147,44 @@
                 <div class="space-y-2" id="member-list-items">
                     <% if (typeof members !== 'undefined' && Array.isArray(members) && members.length > 0) { %>
                         <% members.forEach(function(member) { %>
+                            <% 
+                                // Calculate avatar initials (simple version for EJS)
+                                let initials = '?';
+                                if (member.username) {
+                                    const parts = member.username.trim().split(/\s+/);
+                                    if (parts.length >= 2) {
+                                        initials = (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+                                    } else if (member.username.length >= 2) {
+                                        initials = member.username.substring(0, 2).toUpperCase();
+                                    } else if (member.username.length === 1) {
+                                        initials = member.username.toUpperCase();
+                                    }
+                                }
+                                
+                                // Calculate avatar color (simple hash for EJS)
+                                const colors = ['#148ADE', '#2EA328', '#A32828', '#28A38A', '#2870A3', '#A34D28', '#284FA3', '#7D28A3', '#D9463E', '#4A9F82', '#CC3FAA'];
+                                let avatarColor = colors[0];
+                                if (member.username) {
+                                    const charIndex = member.username.charCodeAt(0) + (member.username.length > 1 ? member.username.charCodeAt(member.username.length - 1) : 0);
+                                    avatarColor = colors[charIndex % colors.length];
+                                }
+                                
+                                // Determine ring class based on privilege
+                                let ringClass = '';
+                                if (member.privilege === 'Administrator') {
+                                    ringClass = 'ring-4 ring-pink-400';
+                                } else if (member.privilege === 'Coordinator') {
+                                    ringClass = 'ring-4 ring-yellow-400';
+                                }
+                                // Citizen has no ring (empty string)
+                            %>
                             <a href="/admin/users/<%= member.id %>/edit" class="member-item flex items-center gap-4 px-2 py-3 rounded-xl hover:bg-stone-50 transition cursor-pointer" data-member-id="<%= member.id %>">
+                                <!-- Avatar -->
+                                <div class="w-12 flex items-center justify-center">
+                                    <div class="grid h-10 w-10 place-content-center rounded-full text-xs font-bold text-white shadow-md <%= ringClass %>" style="background-color: <%= avatarColor %>">
+                                        <span class="member-avatar-initials"><%= initials %></span>
+                                    </div>
+                                </div>
                                 <div class="flex-1 flex items-center justify-center text-sm font-medium text-stone-900">
                                     <%= member.username %>
                                 </div>

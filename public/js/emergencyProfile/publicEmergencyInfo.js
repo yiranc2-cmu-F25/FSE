@@ -47,9 +47,34 @@ function setupUserInfo() {
       
       currentUser = await loadInfo();
       const name = (currentUser.username || "").trim();
+      const role = currentUser.role || "";
+
+      function getPrivilegeRingClass(role) {
+        if (!role) return "";
+        const roleLower = role.toLowerCase();
+        if (roleLower === "admin" || roleLower === "administrator") {
+          return "ring-4 ring-pink-400";
+        }
+        if (roleLower === "coordinator") {
+          return "ring-4 ring-yellow-400";
+        }
+        return ""; // Citizen has no ring
+      }
 
       statusUpdate(currentUser.status);
-      if (ui.avatarColor) ui.avatarColor.style.backgroundColor = getAvatarColor(name);
+      if (ui.avatarColor) {
+        ui.avatarColor.style.backgroundColor = getAvatarColor(name);
+        const ringClass = getPrivilegeRingClass(role);
+        // Remove existing ring classes
+        ui.avatarColor.classList.remove("ring-2", "ring-4", "ring-pink-400", "ring-yellow-400", "ring-white");
+        // Add new ring class if provided
+        if (ringClass) {
+          const ringClasses = ringClass.split(" ");
+          ringClasses.forEach((cls) => {
+            if (cls) ui.avatarColor.classList.add(cls);
+          });
+        }
+      }
       if (ui.avatarInit) ui.avatarInit.textContent = getInitialsSafe(name);
       
       setupStatusListener();

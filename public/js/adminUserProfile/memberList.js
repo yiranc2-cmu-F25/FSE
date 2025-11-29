@@ -4,6 +4,8 @@
  * Sorting by: privilege level (default) or account status
  */
 
+import { getInitialsSafe, getAvatarColor } from "../utils/avatars.js";
+
 // Fallback to window.__MEMBERS__ if available
 let members = Array.isArray(window.__MEMBERS__) ? window.__MEMBERS__ : [];
 
@@ -92,6 +94,12 @@ function getPrivilegeDisplay(privilege) {
   return "CITIZEN";
 }
 
+function getPrivilegeRingClass(privilege) {
+  if (privilege === "Administrator") return "ring-4 ring-pink-400";
+  if (privilege === "Coordinator") return "ring-4 ring-yellow-400";
+  return ""; // Citizen has no ring
+}
+
 function renderMemberList(items) {
   if (!listContainer) return;
 
@@ -106,12 +114,24 @@ function renderMemberList(items) {
       const privilegeClass = getPrivilegeClass(member.privilege);
       const statusClass = getStatusClass(member.status);
       const privilegeDisplay = getPrivilegeDisplay(member.privilege);
+      const ringClass = getPrivilegeRingClass(member.privilege);
       const href = `/admin/users/${member.id}/edit`;
+      
+      // Calculate avatar color and initials using the shared utility functions
+      const username = member.username || "Unknown";
+      const avatarColor = getAvatarColor(username);
+      const initials = getInitialsSafe(username);
 
       return `
         <a href="${href}" class="member-item flex items-center gap-4 px-2 py-3 rounded-xl hover:bg-stone-50 transition cursor-pointer" data-member-id="${member.id}">
+          <!-- Avatar -->
+          <div class="w-12 flex items-center justify-center">
+            <div class="grid h-10 w-10 place-content-center rounded-full text-xs font-bold text-white shadow-md ${ringClass}" style="background-color: ${avatarColor}">
+              <span class="member-avatar-initials">${initials}</span>
+            </div>
+          </div>
           <div class="flex-1 flex items-center justify-center text-sm font-medium text-stone-900">
-            ${member.username || "Unknown"}
+            ${username}
           </div>
           <div class="flex-1 flex items-center justify-center">
             <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold uppercase ${statusClass}">
@@ -183,9 +203,10 @@ function initializeMembersFromDOM() {
   const memberItems = listContainer.querySelectorAll(".member-item");
   members = Array.from(memberItems).map((item) => {
     const memberId = item.dataset.memberId;
-    const usernameEl = item.querySelector(".flex-1:first-child");
-    const statusEl = item.querySelector(".flex-1:nth-child(2) span");
-    const privilegeEl = item.querySelector(".flex-1:nth-child(3) span");
+    // Updated selectors to account for avatar column
+    const usernameEl = item.querySelector(".flex-1:nth-child(2)");
+    const statusEl = item.querySelector(".flex-1:nth-child(3) span");
+    const privilegeEl = item.querySelector(".flex-1:nth-child(4) span");
 
     // Extract status from class or text
     let status = "Inactive";
