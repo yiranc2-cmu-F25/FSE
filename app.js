@@ -25,6 +25,10 @@ import swaggerUi from "swagger-ui-express";
 import swaggerSpec from "./config/swagger/swaggerConfig.js";
 import { blockWhenSpeedTest } from "./middleware/blockWhenSpeedTest.js";
 import taskRoutes from "./routes/taskRoutes.js";
+import { authView } from "./middleware/JWT.js";
+import User from "./entities/User.js";
+import { USER_ROLE } from "./constants/userRole.js";
+import { USER_STATUS } from "./constants/userStatus.js";
 
 
 const __filename = fileURLToPath(import.meta.url);
@@ -135,40 +139,127 @@ function setupRoutes() {
   // Non-API Routes
   app.use("/speed-test", speedTestRoutes); // Speed Test Routes
   
-  // Admin User Profile Pages - must be before pageRoutes to avoid 404
-  app.get('/admin/users', (req, res) => {
-    // Mock data for member list
-    const mockMembers = [
-      { id: "u1", username: "Pikachu", status: "Active", privilege: "Administrator" },
-      { id: "u2", username: "Oteh", status: "Active", privilege: "Administrator" },
-      { id: "u3", username: "Sau", status: "Active", privilege: "Coordinator" },
-      { id: "u4", username: "Chimhu", status: "Active", privilege: "Coordinator" },
-      { id: "u5", username: "MMK", status: "Inactive", privilege: "Coordinator" },
-      { id: "u6", username: "Lilil", status: "Active", privilege: "Coordinator" },
-      { id: "u7", username: "Garen", status: "Active", privilege: "Citizen" },
-      { id: "u8", username: "Xia", status: "Inactive", privilege: "Citizen" },
-      { id: "u9", username: "Luo", status: "Active", privilege: "Citizen" },
-    ];
+  // Helper function to map backend role to frontend privilege
+  function mapRoleToPrivilege(role) {
+    if (role === USER_ROLE.ADMIN) return "Administrator";
+    if (role === USER_ROLE.COORDINATOR) return "Coordinator";
+    if (role === USER_ROLE.CITIZEN) return "Citizen";
+    return "Citizen"; // default
+  }
 
-    res.render('adminUserProfile/pages/member-list', { 
-        members: mockMembers,
-        pageTitle: 'Administer User Profile'
-    });
+  // Helper function to map backend status to frontend status
+  function mapStatusToDisplay(status) {
+    if (status === USER_STATUS.ACTIVE) return "Active";
+    if (status === USER_STATUS.INACTIVE) return "Inactive";
+    return "Inactive"; // default
+  }
+
+  // Helper function to map frontend privilege to backend role
+  function mapPrivilegeToRole(privilege) {
+    if (privilege === "Administrator") return USER_ROLE.ADMIN;
+    if (privilege === "Coordinator") return USER_ROLE.COORDINATOR;
+    if (privilege === "Citizen") return USER_ROLE.CITIZEN;
+    return USER_ROLE.CITIZEN; // default
+  }
+
+  // Helper function to map frontend status to backend status
+  function mapDisplayToStatus(status) {
+    if (status === "Active") return USER_STATUS.ACTIVE;
+    if (status === "Inactive") return USER_STATUS.INACTIVE;
+    return USER_STATUS.INACTIVE; // default
+  }
+
+  // Admin User Profile Pages - must be before pageRoutes to avoid 404
+  app.get('/admin/users', authView, async (req, res) => {
+    try {
+      // Fetch current user from database to get up-to-date role (not from JWT)
+      const currentUser = await User.findById(req.userId);
+      if (!currentUser) {
+        return res.status(401).redirect("/");
+      }
+
+      // Check if user is admin (from database, not JWT)
+      const currentUserObj = currentUser.toObject ? currentUser.toObject() : currentUser;
+      if (currentUserObj.role !== USER_ROLE.ADMIN) {
+        return res.status(403).render('errorPages/404-pageNotFound');
+      }
+
+      // Fetch users directly from database (same logic as controller)
+      const activeUsers = await User.getAllUsers();
+      const inactiveUsers = await User.getInactiveUsers();
+      const allUsers = [...activeUsers, ...inactiveUsers];
+
+      // Map backend format to frontend format
+      const members = allUsers.map(user => {
+        const userObj = user.toObject ? user.toObject() : user;
+        return {
+          id: String(userObj._id || userObj.id),
+          username: userObj.username,
+          status: mapStatusToDisplay(userObj.status),
+          privilege: mapRoleToPrivilege(userObj.role)
+        };
+      });
+
+      res.render('adminUserProfile/pages/member-list', { 
+        members: members,
+        pageTitle: 'Administer User Profile',
+        privilege: currentUserObj.role, // Pass current user's role (lowercase: "admin", "coordinator", "citizen")
+        username: currentUserObj.username // Pass current user's username for websocket authentication
+      });
+    } catch (err) {
+      console.error("Error fetching users for admin page:", err);
+      res.render('adminUserProfile/pages/member-list', { 
+        members: [],
+        pageTitle: 'Administer User Profile',
+        privilege: "citizen", // Default fallback
+        username: req.username || "" // Fallback to JWT username
+      });
+    }
   });
 
-  app.get('/admin/users/:id/edit', (req, res) => {
-    const dummyUserFromDB = {
-        id: "u123",
-        username: "Pikachu",
-        passwordHash: "********", 
-        privilege: "Administrator", 
-        status: "Active"            
-    };
+  app.get('/admin/users/:id/edit', authView, async (req, res) => {
+    try {
+      // Fetch current user from database to get up-to-date role (not from JWT)
+      const currentUser = await User.findById(req.userId);
+      if (!currentUser) {
+        return res.status(401).redirect("/");
+      }
 
-    res.render('adminUserProfile/pages/edit-profile', { 
-        user: dummyUserFromDB,
-        pageTitle: 'Edit User Profile'
-    });
+      // Check if current user is admin (from database, not JWT)
+      const currentUserObj = currentUser.toObject ? currentUser.toObject() : currentUser;
+      if (currentUserObj.role !== USER_ROLE.ADMIN) {
+        return res.status(403).render('errorPages/404-pageNotFound');
+      }
+
+      const userId = req.params.id;
+      
+      // Fetch user from database
+      const user = await User.findById(userId);
+      
+      if (!user) {
+        return res.status(404).render('errorPages/404-pageNotFound');
+      }
+
+      // Map backend format to frontend format
+      const userObj = user.toObject ? user.toObject() : user;
+      const frontendUser = {
+        id: String(userObj._id || userObj.id),
+        username: userObj.username,
+        passwordHash: "********", // Don't expose real password hash
+        privilege: mapRoleToPrivilege(userObj.role),
+        status: mapStatusToDisplay(userObj.status)
+      };
+
+      res.render('adminUserProfile/pages/edit-profile', { 
+        user: frontendUser,
+        pageTitle: 'Edit User Profile',
+        privilege: currentUserObj.role, // Pass current user's role (lowercase: "admin", "coordinator", "citizen")
+        username: currentUserObj.username // Pass current user's username for websocket authentication
+      });
+    } catch (err) {
+      console.error("Error fetching user for edit page:", err);
+      res.status(500).render('errorPages/404-pageNotFound');
+    }
   });
   
   app.use("/", pageRoutes); // All routes for separate pages e.g. public chat wall

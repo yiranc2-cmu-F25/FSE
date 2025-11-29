@@ -44,14 +44,30 @@ function setupPublicChatRoutes() {
 }
 
 function setupLoginRoutes() {
-    router.get("/members", authView, (req, res) => {
-        res.render("memberList/membersLanding", {
-            username: req.username || "",
-            currentUserId: req.userId,
-            searchMode: "all",
-            searchMembers: true,
-            privilege: req.role
-        });
+    router.get("/members", authView, async (req, res) => {
+        try {
+            // Fetch current user from database to get up-to-date role (not from JWT)
+            const User = (await import("../entities/User.js")).default;
+            const currentUser = await User.findById(req.userId);
+            const currentUserObj = currentUser?.toObject ? currentUser.toObject() : currentUser;
+            
+            res.render("memberList/membersLanding", {
+                username: currentUserObj?.username || req.username || "",
+                currentUserId: req.userId,
+                searchMode: "all",
+                searchMembers: true,
+                privilege: currentUserObj?.role || req.role || "citizen" // Use database role, fallback to JWT
+            });
+        } catch (err) {
+            console.error("Error fetching user for members page:", err);
+            res.render("memberList/membersLanding", {
+                username: req.username || "",
+                currentUserId: req.userId,
+                searchMode: "all",
+                searchMembers: true,
+                privilege: req.role || "citizen"
+            });
+        }
     });
 }
 
@@ -131,80 +147,127 @@ function setupHelpCenterRoutes() {
 function setupESNHelpCenterRoutes() {
   console.log("Setting up ESN Help Center Routes...");
   router.get("/esn-help-center", optionalAuth, async (req, res) => {
-    const allTasks = Array.isArray(helpCenterConfig.highlightedTasks)
-      ? helpCenterConfig.highlightedTasks
-      : [];
+    try {
+      const allTasks = Array.isArray(helpCenterConfig.highlightedTasks)
+        ? helpCenterConfig.highlightedTasks
+        : [];
 
-    // Only tasks where joinedCount < capacity, take latest 5
-    const highlightedTasks = allTasks
-      .filter((t) => t.joinedCount < t.capacity)
-      .slice(0, 5);
-    const taskListMeta = helpCenterConfig.taskListMeta || {};
-    
-    // Get current user ID if authenticated
-    const currentUserId = req.userId || req.user?.id || null;
-    
-    // Get participant count for the badge (only if user is authenticated)
-    let participantCount = 0;
-    if (currentUserId) {
-      try {
-        const Task = (await import("../entities/Task.js")).default;
-        participantCount = await Task.countTasksByParticipant(currentUserId, {});
-      } catch (error) {
-        console.error("Error fetching participant count:", error);
-        // Use default value 0 on error
+      // Only tasks where joinedCount < capacity, take latest 5
+      const highlightedTasks = allTasks
+        .filter((t) => t.joinedCount < t.capacity)
+        .slice(0, 5);
+      const taskListMeta = helpCenterConfig.taskListMeta || {};
+      
+      // Get current user ID if authenticated
+      const currentUserId = req.userId || req.user?.id || null;
+      
+      // Fetch current user from database to get up-to-date role (not from JWT)
+      let privilege = req.role || "citizen";
+      let username = req.username || "";
+      if (currentUserId) {
+        try {
+          const User = (await import("../entities/User.js")).default;
+          const currentUser = await User.findById(currentUserId);
+          if (currentUser) {
+            const currentUserObj = currentUser.toObject ? currentUser.toObject() : currentUser;
+            privilege = currentUserObj.role || privilege;
+            username = currentUserObj.username || username;
+          }
+        } catch (error) {
+          console.error("Error fetching user for ESN Help Center:", error);
+        }
       }
-    }
-    
-    // Update hero config with participant count
-    const heroWithCount = {
-      ...helpCenterConfig.hero,
-      navButtons: {
-        ...helpCenterConfig.hero.navButtons,
-        joinedTasks: {
-          ...helpCenterConfig.hero.navButtons.joinedTasks,
-          activeCount: participantCount,
+      
+      // Get participant count for the badge (only if user is authenticated)
+      let participantCount = 0;
+      if (currentUserId) {
+        try {
+          const Task = (await import("../entities/Task.js")).default;
+          participantCount = await Task.countTasksByParticipant(currentUserId, {});
+        } catch (error) {
+          console.error("Error fetching participant count:", error);
+          // Use default value 0 on error
+        }
+      }
+      
+      // Update hero config with participant count
+      const heroWithCount = {
+        ...helpCenterConfig.hero,
+        navButtons: {
+          ...helpCenterConfig.hero.navButtons,
+          joinedTasks: {
+            ...helpCenterConfig.hero.navButtons.joinedTasks,
+            activeCount: participantCount,
+          },
         },
-      },
-    };
-    
-    res.render("helpTasks/ESNHelpCenter.ejs", {
-      hero: heroWithCount,
-      highlightedTasks,
-      username: req.username || "",
-      tasks: allTasks,
-      taskListMeta,
-      currentUserId: currentUserId,
-      // Task detail modal will be populated from API when clicked
-      task: null,
-      viewer: null,
-      privilege: req.role
-    });
+      };
+      
+      res.render("helpTasks/ESNHelpCenter.ejs", {
+        hero: heroWithCount,
+        highlightedTasks,
+        username: username,
+        tasks: allTasks,
+        taskListMeta,
+        currentUserId: currentUserId,
+        // Task detail modal will be populated from API when clicked
+        task: null,
+        viewer: null,
+        privilege: privilege // Use database role
+      });
+    } catch (err) {
+      console.error("Error in ESN Help Center route:", err);
+      res.status(500).render("errorPages/404-pageNotFound");
+    }
   });
 }
 
 function setupMyHelpCenterRoutes() {
-  router.get("/my-tasks", authView, (req, res) => {
-    // Get current user ID if authenticated
-    const currentUserId = req.userId || req.user?.id || null;
-    
-    // Use same taskListMeta structure as ESN Help Center
-    const taskListMeta = {
-      title: "Tasks",
-      searchPlaceholder: "Search tasks",
-      filterLabel: "Filter by",
-    };
-    
-    res.render("helpTasks/myHelpCenter.ejs", {
-      hero: myHelpCenterConfig.hero,
-      taskListMeta: taskListMeta,
-      tasks: [], // Empty array - will be fetched from API on client side
-      username: req.username || "",
-      currentUserId: currentUserId,
-      task: null,
-      viewer: null,
-      privilege: req.role
-    });
+  router.get("/my-tasks", authView, async (req, res) => {
+    try {
+      // Get current user ID if authenticated
+      const currentUserId = req.userId || req.user?.id || null;
+      
+      // Fetch current user from database to get up-to-date role (not from JWT)
+      const User = (await import("../entities/User.js")).default;
+      const currentUser = await User.findById(req.userId);
+      const currentUserObj = currentUser?.toObject ? currentUser.toObject() : currentUser;
+      
+      // Use same taskListMeta structure as ESN Help Center
+      const taskListMeta = {
+        title: "Tasks",
+        searchPlaceholder: "Search tasks",
+        filterLabel: "Filter by",
+      };
+      
+      res.render("helpTasks/myHelpCenter.ejs", {
+        hero: myHelpCenterConfig.hero,
+        taskListMeta: taskListMeta,
+        tasks: [], // Empty array - will be fetched from API on client side
+        username: currentUserObj?.username || req.username || "",
+        currentUserId: currentUserId,
+        task: null,
+        viewer: null,
+        privilege: currentUserObj?.role || req.role || "citizen" // Use database role, fallback to JWT
+      });
+    } catch (err) {
+      console.error("Error fetching user for my-tasks page:", err);
+      const currentUserId = req.userId || req.user?.id || null;
+      const taskListMeta = {
+        title: "Tasks",
+        searchPlaceholder: "Search tasks",
+        filterLabel: "Filter by",
+      };
+      res.render("helpTasks/myHelpCenter.ejs", {
+        hero: myHelpCenterConfig.hero,
+        taskListMeta: taskListMeta,
+        tasks: [],
+        username: req.username || "",
+        currentUserId: currentUserId,
+        task: null,
+        viewer: null,
+        privilege: req.role || "citizen"
+      });
+    }
   });
 }
 
@@ -267,13 +330,28 @@ function setupEditTaskRoutes() {
 // }
 console.log("Setting up routes...");
 function setupCoachingBoardPages() {
-    router.get("/boards", authView, (req, res) => {
-        res.render("coachingBoards/list", {
-            username: req.username || "",
-            searchMode: "set",
-            currentUserId: req.userId,
-            privilege: req.role
-        });
+    router.get("/boards", authView, async (req, res) => {
+        try {
+            // Fetch current user from database to get up-to-date role (not from JWT)
+            const User = (await import("../entities/User.js")).default;
+            const currentUser = await User.findById(req.userId);
+            const currentUserObj = currentUser?.toObject ? currentUser.toObject() : currentUser;
+            
+            res.render("coachingBoards/list", {
+                username: currentUserObj?.username || req.username || "",
+                searchMode: "set",
+                currentUserId: req.userId,
+                privilege: currentUserObj?.role || req.role || "citizen" // Use database role, fallback to JWT
+            });
+        } catch (err) {
+            console.error("Error fetching user for boards page:", err);
+            res.render("coachingBoards/list", {
+                username: req.username || "",
+                searchMode: "set",
+                currentUserId: req.userId,
+                privilege: req.role || "citizen"
+            });
+        }
     });
     router.get("/boards/new", authView, (req, res) => {
         res.render("coachingBoards/form", {

@@ -4,7 +4,7 @@
 <%- include('./../partials/modals/success-content') %>
 <%- include('./../partials/modals/confirm-content') %>
 
-<form id="edit-profile-form" action="/admin/users/update" method="POST" class="px-8 py-4 flex flex-col gap-y-6">
+<form id="edit-profile-form" class="px-8 py-4 flex flex-col gap-y-6">
     <div id="username-section" class="username_section flex flex-col gap-y-2">
         <div class="flex items-center justify-start gap-x-2">
             <label for="username" class="text-sm font-medium text-gray-900">Username</label>
@@ -15,11 +15,17 @@
         </p>
     </div>
     <div id="password-section" class="password_section flex flex-col gap-y-2">
-        <div class="flex items-center justify-start gap-x-2">
-            <label for="password" class="text-sm font-medium text-gray-900">Password</label>
-            <%- include('./../partials/icons/password-key', {classes: 'w-4 h-4 text-white'}) %>
+        <div class="flex items-center justify-between">
+            <div class="flex items-center justify-start gap-x-2">
+                <label for="password" class="text-sm font-medium text-gray-900">Password</label>
+                <%- include('./../partials/icons/password-key', {classes: 'w-4 h-4 text-white'}) %>
+            </div>
+            <label class="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" id="change-password-checkbox" class="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary">
+                <span class="text-xs text-gray-600 font-medium">Change Password</span>
+            </label>
         </div>
-        <input id="input-password" type="text" name="password" value="<%=user.passwordHash%>" class="w-full rounded-sm border-gray-300 border-b-2 focus:outline-none focus:ring-0 focus:border-primary sm:text-sm" placeholder="Enter your password">
+        <input id="input-password" type="text" name="password" value="" disabled class="w-full rounded-sm border-gray-300 border-b-2 focus:outline-none focus:ring-0 focus:border-primary sm:text-sm bg-gray-50" placeholder="Leave unchecked to keep current password">
         <p id="input-password-error" class="hidden text-xs text-red-500 font-medium mt-1"></p> 
     </div>
     <div class="privilege_section flex flex-col gap-y-2">
@@ -125,6 +131,28 @@
   animation: wiggle 0.4s ease-in-out;
 }
 </style>
+<script>
+    // Set current user for websocket authentication
+    window.__CURRENT_USER__ = "<%= username || '' %>";
+</script>
+<script type="module">
+    // Initialize header avatar
+    import { initHeaderAvatar } from "/js/utils/initHeaderAvatar.js";
+    initHeaderAvatar();
+
+    // Maintain websocket connection
+    import { getSocket } from "/js/utils/socket.js";
+    const socket = getSocket();
+    if (socket && !socket.connected) {
+        try {
+            socket.connect();
+            socket.on?.("connect", () => console.log("[Admin Edit Profile] socket connected", socket.id));
+            socket.on?.("connect_error", (e) => console.warn("[Admin Edit Profile] connect_error", e?.message || e));
+        } catch (e) {
+            console.error("[Admin Edit Profile] socket connect() failed", e);
+        }
+    }
+</script>
 <script src="/js/adminUserProfile/modalWorkflow.js"></script>
 <script src="/js/adminUserProfile/editProfileValidation.js"></script>
 

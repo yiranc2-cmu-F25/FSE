@@ -162,6 +162,20 @@ function updateToggleIcon() {
   sortToggleIcon.textContent = currentDirection === "asc" ? "↑" : "↓";
 }
 
+// Helper functions to map backend format to frontend format
+function mapBackendRoleToPrivilege(role) {
+  if (role === "admin" || role === "Administrator") return "Administrator";
+  if (role === "coordinator" || role === "Coordinator") return "Coordinator";
+  if (role === "citizen" || role === "Citizen") return "Citizen";
+  return "Citizen"; // default
+}
+
+function mapBackendStatusToDisplay(status) {
+  if (status === "active" || status === "Active") return "Active";
+  if (status === "inactive" || status === "Inactive") return "Inactive";
+  return "Inactive"; // default
+}
+
 // Initialize members from server-rendered data
 function initializeMembersFromDOM() {
   if (!listContainer) return;
@@ -196,6 +210,41 @@ function initializeMembersFromDOM() {
       privilege: privilege,
     };
   });
+}
+
+// Optional: Fetch members from API (for real-time updates)
+async function fetchMembersFromAPI() {
+  try {
+    const response = await fetch("/api/admin/profiles", {
+      method: "GET",
+      credentials: "include",
+      headers: {
+        "Accept": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      console.error("Failed to fetch members:", response.status);
+      return null;
+    }
+
+    const backendUsers = await response.json();
+    if (!Array.isArray(backendUsers)) {
+      console.error("Invalid response format: expected array");
+      return null;
+    }
+
+    // Map backend format to frontend format
+    return backendUsers.map((user) => ({
+      id: user.id,
+      username: user.username,
+      status: mapBackendStatusToDisplay(user.status),
+      privilege: mapBackendRoleToPrivilege(user.role),
+    }));
+  } catch (error) {
+    console.error("Error fetching members from API:", error);
+    return null;
+  }
 }
 
 if (searchInput && sortSelect && sortToggle && listContainer) {

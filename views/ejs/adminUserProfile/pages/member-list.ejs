@@ -180,9 +180,27 @@
     <%- include('../../partials/nav-bar/absNavBar.ejs') %>
 
     <!-- Scripts -->
+    <script>
+        // Set current user for websocket authentication
+        window.__CURRENT_USER__ = "<%= username || '' %>";
+    </script>
     <script type="module">
+        // Initialize header avatar
         import { initHeaderAvatar } from "/js/utils/initHeaderAvatar.js";
         initHeaderAvatar();
+
+        // Maintain websocket connection
+        import { getSocket } from "/js/utils/socket.js";
+        const socket = getSocket();
+        if (socket && !socket.connected) {
+            try {
+                socket.connect();
+                socket.on?.("connect", () => console.log("[Admin Member List] socket connected", socket.id));
+                socket.on?.("connect_error", (e) => console.warn("[Admin Member List] connect_error", e?.message || e));
+            } catch (e) {
+                console.error("[Admin Member List] socket connect() failed", e);
+            }
+        }
     </script>
     <script type="module" src="/js/extensionFeatures/featureModal.js"></script>
     <script type="module" src="/js/nav-bar/nav-bar.js"></script>

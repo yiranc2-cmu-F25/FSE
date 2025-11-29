@@ -130,26 +130,53 @@ export async function updateUserProfile(req, res) {
             });
         }
         
-        // Perform updates
-        const updatePromises = [];
-        
-        if (status !== undefined) {
-            updatePromises.push(User.DAO.updateAccountStatusById(userId, status));
-        }
-        
-        if (role !== undefined) {
-            updatePromises.push(User.updateRoleById(userId, role));
-        }
-        
+        // Store old username before update (for socket disconnection)
+        let oldUsername = null;
         if (username !== undefined) {
-            updatePromises.push(User.DAO.updateUsernameById(userId, username.toLowerCase()));
+            const userBeforeUpdate = await User.findById(userId);
+            const userBeforeObj = userBeforeUpdate.toObject ? userBeforeUpdate.toObject() : userBeforeUpdate;
+            oldUsername = userBeforeObj.username;
         }
         
+        // Fetch user document once and update all fields together to avoid race conditions
+        // This is critical for password updates - parallel updates can cause password hashing to fail
+        // When multiple fields are updated in parallel, each update fetches the document separately,
+        // which can cause Mongoose's change detection to fail, especially for password hashing
+        const userDoc = await User.findById(userId);
+        if (!userDoc) {
+            return res.status(404).json({ error: "User not found" });
+        }
+        
+        // Update all fields on the same document instance
+        // This ensures Mongoose properly tracks changes and the pre-save hook runs correctly
+        if (status !== undefined) {
+            userDoc.status = status;
+        }
+        if (role !== undefined) {
+            userDoc.role = role;
+        }
+        if (username !== undefined) {
+            userDoc.username = username.toLowerCase();
+        }
         if (password !== undefined) {
-            updatePromises.push(User.DAO.updatePasswordById(userId, password));
+            // Explicitly set password - pre-save hook will hash it
+            // Setting the password directly on the document ensures Mongoose detects the change
+            userDoc.password = password;
         }
         
-        await Promise.all(updatePromises);
+        // Save once with all updates - this ensures password hashing works correctly
+        // The pre-save hook will detect password modification via isModified("password") and hash it
+        await userDoc.save();
+        
+        // Disconnect socket with old username if username changed
+        // This forces the user to reconnect with the new username
+        if (oldUsername && oldUsername !== username.toLowerCase()) {
+            const socketInstance = req.app.get("socketInstance");
+            if (socketInstance) {
+                socketInstance.disconnectUser(oldUsername);
+                console.log(`Disconnected socket for username change: ${oldUsername} -> ${username.toLowerCase()}`);
+            }
+        }
         
         // Get updated user
         const updatedUser = await User.findById(userId);

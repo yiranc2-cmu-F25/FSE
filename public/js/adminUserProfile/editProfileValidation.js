@@ -2,13 +2,56 @@
  * Edit Profile Validation
  * Reuses the same validation logic from joinCommunity.js
  * - Username: min 3 chars, checks against API for reserved/exists status
- * - Password: min 4 chars
+ * - Password: min 4 chars (only validated if "Change Password" is checked)
  * - Debounced validation on input
  */
 
 const API = {
   usernameStatus: "/api/authentications/users/usernames",
 };
+
+// Setup password field toggle
+function setupPasswordToggle() {
+  const checkbox = document.getElementById("change-password-checkbox");
+  const passwordInput = document.getElementById("input-password");
+  
+  if (!checkbox || !passwordInput) return;
+  
+  checkbox.addEventListener("change", (e) => {
+    if (e.target.checked) {
+      // Enable password field and clear it
+      passwordInput.disabled = false;
+      passwordInput.classList.remove("bg-gray-50");
+      passwordInput.value = "";
+      passwordInput.placeholder = "Enter new password";
+      passwordInput.focus();
+    } else {
+      // Disable password field and clear it
+      passwordInput.disabled = true;
+      passwordInput.classList.add("bg-gray-50");
+      passwordInput.value = "";
+      passwordInput.placeholder = "Leave unchecked to keep current password";
+      // Clear any password errors
+      const errorEl = document.getElementById("input-password-error");
+      if (errorEl) {
+        errorEl.classList.add("hidden");
+        errorEl.textContent = "";
+      }
+      // Reset password validation state
+      if (validationState.password) {
+        validationState.password.isValid = true;
+        validationState.password.error = "";
+      }
+    }
+  });
+}
+
+// Initialize password toggle on page load
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", setupPasswordToggle);
+} else {
+  setupPasswordToggle();
+}
 
 // --- Utility Functions ---
 function debounce(func, wait) {
@@ -152,6 +195,17 @@ function showError(inputId, message) {
 }
 
 function validatePassword(value) {
+  // Only validate password if "Change Password" checkbox is checked
+  const checkbox = document.getElementById("change-password-checkbox");
+  const isPasswordChangeEnabled = checkbox && checkbox.checked;
+  
+  if (!isPasswordChangeEnabled) {
+    // Password change is disabled, clear any errors
+    showError("input-password", null);
+    return;
+  }
+  
+  // Validate password length only if checkbox is checked
   const error = validatePasswordLength(value);
   showError("input-password", error);
 }
@@ -187,8 +241,11 @@ async function validateAllFields() {
     }
   }
 
-  // Validate password
-  if (passwordInput) {
+  // Validate password (only if "Change Password" checkbox is checked)
+  const checkbox = document.getElementById("change-password-checkbox");
+  const isPasswordChangeEnabled = checkbox && checkbox.checked;
+  
+  if (isPasswordChangeEnabled && passwordInput) {
     const passwordValue = passwordInput.value;
     const passwordError = validatePasswordLength(passwordValue);
     showError("input-password", passwordError);
@@ -197,6 +254,9 @@ async function validateAllFields() {
       isValid = false;
       failedInputFields.push("input-password");
     }
+  } else if (passwordInput) {
+    // Password change is disabled, clear any errors
+    showError("input-password", null);
   }
 
   // Trigger wiggle animation on failed sections
@@ -265,10 +325,15 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   if (passwordInput) {
-    passwordInput.addEventListener("input", validatePasswordDebounced);
-    // Clear error on focus
+    passwordInput.addEventListener("input", (e) => {
+      // Only validate if password field is enabled
+      if (!passwordInput.disabled) {
+        validatePasswordDebounced(e);
+      }
+    });
+    // Clear error on focus (only if enabled)
     passwordInput.addEventListener("focus", () => {
-      if (passwordInput.value) {
+      if (!passwordInput.disabled && passwordInput.value) {
         validatePasswordDebounced({ target: passwordInput });
       }
     });

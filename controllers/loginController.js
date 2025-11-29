@@ -38,15 +38,20 @@ export async function login(req, res) {
 
 export async function getMe(req, res) {
   try {
-    const user = await User.findByUsername(req.username);
+    // Use userId instead of username because username can change but userId never changes
+    // This ensures the endpoint works even after an admin changes the username
+    const user = await User.findById(req.userId);
 
     if (!user) return res.status(404).json({ error: "User not found" });
 
+    // Handle both Mongoose document and plain object
+    const userObj = user.toObject ? user.toObject() : user;
+    
     res.json({
-      id: user.id,
-      username: user.username,
-      status: user.sharedstatus ?? "undefined",
-      role: user.role,
+      id: String(userObj._id || userObj.id),
+      username: userObj.username, // Return current username from database (not JWT)
+      status: userObj.sharedstatus ?? "undefined",
+      role: userObj.role, // Return current role from database (not JWT)
       image: "images/photos/user-profiles/user1-james.png",
     });
   } catch (err) {
