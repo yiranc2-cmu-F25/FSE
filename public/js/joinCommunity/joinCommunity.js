@@ -206,6 +206,13 @@ async function handleExistingUsername(uname, pwd) {
     window.location.href = NEXT_ROUTE_AFTER_LOGIN_VALIDATION;
     return;
   }
+  
+  // Check if account is inactive - redirect to splash page with error modal
+  if (res.status === 403 && data?.error === "Account inactive") {
+    window.location.href = "/?inactive=true";
+    return;
+  }
+  
   showError("password", data?.message || "Incorrect password.");
 }
 

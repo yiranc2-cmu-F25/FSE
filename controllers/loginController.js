@@ -24,9 +24,17 @@ export async function login(req, res) {
       return res.status(500).json({ error: "login_failed_no_user_id" });
     }
     
-    // Get user role from database (only during login)
+    // Get user role and status from database
     const userObj = user.toObject ? user.toObject() : user;
     const role = userObj.role;
+    const status = userObj.status;
+    
+    // Check if user account is inactive
+    const { USER_STATUS } = await import("../constants/userStatus.js");
+    if (status === USER_STATUS.INACTIVE) {
+      // Don't set auth cookie, return error that will trigger redirect to splash page
+      return res.status(403).json({ error: "Account inactive", reason: "Your account has been deactivated" });
+    }
     
     setAuthCookie(res, userId, username, role, EXPIRATION_TIME);
     return res.json({ username: username, ok: true });
