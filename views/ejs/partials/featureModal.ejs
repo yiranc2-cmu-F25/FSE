@@ -50,7 +50,7 @@
           id="displayName"
           class="mt-4 text-center text-2xl font-extrabold"
         ></p>
-        <div class="mt-2 flex justify-center items-center gap-2">
+        <div class="mt-2 flex items-center justify-center gap-2">
           <span
             class="inline-flex items-center rounded-full px-3 py-1 text-sm font-medium"
             id="partial-status-color"
@@ -73,279 +73,295 @@
       </div>
 
       <!-- body (scrollable) -->
-      <div class="overflow-y-auto max-h-[50vh]">
+      <div class="max-h-[50vh] overflow-y-auto">
         <!-- all buttons go here -->
-         <p class="mb-2 text-sm font-semibold text-stone-500">
-        Profile &amp; Account
-      </p>
-      <button
-        id="status-button"
-        type="button"
-        class="mb-4 flex w-full items-center justify-between rounded-2xl border border-stone-200 bg-white px-4 py-4 text-left shadow-sm hover:bg-stone-50"
-      >
-        <span class="flex items-center gap-3">
-          <span
-            class="grid h-10 w-10 place-content-center rounded-xl bg-stone-100"
-          >
-            <svg
-              class="h-6 w-6 stroke-1 transition duration-150"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
+        <p class="mb-2 text-sm font-semibold text-stone-500">
+          Profile &amp; Account
+        </p>
+        <button
+          id="status-button"
+          type="button"
+          class="mb-4 flex w-full items-center justify-between rounded-2xl border border-stone-200 bg-white px-4 py-4 text-left shadow-sm hover:bg-stone-50"
+        >
+          <span class="flex items-center gap-3">
+            <span
+              class="grid h-10 w-10 place-content-center rounded-xl bg-stone-100"
             >
-              <path
-                d="M17 4H17.502C18.7134 4 19.319 4 19.7834 4.232C20.2095 4.44495 20.5551 4.79048 20.768 5.21665C21 5.68096 21 6.28664 21 7.498V8M17 20H17.502C18.7134 20 19.319 20 19.7834 19.768C20.2095 19.5551 20.5551 19.2095 20.768 18.7834C21 18.319 21 17.7134 21 16.502V16M7 4H6.498C5.28664 4 4.68096 4 4.21665 4.232C3.79048 4.44495 3.44495 4.79048 3.232 5.21665C3 5.68096 3 6.28664 3 7.498V8M7 20H6.498C5.28664 20 4.68096 20 4.21665 19.768C3.79048 19.5551 3.44495 19.2095 3.232 18.7834C3 18.319 3 17.7134 3 16.502V16"
-                stroke-linecap="round"
-              />
-              <path
-                d="M7.62584 17.0695C8.0447 16.4649 8.66228 15.9421 9.43355 15.571C10.2049 15.1999 11.0906 15 12 15C12.9094 15 13.7951 15.1999 14.5664 15.571C15.3377 15.9421 15.9553 16.4649 16.3742 17.0695"
-                stroke-linecap="round"
-              />
-              <circle cx="12" cy="9" r="3" stroke-linecap="round" />
-            </svg>
-          </span>
-
-          <span class="text-base font-semibold">ESN Status</span>
-        </span>
-        <svg
-          viewBox="0 0 24 24"
-          class="h-5 w-5 stroke-stone-500"
-          fill="none"
-          stroke-width="2"
-        >
-          <path
-            d="M9 6l6 6-6 6"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          />
-        </svg>
-      </button>
-
-      <button
-        id="emergency-profile-button"
-        type="button"
-        class="mb-6 flex w-full items-center justify-between rounded-2xl border border-stone-200 bg-white px-4 py-4 text-left shadow-sm hover:bg-stone-50"
-      >
-        <span class="flex items-center gap-3">
-          <span
-            class="grid h-10 w-10 place-content-center rounded-xl bg-stone-100"
-          >
-            <img
-              src = "/images/emergency-profile/folders.png"
-              alt="Refresh icon"
-              class="h-6 w-6 brightness-50"
-              />
-          </span>
-          <span class="text-base font-semibold">Emergency Medical Profile</span>
-        </span>
-        <svg
-          viewBox="0 0 24 24"
-          class="h-5 w-5 stroke-stone-500"
-          fill="none"
-          stroke-width="2"
-        >
-          <path
-            d="M9 6l6 6-6 6"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          />
-        </svg>
-      </button>
-      <% if (privilege === "admin") { %>
-      <button
-        id="administer-user-profile-button"
-        type="button"
-        class="mb-6 flex w-full items-center justify-between rounded-2xl border border-stone-200 bg-white px-4 py-4 text-left shadow-sm hover:bg-stone-50"
-      >
-        <span class="flex items-center gap-3">
-          <span
-            class="grid h-10 w-10 place-content-center rounded-xl bg-stone-100"
-          >
-            <img
-              src = "/images/admin-user-profile/icons/admin-user-profile.svg"
-              alt="Administer User Profile icon"
-              class="h-6 w-6"
-              />
-          </span>
-          <span class="text-base font-semibold">Administer User Profile</span>
-        </span>
-        <svg
-          viewBox="0 0 24 24"
-          class="h-5 w-5 stroke-stone-500"
-          fill="none"
-          stroke-width="2"
-        >
-          <path
-            d="M9 6l6 6-6 6"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          />
-        </svg>
-      </button>
-      <% } %>
-      <button
-        id="update-skills-button"
-        type="button"
-        class="mb-6 flex w-full items-center justify-between rounded-2xl border border-stone-200 bg-white px-4 py-4 text-left shadow-sm hover:bg-stone-50"
-      >
-        <span class="flex items-center gap-3">
-          <span
-            class="grid h-10 w-10 place-content-center rounded-xl bg-stone-100"
-          >
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
-            <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
-            <line x1="6" y1="6" x2="6.01" y2="6"></line>
-            <line x1="6" y1="18" x2="6.01" y2="18"></line>
-          </svg>
-          </span>
-          <span class="text-base font-semibold">Update Skills</span>
-        </span>
-        <svg
-          viewBox="0 0 24 24"
-          class="h-5 w-5 stroke-stone-500"
-          fill="none"
-          stroke-width="2"
-        >
-          <path
-            d="M9 6l6 6-6 6"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          />
-        </svg>
-      </button>
-
-      <% if (privilege === "admin") { %>
-      <p class="mb-2 mt-4 text-sm font-semibold text-stone-500">System Tools</p>
-      <% } %>
-      <% if (privilege === "admin") { %>
-      <button
-        id="speed-test-button"
-        type="button"
-        class="mb-6 flex w-full items-center justify-between rounded-2xl border border-stone-200 bg-white px-4 py-4 text-left shadow-sm hover:bg-stone-50"
-      >
-        <span class="flex items-center gap-3">
-          <span
-            class="grid h-10 w-10 place-content-center rounded-xl bg-stone-100"
-          >
-            <svg
-              class="h-6 w-6 stroke-blue-500 stroke-1 transition duration-150"
-              version="1.1"
-              id="Layer_1"
-              xmlns="http://www.w3.org/2000/svg"
-              xmlns:xlink="http://www.w3.org/1999/xlink"
-              viewBox="0 0 512 512"
-              enable-background="new 0 0 512 512"
-              xml:space="preserve"
-            >
-              <g>
+              <svg
+                class="h-6 w-6 stroke-1 transition duration-150"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
                 <path
-                  d="M256,0C114.609,0,0,114.609,0,256s114.609,256,256,256s256-114.609,256-256S397.391,0,256,0z M256,472
-		c-119.297,0-216-96.703-216-216S136.703,40,256,40s216,96.703,216,216S375.297,472,256,472z"
+                  d="M17 4H17.502C18.7134 4 19.319 4 19.7834 4.232C20.2095 4.44495 20.5551 4.79048 20.768 5.21665C21 5.68096 21 6.28664 21 7.498V8M17 20H17.502C18.7134 20 19.319 20 19.7834 19.768C20.2095 19.5551 20.5551 19.2095 20.768 18.7834C21 18.319 21 17.7134 21 16.502V16M7 4H6.498C5.28664 4 4.68096 4 4.21665 4.232C3.79048 4.44495 3.44495 4.79048 3.232 5.21665C3 5.68096 3 6.28664 3 7.498V8M7 20H6.498C5.28664 20 4.68096 20 4.21665 19.768C3.79048 19.5551 3.44495 19.2095 3.232 18.7834C3 18.319 3 17.7134 3 16.502V16"
+                  stroke-linecap="round"
                 />
+                <path
+                  d="M7.62584 17.0695C8.0447 16.4649 8.66228 15.9421 9.43355 15.571C10.2049 15.1999 11.0906 15 12 15C12.9094 15 13.7951 15.1999 14.5664 15.571C15.3377 15.9421 15.9553 16.4649 16.3742 17.0695"
+                  stroke-linecap="round"
+                />
+                <circle cx="12" cy="9" r="3" stroke-linecap="round" />
+              </svg>
+            </span>
+
+            <span class="text-base font-semibold">ESN Status</span>
+          </span>
+          <svg
+            viewBox="0 0 24 24"
+            class="h-5 w-5 stroke-stone-500"
+            fill="none"
+            stroke-width="2"
+          >
+            <path
+              d="M9 6l6 6-6 6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </button>
+
+        <button
+          id="emergency-profile-button"
+          type="button"
+          class="mb-6 flex w-full items-center justify-between rounded-2xl border border-stone-200 bg-white px-4 py-4 text-left shadow-sm hover:bg-stone-50"
+        >
+          <span class="flex items-center gap-3">
+            <span
+              class="grid h-10 w-10 place-content-center rounded-xl bg-stone-100"
+            >
+              <img
+                src="/images/emergency-profile/folders.png"
+                alt="Refresh icon"
+                class="h-6 w-6 brightness-50"
+              />
+            </span>
+            <span class="text-base font-semibold"
+              >Emergency Medical Profile</span
+            >
+          </span>
+          <svg
+            viewBox="0 0 24 24"
+            class="h-5 w-5 stroke-stone-500"
+            fill="none"
+            stroke-width="2"
+          >
+            <path
+              d="M9 6l6 6-6 6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </button>
+        <% if (privilege === "admin") { %>
+        <button
+          id="administer-user-profile-button"
+          type="button"
+          class="mb-6 flex w-full items-center justify-between rounded-2xl border border-stone-200 bg-white px-4 py-4 text-left shadow-sm hover:bg-stone-50"
+        >
+          <span class="flex items-center gap-3">
+            <span
+              class="grid h-10 w-10 place-content-center rounded-xl bg-stone-100"
+            >
+              <img
+                src="/images/admin-user-profile/icons/admin-user-profile.svg"
+                alt="Administer User Profile icon"
+                class="h-6 w-6"
+              />
+            </span>
+            <span class="text-base font-semibold">Administer User Profile</span>
+          </span>
+          <svg
+            viewBox="0 0 24 24"
+            class="h-5 w-5 stroke-stone-500"
+            fill="none"
+            stroke-width="2"
+          >
+            <path
+              d="M9 6l6 6-6 6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </button>
+        <% } %>
+        <button
+          id="update-skills-button"
+          type="button"
+          class="mb-6 flex w-full items-center justify-between rounded-2xl border border-stone-200 bg-white px-4 py-4 text-left shadow-sm hover:bg-stone-50"
+        >
+          <span class="flex items-center gap-3">
+            <span
+              class="grid h-10 w-10 place-content-center rounded-xl bg-stone-100"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#000000"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+                <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+                <line x1="6" y1="6" x2="6.01" y2="6"></line>
+                <line x1="6" y1="18" x2="6.01" y2="18"></line>
+              </svg>
+            </span>
+            <span class="text-base font-semibold">Update Skills</span>
+          </span>
+          <svg
+            viewBox="0 0 24 24"
+            class="h-5 w-5 stroke-stone-500"
+            fill="none"
+            stroke-width="2"
+          >
+            <path
+              d="M9 6l6 6-6 6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </button>
+
+        <% if (privilege === "admin") { %>
+        <p class="mb-2 mt-4 text-sm font-semibold text-stone-500">
+          System Tools
+        </p>
+        <% } %> <% if (privilege === "admin") { %>
+        <button
+          id="speed-test-button"
+          type="button"
+          class="mb-6 flex w-full items-center justify-between rounded-2xl border border-stone-200 bg-white px-4 py-4 text-left shadow-sm hover:bg-stone-50"
+        >
+          <span class="flex items-center gap-3">
+            <span
+              class="grid h-10 w-10 place-content-center rounded-xl bg-stone-100"
+            >
+              <svg
+                class="h-6 w-6 stroke-blue-500 stroke-1 transition duration-150"
+                version="1.1"
+                id="Layer_1"
+                xmlns="http://www.w3.org/2000/svg"
+                xmlns:xlink="http://www.w3.org/1999/xlink"
+                viewBox="0 0 512 512"
+                enable-background="new 0 0 512 512"
+                xml:space="preserve"
+              >
                 <g>
                   <path
-                    d="M350.281,169.609l-23.594,21.625C343.016,209.047,352,232.047,352,256c0,52.938-43.062,96-96,96s-96-43.062-96-96
+                    d="M256,0C114.609,0,0,114.609,0,256s114.609,256,256,256s256-114.609,256-256S397.391,0,256,0z M256,472
+		c-119.297,0-216-96.703-216-216S136.703,40,256,40s216,96.703,216,216S375.297,472,256,472z"
+                  />
+                  <g>
+                    <path
+                      d="M350.281,169.609l-23.594,21.625C343.016,209.047,352,232.047,352,256c0,52.938-43.062,96-96,96s-96-43.062-96-96
 			s43.062-96,96-96v-32c-70.578,0-128,57.422-128,128s57.422,128,128,128s128-57.422,128-128
 			C384,224.016,372.031,193.344,350.281,169.609z"
-                  />
-                  <polygon
-                    points="272,262.391 307.188,138.688 240,249.609 248,272 		"
-                  />
+                    />
+                    <polygon
+                      points="272,262.391 307.188,138.688 240,249.609 248,272 		"
+                    />
+                  </g>
                 </g>
-              </g>
-            </svg>
+              </svg>
+            </span>
+            <span class="text-base font-semibold">ESN Speed Test</span>
           </span>
-          <span class="text-base font-semibold">ESN Speed Test</span>
-        </span>
-        <svg
-          viewBox="0 0 24 24"
-          class="h-5 w-5 stroke-stone-500 contrast-125"
-          fill="none"
-          stroke-width="2"
-        >
-          <path
-            d="M9 6l6 6-6 6"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          />
-        </svg>
-      </button>
-      <% } %>
-      <% if (privilege === "coordinator" || privilege === "admin") { %>
-      <button
-        id="post-public-announcement-button"
-        type="button"
-        class="mb-6 flex w-full items-center justify-between rounded-2xl border border-stone-200 bg-white px-4 py-4 text-left shadow-sm hover:bg-stone-50"
-      >
-        <span class="flex items-center gap-3">
-          <span
-            class="grid h-10 w-10 place-content-center rounded-xl bg-stone-100"
+          <svg
+            viewBox="0 0 24 24"
+            class="h-5 w-5 stroke-stone-500 contrast-125"
+            fill="none"
+            stroke-width="2"
           >
-            <img
-              src="/images/post-annoucement/announcement-gray.svg"
-              alt="Refresh icon"
-              class="h-6 w-6 brightness-50"
+            <path
+              d="M9 6l6 6-6 6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
             />
-          </span>
-          <span class="text-base font-semibold">Post Public Announcement</span>
-        </span>
-        <svg
-          viewBox="0 0 24 24"
-          class="h-5 w-5 stroke-stone-500"
-          fill="none"
-          stroke-width="2"
+          </svg>
+        </button>
+        <% } %> <% if (privilege === "coordinator" || privilege === "admin") {
+        %>
+        <button
+          id="post-public-announcement-button"
+          type="button"
+          class="mb-6 flex w-full items-center justify-between rounded-2xl border border-stone-200 bg-white px-4 py-4 text-left shadow-sm hover:bg-stone-50"
         >
-          <path
-            d="M9 6l6 6-6 6"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          />
-        </svg>
-      </button>
-      <% } %>
-      <%- include('./feature-modal/help-tools/myTasks.ejs') %>
+          <span class="flex items-center gap-3">
+            <span
+              class="grid h-10 w-10 place-content-center rounded-xl bg-stone-100"
+            >
+              <img
+                src="/images/post-annoucement/announcement-gray.svg"
+                alt="Refresh icon"
+                class="h-6 w-6 brightness-50"
+              />
+            </span>
+            <span class="text-base font-semibold"
+              >Post Public Announcement</span
+            >
+          </span>
+          <svg
+            viewBox="0 0 24 24"
+            class="h-5 w-5 stroke-stone-500"
+            fill="none"
+            stroke-width="2"
+          >
+            <path
+              d="M9 6l6 6-6 6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </button>
+        <% } %> <%- include('./feature-modal/help-tools/myTasks.ejs') %>
 
-      <p class="mb-2 mt-4 text-sm font-semibold text-stone-500">Help Center</p>
-      <button
-        id="view-help-center-btn"
-        type="button"
-        class="mb-6 flex w-full items-center justify-between rounded-2xl border border-stone-200 bg-white px-4 py-4 text-left shadow-sm hover:bg-stone-50"
-      >
-        <span class="flex items-center gap-3">
-          <span
-            class="grid h-10 w-10 place-content-center rounded-xl bg-stone-100"
-          >
-          <img
-          src="/images/helpCenter/shelter-view-help-center.svg"
-          alt="View Help Center icon"
-          class="h-6 w-6 brightness-50"
-        />
-          </span>
-          <span class="text-base font-semibold">View Help Center</span>
-        </span>
-        <svg
-          viewBox="0 0 24 24"
-          class="h-5 w-5 stroke-stone-500 contrast-125"
-          fill="none"
-          stroke-width="2"
+        <p class="mb-2 mt-4 text-sm font-semibold text-stone-500">
+          Help Center
+        </p>
+        <button
+          id="view-help-center-btn"
+          type="button"
+          class="mb-6 flex w-full items-center justify-between rounded-2xl border border-stone-200 bg-white px-4 py-4 text-left shadow-sm hover:bg-stone-50"
         >
-          <path
-            d="M9 6l6 6-6 6"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          />
-        </svg>
-      </button>
-      <button
-        id="manage-help-center-btn"
-        type="button"
-        class="mb-6 flex w-full items-center justify-between rounded-2xl border border-stone-200 bg-white px-4 py-4 text-left shadow-sm hover:bg-stone-50"
-      >
-        <span class="flex items-center gap-3">
-          <span
-            class="grid h-10 w-10 place-content-center rounded-xl bg-stone-100"
+          <span class="flex items-center gap-3">
+            <span
+              class="grid h-10 w-10 place-content-center rounded-xl bg-stone-100"
+            >
+              <img
+                src="/images/helpCenter/shelter-view-help-center.svg"
+                alt="View Help Center icon"
+                class="h-6 w-6 brightness-50"
+              />
+            </span>
+            <span class="text-base font-semibold">View Help Center</span>
+          </span>
+          <svg
+            viewBox="0 0 24 24"
+            class="h-5 w-5 stroke-stone-500 contrast-125"
+            fill="none"
+            stroke-width="2"
           >
-            <!-- <svg
+            <path
+              d="M9 6l6 6-6 6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </button>
+        <button
+          id="manage-help-center-btn"
+          type="button"
+          class="mb-6 flex w-full items-center justify-between rounded-2xl border border-stone-200 bg-white px-4 py-4 text-left shadow-sm hover:bg-stone-50"
+        >
+          <span class="flex items-center gap-3">
+            <span
+              class="grid h-10 w-10 place-content-center rounded-xl bg-stone-100"
+            >
+              <!-- <svg
               class="h-6 w-6 stroke-blue-500 stroke-1 transition duration-150"
               version="1.1"
               id="Layer_1"
@@ -372,28 +388,27 @@
                 </g>
               </g>
             </svg> -->
-            <img
-            src="/images/helpCenter/shelter-manage-help-center.svg"
-            alt="Manage Help Center icon"
-            class="h-6 w-6 brightness-50"
-          />
+              <img
+                src="/images/helpCenter/shelter-manage-help-center.svg"
+                alt="Manage Help Center icon"
+                class="h-6 w-6 brightness-50"
+              />
+            </span>
+            <span class="text-base font-semibold">Manage Help Center</span>
           </span>
-          <span class="text-base font-semibold">Manage Help Center</span>
-        </span>
-        <svg
-          viewBox="0 0 24 24"
-          class="h-5 w-5 stroke-stone-500 contrast-125"
-          fill="none"
-          stroke-width="2"
-        >
-          <path
-            d="M9 6l6 6-6 6"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          />
-        </svg>
-      </button>
-      
+          <svg
+            viewBox="0 0 24 24"
+            class="h-5 w-5 stroke-stone-500 contrast-125"
+            fill="none"
+            stroke-width="2"
+          >
+            <path
+              d="M9 6l6 6-6 6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </button>
       </div>
 
       <!-- logout area -->

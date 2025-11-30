@@ -2,6 +2,7 @@
  * Modal Workflow for Edit Profile
  * Handles confirm and success modals
  */
+/* global openModal, closeModal */
 
 const modalOverlay = document.getElementById("global-modal-overlay");
 const modalContent = document.getElementById("modal-dynamic-content");
@@ -10,13 +11,13 @@ const confirmTemplate = document.getElementById("tmpl-modal-confirm");
 const successTemplate = document.getElementById("tmpl-modal-success");
 
 // Global functions for onclick handlers
-window.openModal = function() {
+window.openModal = function () {
   if (!modalOverlay) return;
   modalOverlay.classList.remove("hidden");
   document.body.classList.add("overflow-hidden");
 };
 
-window.closeModal = function() {
+window.closeModal = function () {
   if (!modalOverlay) return;
   modalOverlay.classList.add("hidden");
   document.body.classList.remove("overflow-hidden");
@@ -46,33 +47,33 @@ if (document.readyState === "loading") {
 
 function showConfirmModal() {
   if (!modalContent || !confirmTemplate) return;
-  
+
   const content = confirmTemplate.content.cloneNode(true);
   modalContent.innerHTML = "";
   modalContent.appendChild(content);
-  
+
   // Wire up cancel button
   const cancelBtn = document.getElementById("btn-confirm-cancel");
   if (cancelBtn) {
     cancelBtn.addEventListener("click", closeModal);
   }
-  
+
   // Wire up confirm button
   const confirmBtn = document.getElementById("btn-confirm-action");
   if (confirmBtn) {
     confirmBtn.addEventListener("click", handleConfirm);
   }
-  
+
   openModal();
 }
 
 function showSuccessModal() {
   if (!modalContent || !successTemplate) return;
-  
+
   const content = successTemplate.content.cloneNode(true);
   modalContent.innerHTML = "";
   modalContent.appendChild(content);
-  
+
   // Wire up "Great!" button to navigate
   const greatBtn = document.getElementById("btn-success-great");
   if (greatBtn) {
@@ -80,7 +81,7 @@ function showSuccessModal() {
       window.location.href = "/admin/users";
     });
   }
-  
+
   openModal();
 }
 
@@ -102,7 +103,7 @@ function mapDisplayToStatus(status) {
 async function handleConfirm() {
   // Close confirm modal first
   closeModal();
-  
+
   const form = document.getElementById("edit-profile-form");
   if (!form) {
     console.error("Form not found");
@@ -115,14 +116,17 @@ async function handleConfirm() {
   const password = formData.get("password");
   const privilege = formData.get("privilege");
   const status = formData.get("status");
-  
+
   // Check if password change is enabled
-  const changePasswordCheckbox = document.getElementById("change-password-checkbox");
-  const isPasswordChangeEnabled = changePasswordCheckbox && changePasswordCheckbox.checked;
+  const changePasswordCheckbox = document.getElementById(
+    "change-password-checkbox",
+  );
+  const isPasswordChangeEnabled =
+    changePasswordCheckbox && changePasswordCheckbox.checked;
 
   // Get user ID from URL
   const urlPath = window.location.pathname;
-  const userIdMatch = urlPath.match(/\/admin\/users\/([^\/]+)\/edit/);
+  const userIdMatch = urlPath.match(/\/admin\/users\/([^/]+)\/edit/);
   if (!userIdMatch) {
     console.error("Could not extract user ID from URL");
     return;
@@ -157,9 +161,11 @@ async function handleConfirm() {
       }, 300); // Small delay for smooth transition
     } else {
       // Handle error
-      const errorData = await response.json().catch(() => ({ error: "Update failed" }));
+      const errorData = await response
+        .json()
+        .catch(() => ({ error: "Update failed" }));
       console.error("Update failed:", response.status, errorData);
-      
+
       // TODO: Show error modal instead of success
       // For now, still show success modal as per requirements
       setTimeout(() => {
@@ -178,4 +184,3 @@ async function handleConfirm() {
 
 // Export for use in other scripts
 window.showConfirmModal = showConfirmModal;
-
