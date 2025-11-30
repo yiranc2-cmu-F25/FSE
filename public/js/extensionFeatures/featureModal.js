@@ -9,6 +9,8 @@ const ui = {
   avatarInit: $("#avatar-initials"),
   avatarColor: $("#avatar"),
   statusText: $("#status-text"),
+  privilegeBadge: $("#privilege-badge"),
+  privilegeText: $("#privilege-text"),
   openBtn: $("#open-profile-modal"),
   modal: $("#feature-modal"),
   overlay: $("#feature-modal-overlay"),
@@ -23,10 +25,46 @@ const ui = {
   emergencyProfileButton: $("#emergency-profile-button"),
   manageHelpCentersButton: $("#manage-help-center-btn"),
   viewHelpCentersButton: $("#view-help-center-btn"),
-
+  administerUserProfileButton: $("#administer-user-profile-button"),  
 };
 const body = document.body;
 ui.body = body;
+
+function getPrivilegeRingClass(role) {
+  if (!role) return "";
+  const roleLower = role.toLowerCase();
+  if (roleLower === "admin" || roleLower === "administrator") {
+    return "ring-4 ring-pink-400";
+  }
+  if (roleLower === "coordinator") {
+    return "ring-4 ring-yellow-400";
+  }
+  return ""; // Citizen has no ring
+}
+
+function getPrivilegeClass(role) {
+  if (!role) return "bg-stone-100 text-stone-700";
+  const roleLower = role.toLowerCase();
+  if (roleLower === "admin" || roleLower === "administrator") {
+    return "bg-red-100 text-red-600";
+  }
+  if (roleLower === "coordinator") {
+    return "bg-orange-100 text-orange-600";
+  }
+  return "bg-stone-100 text-stone-700"; // Citizen
+}
+
+function getPrivilegeDisplay(role) {
+  if (!role) return "CITIZEN";
+  const roleLower = role.toLowerCase();
+  if (roleLower === "admin" || roleLower === "administrator") {
+    return "ADMIN";
+  }
+  if (roleLower === "coordinator") {
+    return "COORDINATOR";
+  }
+  return "CITIZEN";
+}
 
 function setupUserInfo() {
   document.addEventListener("DOMContentLoaded", async () => {
@@ -34,14 +72,41 @@ function setupUserInfo() {
       const user = await loadInfo();
       console.log("Loaded user info:", user);
       const name = (user.username || "").trim();
+      const role = user.role || "";
 
       statusUpdate(user.status);
 
       if (ui.statusText) ui.statusText.textContent = user.status.toUpperCase() ?? "UNDEFINED";
-      if (ui.avatarColor)
+      if (ui.avatarColor) {
         ui.avatarColor.style.backgroundColor = getAvatarColor(name);
+        // Apply privilege ring
+        const ringClass = getPrivilegeRingClass(role);
+        // Remove existing ring classes
+        ui.avatarColor.classList.remove("ring-2", "ring-4", "ring-pink-400", "ring-yellow-400", "ring-white");
+        // Add new ring class if provided
+        if (ringClass) {
+          const ringClasses = ringClass.split(" ");
+          ringClasses.forEach((cls) => {
+            if (cls) ui.avatarColor.classList.add(cls);
+          });
+        }
+      }
       if (ui.avatarInit) ui.avatarInit.textContent = getInitialsSafe(name);
       if (ui.displayInput) ui.displayInput.value = name || "Guest";
+      
+      // Set privilege badge
+      if (ui.privilegeBadge && ui.privilegeText) {
+        const privilegeClass = getPrivilegeClass(role);
+        const privilegeDisplay = getPrivilegeDisplay(role);
+        // Remove existing privilege classes
+        ui.privilegeBadge.classList.remove("bg-red-100", "text-red-600", "bg-orange-100", "text-orange-600", "bg-stone-100", "text-stone-700");
+        // Add new privilege classes
+        const classes = privilegeClass.split(" ");
+        classes.forEach((cls) => {
+          if (cls) ui.privilegeBadge.classList.add(cls);
+        });
+        ui.privilegeText.textContent = privilegeDisplay;
+      }
     } catch (err) {
       console.error("Failed to load user info:", err);
     }
@@ -152,6 +217,10 @@ function setupSidebarSelection() {
 
     ui.viewHelpCentersButton?.addEventListener("click", () => {
       window.location.href = "/help-centers/view";
+    });
+
+    ui.administerUserProfileButton?.addEventListener("click", () => {
+      window.location.href = "/admin/users";
     });
   });
 }

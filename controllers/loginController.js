@@ -24,9 +24,17 @@ export async function login(req, res) {
       return res.status(500).json({ error: "login_failed_no_user_id" });
     }
     
-    // Get user role from database (only during login)
+    // Get user role and status from database
     const userObj = user.toObject ? user.toObject() : user;
     const role = userObj.role;
+    const status = userObj.status;
+    
+    // Check if user account is inactive
+    const { USER_STATUS } = await import("../constants/userStatus.js");
+    if (status === USER_STATUS.INACTIVE) {
+      // Don't set auth cookie, return error that will trigger redirect to splash page
+      return res.status(403).json({ error: "Account inactive", reason: "Your account has been deactivated" });
+    }
     
     setAuthCookie(res, userId, username, role, EXPIRATION_TIME);
     return res.json({ username: username, ok: true });
@@ -38,15 +46,20 @@ export async function login(req, res) {
 
 export async function getMe(req, res) {
   try {
-    const user = await User.findByUsername(req.username);
+    // Use userId instead of username because username can change but userId never changes
+    // This ensures the endpoint works even after an admin changes the username
+    const user = await User.findById(req.userId);
 
     if (!user) return res.status(404).json({ error: "User not found" });
 
+    // Handle both Mongoose document and plain object
+    const userObj = user.toObject ? user.toObject() : user;
+    
     res.json({
-      id: user.id,
-      username: user.username,
-      status: user.sharedstatus ?? "undefined",
-      role: user.role,
+      id: String(userObj._id || userObj.id),
+      username: userObj.username, // Return current username from database (not JWT)
+      status: userObj.sharedstatus ?? "undefined",
+      role: userObj.role, // Return current role from database (not JWT)
       image: "images/photos/user-profiles/user1-james.png",
     });
   } catch (err) {

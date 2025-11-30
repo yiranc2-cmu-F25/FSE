@@ -165,7 +165,10 @@ export class UserDao extends iUserDao {
             if (!doc) {
                 throw new Error("User not found");
             }
+            // Explicitly mark password as modified to ensure pre-save hook runs
+            // This is critical when multiple fields are updated in parallel
             doc.password = newPassword;
+            doc.markModified("password");
             await doc.save();
         } catch (err) {
             console.error("Error updating password for user ID:", id, err);
