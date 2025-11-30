@@ -214,9 +214,8 @@
         </svg>
       </button>
 
-      <% if (privilege === "admin") { %>
       <p class="mb-2 mt-4 text-sm font-semibold text-stone-500">System Tools</p>
-      <% } %>
+
       <% if (privilege === "admin") { %>
       <button
         id="speed-test-button"
@@ -271,7 +270,6 @@
         </svg>
       </button>
       <% } %>
-      <% if (privilege === "coordinator" || privilege === "admin") { %>
       <button
         id="post-public-announcement-button"
         type="button"
@@ -302,7 +300,6 @@
           />
         </svg>
       </button>
-      <% } %>
       <%- include('./feature-modal/help-tools/myTasks.ejs') %>
 
       <p class="mb-2 mt-4 text-sm font-semibold text-stone-500">Help Center</p>
