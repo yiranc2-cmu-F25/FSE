@@ -37,13 +37,20 @@ export class inMemoryMsgDao extends iMsgDao {
       .filter((m) => m.receiver === null || m.receiver === "public")
       .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
     
-    // Filter out messages from inactive users
+    // Filter out messages from inactive users and populate sender
     const filteredMessages = await Promise.all(
       publicMessages.map(async (msg) => {
         try {
           const user = await UserDac.DAO?.findById?.(msg.sender);
           if (user && user.status === USER_STATUS.ACTIVE) {
-            return msg;
+            return {
+              ...msg,
+              _id: msg.id || msg._id,
+              sender: {
+                username: user.username,
+                status: user.status
+              }
+            };
           }
         } catch (e) {
           // User not found or error, skip this message
