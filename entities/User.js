@@ -83,6 +83,10 @@ class User {
     static async usernameExists(username, excludeUserId = null) {
         return await User.DAO.usernameExists(username, excludeUserId);
     }
+
+    static async checkInitialAdministratorExists() {
+        return await User.DAO.checkInitialAdministratorExists();
+    }
 }
 
 export default User;

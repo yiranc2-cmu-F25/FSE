@@ -1,6 +1,7 @@
 import bcrypt from "bcrypt";
 import { USER_STATUS } from "../constants/userStatus.js";
 import { USER_ROLE } from "../constants/userRole.js";
+import { SHARED_STATUS } from "../constants/sharedStatus.js";
 import { iUserDao } from "./iUserDao.js";
 
 export class UserDao extends iUserDao {
@@ -233,6 +234,56 @@ export class UserDao extends iUserDao {
             return doc.role || USER_ROLE.CITIZEN;
         } catch (err) {
             console.error("Error getting role by ID:", err);
+            throw err;
+        }
+    }
+
+    /**
+     * Check if the initial administrator user exists
+     * Initial administrator should have:
+     * - username: "esnadmin" (stored as lowercase)
+     * - password: "admin" (validated using bcrypt)
+     * - role: USER_ROLE.ADMIN ("admin")
+     * - status: USER_STATUS.ACTIVE ("active")
+     * - sharedstatus: SHARED_STATUS.OK ("ok")
+     * @returns {Promise<boolean>} True if initial administrator exists and matches all criteria
+     */
+    async checkInitialAdministratorExists() {
+        try {
+            const INITIAL_ADMIN_USERNAME = "esnadmin";
+            const INITIAL_ADMIN_PASSWORD = "admin";
+
+            // Find user by username (username is stored as lowercase)
+            const doc = await this.UserModel.findOne({ username: INITIAL_ADMIN_USERNAME });
+            
+            if (!doc) {
+                return false;
+            }
+
+            // Check role
+            if (doc.role !== USER_ROLE.ADMIN) {
+                return false;
+            }
+
+            // Check account status
+            if (doc.status !== USER_STATUS.ACTIVE) {
+                return false;
+            }
+
+            // Check shared status
+            if (doc.sharedstatus !== SHARED_STATUS.OK) {
+                return false;
+            }
+
+            // Validate password using bcrypt
+            const passwordMatches = await bcrypt.compare(INITIAL_ADMIN_PASSWORD, doc.password);
+            if (!passwordMatches) {
+                return false;
+            }
+
+            return true;
+        } catch (err) {
+            console.error("Error checking initial administrator:", err);
             throw err;
         }
     }

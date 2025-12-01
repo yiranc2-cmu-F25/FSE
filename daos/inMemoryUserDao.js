@@ -1,6 +1,7 @@
 import { USER_STATUS } from "../constants/userStatus.js";
 import { SHARED_STATUS } from "../constants/sharedStatus.js";
 import { USER_ROLE } from "../constants/userRole.js";
+import bcrypt from "bcrypt";
 import { iUserDao } from "./iUserDao.js";
 
 export class inMemoryUserDao extends iUserDao {
@@ -208,5 +209,41 @@ export class inMemoryUserDao extends iUserDao {
       return null;
     }
     return user.role || USER_ROLE.CITIZEN;
+  }
+
+  async checkInitialAdministratorExists() {
+    const INITIAL_ADMIN_USERNAME = "esnadmin";
+    const INITIAL_ADMIN_PASSWORD = "admin";
+
+    // Find user by username (case-insensitive for in-memory)
+    const user = this.users.find(
+      (u) => u.username.toLowerCase() === INITIAL_ADMIN_USERNAME.toLowerCase()
+    );
+
+    if (!user) {
+      return false;
+    }
+
+    // Check role
+    if (user.role !== USER_ROLE.ADMIN) {
+      return false;
+    }
+
+    // Check account status
+    if (user.status !== USER_STATUS.ACTIVE) {
+      return false;
+    }
+
+    // Check shared status
+    if (user.sharedstatus !== SHARED_STATUS.OK) {
+      return false;
+    }
+
+    // Validate password (in-memory uses plain text comparison)
+    if (user.password !== INITIAL_ADMIN_PASSWORD) {
+      return false;
+    }
+
+    return true;
   }
 }
