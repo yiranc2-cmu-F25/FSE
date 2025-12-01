@@ -1,4 +1,21 @@
-// public/js/tasks/taskDetailModal.js
+// public/js/helpCenter/taskDetailModal.js
+
+import { hideElement, showElement, formatDate } from "./taskModalUtils.js";
+import { joinTask, quitTask, uploadTaskLog, fetchTask } from "./taskApi.js";
+import {
+  populateTitle,
+  populateStatus,
+  populateLocation,
+  populatePostTime,
+  populateDueDate,
+  populatePublisher,
+  populateHelpers,
+  populateDescription,
+  populateTaskLogs,
+  populateResources,
+  populateSkills,
+  populatePanelTitles,
+} from "./taskModalPopulate.js";
 
 const overlay = document.querySelector("#task-modal-root");
 const taskModalWrapper = document.querySelector("#task-modal-wrapper");
@@ -14,14 +31,6 @@ const btnUploadLog = document.querySelector("#btn-upload-log");
 const btnJoinTask = document.querySelector("#btn-join-task");
 const btnQuitTask = document.querySelector("#btn-quit-task");
 const btnEditTask = document.querySelector("#btn-edit-task");
-
-// Simple utility
-function hideElement(el) {
-  if (el) el.classList.add("hidden");
-}
-function showElement(el) {
-  if (el) el.classList.remove("hidden");
-}
 
 // Current task and viewer state - start empty, will be populated from API
 let currentTaskData = null;
@@ -105,20 +114,6 @@ function transformTaskForModal(backendTask) {
   return transformed;
 }
 
-// Format date for display
-function formatDate(iso) {
-  if (!iso) return "";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "";
-  return d.toLocaleString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
-}
-
 // Populate modal with task data
 function populateModal(task) {
   if (!task || !detailPanel) {
@@ -128,344 +123,18 @@ function populateModal(task) {
 
   console.log("[populateModal] Populating modal with task:", task);
 
-  // Update title
-  const titleEl = detailPanel.querySelector("h2");
-  if (titleEl) {
-    titleEl.textContent = task.title || "";
-    console.log("[populateModal] Updated title:", task.title);
-  } else {
-    console.warn("[populateModal] Title element not found");
-  }
-
-  // Update status label and status tag - find the mb-3 div
-  const statusContainer = detailPanel.querySelector(".mb-3");
-  if (statusContainer) {
-    // Update emergency level tag (first rounded-full)
-    const statusLabelEl = statusContainer.querySelector(".rounded-full");
-    if (statusLabelEl) {
-      statusLabelEl.textContent = task.statusLabel || task.emergencyLevel || "";
-      // Update status class based on level
-      statusLabelEl.className = "inline-flex rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide ";
-      if (task.emergencyLevel === "critical") {
-        statusLabelEl.className += "bg-rose-100 text-rose-600";
-      } else if (task.emergencyLevel === "urgent") {
-        statusLabelEl.className += "bg-amber-100 text-amber-600";
-      } else {
-        statusLabelEl.className += "bg-stone-100 text-stone-600";
-      }
-      console.log("[populateModal] Updated emergency level tag:", task.statusLabel);
-    }
-    
-    // Update status tag (OPEN/CLOSED) - second rounded-full
-    const statusTags = statusContainer.querySelectorAll(".rounded-full");
-    if (statusTags.length >= 2) {
-      const statusTag = statusTags[1];
-      const status = task.status || (task.isOpen !== false ? "OPEN" : "CLOSED");
-      statusTag.textContent = status;
-      statusTag.className = "inline-flex rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide ";
-      if (status === "OPEN") {
-        statusTag.className += "bg-emerald-100 text-emerald-700";
-      } else {
-        statusTag.className += "bg-stone-200 text-stone-600";
-      }
-      console.log("[populateModal] Updated status tag:", status);
-    }
-    
-    // Update category icon
-    const categoryIcon = statusContainer.querySelector("#task-category-icon");
-    if (categoryIcon) {
-      const categoryIconMap = {
-        debris_removal_and_cleanup: "/images/help-tasks/icons/task_category/debrisRemoval_cleanUp.svg",
-        temporary_repair: "/images/help-tasks/icons/task_category/tempRepair.svg",
-        animal_care: "/images/help-tasks/icons/task_category/animalCare.svg",
-        others: "/images/help-tasks/icons/task_category/otherCategory.svg",
-      };
-      const iconPath = categoryIconMap[task.category] || categoryIconMap.others;
-      categoryIcon.src = iconPath;
-      categoryIcon.alt = task.category || "Task category";
-      console.log("[populateModal] Updated category icon:", iconPath);
-    }
-  } else {
-    console.warn("[populateModal] Status container not found");
-  }
-
-  // Update location
-  const locationDt = Array.from(detailPanel.querySelectorAll("dt")).find(
-    (dt) => dt.textContent.trim() === "Location:",
-  );
-  if (locationDt) {
-    const locationDd = locationDt.nextElementSibling;
-    if (locationDd) {
-      locationDd.textContent = task.location || "Not specified";
-      console.log("[populateModal] Updated location:", task.location);
-    } else {
-      console.warn("[populateModal] Location dd element not found");
-    }
-  } else {
-    console.warn("[populateModal] Location dt element not found");
-  }
-
-  // Update post time
-  const postTimeDt = Array.from(detailPanel.querySelectorAll("dt")).find(
-    (dt) => dt.textContent.trim() === "Post Time:",
-  );
-  if (postTimeDt) {
-    const postTimeDd = postTimeDt.nextElementSibling;
-    if (postTimeDd) {
-      const formattedDate = formatDate(task.postTime);
-      postTimeDd.textContent = formattedDate || "Not specified";
-      console.log("[populateModal] Updated post time:", formattedDate, "from:", task.postTime);
-    } else {
-      console.warn("[populateModal] Post time dd element not found");
-    }
-  } else {
-    console.warn("[populateModal] Post time dt element not found");
-  }
-
-  // Update due date
-  const dueDateDt = Array.from(detailPanel.querySelectorAll("dt")).find(
-    (dt) => dt.textContent.trim() === "Due Date:",
-  );
-  if (dueDateDt) {
-    const dueDateDd = dueDateDt.nextElementSibling;
-    if (dueDateDd) {
-      const formattedDate = task.dueDate ? formatDate(task.dueDate) : "Not specified";
-      dueDateDd.textContent = formattedDate;
-      console.log("[populateModal] Updated due date:", formattedDate, "from:", task.dueDate);
-    } else {
-      console.warn("[populateModal] Due date dd element not found");
-    }
-  } else {
-    console.warn("[populateModal] Due date dt element not found");
-  }
-
-  // Update publisher
-  const publisherDt = Array.from(detailPanel.querySelectorAll("dt")).find(
-    (dt) => dt.textContent.trim() === "Publisher:",
-  );
-  if (publisherDt) {
-    const publisherDd = publisherDt.nextElementSibling;
-    if (publisherDd) {
-      const publisherName = task.creator?.username || "Unknown";
-      publisherDd.textContent = publisherName;
-      console.log("[populateModal] Updated publisher:", publisherName);
-    } else {
-      console.warn("[populateModal] Publisher dd element not found");
-    }
-  } else {
-    console.warn("[populateModal] Publisher dt element not found");
-  }
-
-  // Update helpers
-  const helpersDt = Array.from(detailPanel.querySelectorAll("dt")).find(
-    (dt) => dt.textContent.trim() === "Helpers:",
-  );
-  if (helpersDt) {
-    const helpersDd = helpersDt.nextElementSibling;
-    if (helpersDd) {
-      const ratioPill = helpersDd.querySelector(".helpers-ratio-pill");
-      const progressBar = helpersDd.querySelector(".helpers-progress-bar");
-      const avatarsContainer = helpersDd.querySelector(".helpers-avatars");
-      const helperNamesList = helpersDd.querySelector(".helper-names-list");
-
-      if (ratioPill) {
-        const joined = task.helpersJoined || 0;
-        const capacity = task.helpersCapacity || 0;
-        ratioPill.textContent = `${joined} / ${capacity}`;
-        console.log("[populateModal] Updated helpers ratio:", `${joined} / ${capacity}`);
-      } else {
-        console.warn("[populateModal] Helpers ratio pill not found");
-      }
-
-      if (progressBar && task.helpersCapacity > 0) {
-        const percentage = (100 * (task.helpersJoined || 0)) / task.helpersCapacity;
-        progressBar.style.width = `${percentage}%`;
-        console.log("[populateModal] Updated progress bar:", `${percentage}%`);
-      } else if (!progressBar) {
-        console.warn("[populateModal] Progress bar not found");
-      }
-
-      // Update avatars (placeholder for now)
-      if (avatarsContainer) {
-        avatarsContainer.innerHTML = "";
-        (task.helperAvatars || []).slice(0, 5).forEach((h) => {
-          const span = document.createElement("span");
-          span.className =
-            "relative -ml-2 flex h-7 w-7 items-center justify-center rounded-full border border-white text-[9px] font-semibold text-white shadow-sm";
-          span.style.backgroundColor = h.color || "#f97316";
-          span.textContent = h.initials || "";
-          avatarsContainer.appendChild(span);
-        });
-      }
-
-      // Update helper names list
-      if (helperNamesList) {
-        const names = Array.isArray(task.participantNames)
-          ? task.participantNames
-          : [];
-
-        if (names.length > 0) {
-          helperNamesList.innerHTML = names
-            .map(
-              (name, index) => `
-                <div class="flex items-center gap-2">
-                  <span class="inline-flex h-4 w-4 items-center justify-center rounded-full bg-amber-100 text-[10px] font-semibold text-amber-700">
-                    ${index + 1}
-                  </span>
-                  <span class="text-[11px] text-stone-700">${name}</span>
-                </div>
-              `,
-            )
-            .join("");
-        } else {
-          helperNamesList.innerHTML =
-            '<p class="text-[11px] text-stone-500">No helpers yet.</p>';
-        }
-      } else {
-        console.warn("[populateModal] Helper names list not found");
-      }
-    } else {
-      console.warn("[populateModal] Helpers dd element not found");
-    }
-  } else {
-    console.warn("[populateModal] Helpers dt element not found");
-  }
-
-  // Update description
-  const descSection = Array.from(detailPanel.querySelectorAll("section")).find((section) => {
-    const h3 = section.querySelector("h3");
-    return h3 && h3.textContent.trim() === "Description";
-  });
-  if (descSection) {
-    const descP = descSection.querySelector("p");
-    if (descP) {
-      descP.textContent = task.description || "";
-      console.log("[populateModal] Updated description:", task.description?.substring(0, 50) + "...");
-    } else {
-      console.warn("[populateModal] Description paragraph not found");
-    }
-  } else {
-    console.warn("[populateModal] Description section not found");
-  }
-
-  // Update task logs
-  const logsSection = Array.from(detailPanel.querySelectorAll("section")).find((section) => {
-    const h3 = section.querySelector("h3");
-    return h3 && h3.textContent.trim() === "Task Logs";
-  });
-  if (logsSection) {
-    const logsContainer = logsSection.querySelector(".space-y-2");
-    if (logsContainer) {
-      if (task.taskLogs && task.taskLogs.length > 0) {
-        logsContainer.innerHTML = task.taskLogs
-          .map(
-            (log) => `
-          <div class="grid grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] gap-3">
-            <p class="text-[11px] text-stone-500">${formatDate(log.timestamp)}</p>
-            <p class="text-[11px] leading-snug text-stone-700">${log.summary || ""}</p>
-          </div>
-        `,
-          )
-          .join("");
-      } else {
-        logsContainer.innerHTML = '<p class="text-[11px] text-stone-500">No logs yet.</p>';
-      }
-    }
-  }
-
-  // Update resources needed
-  const resourcesSection = Array.from(detailPanel.querySelectorAll("section")).find((section) => {
-    const h3 = section.querySelector("h3");
-    return h3 && h3.textContent.trim() === "Resource Needed";
-  });
-  if (resourcesSection) {
-    const resourcesContainer = resourcesSection.querySelector(".space-y-1");
-    if (resourcesContainer) {
-      console.log("[populateModal] Resources needed:", task.resourcesNeeded);
-      if (task.resourcesNeeded && Array.isArray(task.resourcesNeeded) && task.resourcesNeeded.length > 0) {
-        resourcesContainer.innerHTML = task.resourcesNeeded
-          .map(
-            (r) => `
-          <label class="flex items-start gap-2 text-[11px]">
-            <input
-              type="checkbox"
-              disabled
-              ${r.isFulfilled ? "checked" : ""}
-              class="mt-[2px] h-3.5 w-3.5 rounded border-stone-300 text-amber-500 focus:ring-0"
-            />
-            <span class="${r.isFulfilled ? "text-stone-500 line-through" : ""}">
-              ${r.label || ""}
-            </span>
-          </label>
-        `,
-          )
-          .join("");
-        console.log("[populateModal] Updated resources, count:", task.resourcesNeeded.length);
-      } else {
-        resourcesContainer.innerHTML =
-          '<p class="text-[11px] text-stone-500">No resources needed.</p>';
-        console.log("[populateModal] No resources needed");
-      }
-    } else {
-      console.warn("[populateModal] Resources container not found");
-    }
-  } else {
-    console.warn("[populateModal] Resources section not found");
-  }
-
-  // Update skills required
-  const skillsSection = Array.from(detailPanel.querySelectorAll("section")).find((section) => {
-    const h3 = section.querySelector("h3");
-    return h3 && h3.textContent.trim() === "Skills Required";
-  });
-  if (skillsSection) {
-    const skillsList = skillsSection.querySelector("ul");
-    if (skillsList) {
-      console.log("[populateModal] Skills required:", task.skillsRequired);
-      if (task.skillsRequired && Array.isArray(task.skillsRequired) && task.skillsRequired.length > 0) {
-        skillsList.innerHTML = task.skillsRequired
-          .map(
-            (s) => `
-          <li class="flex items-start gap-2 text-[11px]">
-            <span class="mt-[3px] h-1 w-1 rounded-full bg-amber-400"></span>
-            <span>${s}</span>
-          </li>
-        `,
-          )
-          .join("");
-        console.log("[populateModal] Updated skills, count:", task.skillsRequired.length);
-      } else {
-        skillsList.innerHTML = '<li class="text-[11px] text-stone-500">No specific skills required.</li>';
-        console.log("[populateModal] No skills required");
-      }
-    } else {
-      console.warn("[populateModal] Skills list not found");
-    }
-  } else {
-    console.warn("[populateModal] Skills section not found");
-  }
-
-  // Update join panel task title
-  if (joinPanel) {
-    const joinPanelTitle = joinPanel.querySelector("span.font-semibold");
-    if (joinPanelTitle) {
-      joinPanelTitle.textContent = task.title || "";
-      console.log("[populateModal] Updated join panel title:", task.title);
-    } else {
-      console.warn("[populateModal] Join panel title span not found");
-    }
-  }
-
-  // Update quit panel task title
-  if (quitPanel) {
-    const quitPanelTitle = quitPanel.querySelector("span.font-semibold");
-    if (quitPanelTitle) {
-      quitPanelTitle.textContent = task.title || "";
-      console.log("[populateModal] Updated quit panel title:", task.title);
-    } else {
-      console.warn("[populateModal] Quit panel title span not found");
-    }
-  }
+  populateTitle(detailPanel, task);
+  populateStatus(detailPanel, task);
+  populateLocation(detailPanel, task);
+  populatePostTime(detailPanel, task);
+  populateDueDate(detailPanel, task);
+  populatePublisher(detailPanel, task);
+  populateHelpers(detailPanel, task);
+  populateDescription(detailPanel, task);
+  populateTaskLogs(detailPanel, task);
+  populateResources(detailPanel, task);
+  populateSkills(detailPanel, task);
+  populatePanelTitles(joinPanel, quitPanel, task);
 }
 
 function setDetailButtonsVisibility(isParticipant, isOwner) {
@@ -759,38 +428,7 @@ document.addEventListener("click", (e) => {
 }, true); // Use capture phase to run early
 
 // ===== Join Task Functionality =====
-async function joinTask(taskId, note) {
-  try {
-    const response = await fetch(`/api/tasks/single/${encodeURIComponent(taskId)}/join`, {
-      method: "POST",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ note: note || "" }),
-    });
-
-    if (!response.ok) {
-      if (response.status === 401) {
-        throw new Error("Unauthorized: Please log in");
-      }
-      if (response.status === 400) {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to join task");
-      }
-      if (response.status === 404) {
-        throw new Error("Task not found");
-      }
-      throw new Error(`Failed to join task: ${response.status}`);
-    }
-
-    const result = await response.json();
-    return result;
-  } catch (error) {
-    console.error("Error joining task:", error);
-    throw error;
-  }
-}
+// joinTask is imported from taskApi.js
 
 // Join panel confirm button - opens confirm modal (use event delegation)
 document.addEventListener("click", (e) => {
@@ -953,37 +591,7 @@ document.addEventListener("click", (event) => {
 });
 
 // ===== Quit Task Functionality =====
-async function quitTask(taskId) {
-  try {
-    const response = await fetch(`/api/tasks/single/${encodeURIComponent(taskId)}/quit`, {
-      method: "POST",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (!response.ok) {
-      if (response.status === 401) {
-        throw new Error("Unauthorized: Please log in");
-      }
-      if (response.status === 400) {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to quit task");
-      }
-      if (response.status === 404) {
-        throw new Error("Task not found");
-      }
-      throw new Error(`Failed to quit task: ${response.status}`);
-    }
-
-    const result = await response.json();
-    return result;
-  } catch (error) {
-    console.error("Error quitting task:", error);
-    throw error;
-  }
-}
+// quitTask is imported from taskApi.js
 
 // Quit panel confirm button - performs API call
 const quitConfirmBtn = document.querySelector("#quit-confirm-btn");
@@ -1122,19 +730,7 @@ document.addEventListener("click", (event) => {
     
     // Refresh task data from API to get updated participant list
     if (currentTaskData && currentTaskData.id) {
-      fetch(`/api/tasks/single/${encodeURIComponent(currentTaskData.id)}`, {
-        method: "GET",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      })
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error(`Failed to fetch task: ${response.status}`);
-          }
-          return response.json();
-        })
+      fetchTask(currentTaskData.id)
         .then((updatedTask) => {
           // Get current user ID for determining relationship
           const currentUserId = window.__CURRENT_USER_ID__ || null;
@@ -1179,44 +775,7 @@ document.addEventListener("click", (event) => {
 });
 
 // ===== Upload Task Log Functionality =====
-async function uploadTaskLog(taskId, logText) {
-  try {
-    const response = await fetch(`/api/tasks/single/${encodeURIComponent(taskId)}/logs`, {
-      method: "POST",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ 
-        summary: logText.trim(),
-      }),
-    });
-
-    if (!response.ok) {
-      if (response.status === 401) {
-        throw new Error("Unauthorized: Please log in");
-      }
-      if (response.status === 400) {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to upload task log");
-      }
-      if (response.status === 403) {
-        const error = await response.json();
-        throw new Error(error.message || "Only participants can add task logs");
-      }
-      if (response.status === 404) {
-        throw new Error("Task not found");
-      }
-      throw new Error(`Failed to upload task log: ${response.status}`);
-    }
-
-    const result = await response.json();
-    return result;
-  } catch (error) {
-    console.error("Error uploading task log:", error);
-    throw error;
-  }
-}
+// uploadTaskLog is imported from taskApi.js
 
 const logSubmitBtn = document.querySelector("#log-submit-btn");
 if (logSubmitBtn) {
@@ -1257,22 +816,15 @@ if (logSubmitBtn) {
       }
       
       // Refresh task data to show new log
-      // Fetch updated task data from API
-      const response = await fetch(`/api/tasks/single/${encodeURIComponent(currentTaskData.id)}`, {
-        method: "GET",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (response.ok) {
-        const updatedTask = await response.json();
+      try {
+        const updatedTask = await fetchTask(currentTaskData.id);
         const transformedTask = transformTaskForModal(updatedTask);
         if (transformedTask) {
           currentTaskData = transformedTask;
           populateModal(currentTaskData);
         }
+      } catch (error) {
+        console.error("Error refreshing task data:", error);
       }
       
       // Show success modal
