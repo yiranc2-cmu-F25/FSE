@@ -255,7 +255,7 @@ router.get("/bookmarks", auth, getBookmarkedEmergencyProfiles);
  *       500:
  *         description: Server error
  */
-router.get("/:profileId/photo", auth, getProfilePhoto);
+router.get("/:profileId/photos", auth, getProfilePhoto);
 
 router.post("/bookmarks", auth, bookmarkEmergencyProfile);
 

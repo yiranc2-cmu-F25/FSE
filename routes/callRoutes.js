@@ -109,12 +109,12 @@ const router = Router();
  *                 status: { type: string, example: "error" }
  *                 message: { type: string, example: "Server error" }
  */
-router.post("/join-room", auth, joinVoiceCall);
+router.post("/participants", auth, joinVoiceCall);
 
 /**
  * @openapi
- * /api/calls/leave-room:
- *   post:
+ * /api/calls/participants:
+ *   delete:
  *     tags: [Voice Calls]
  *     summary: Leave a group voice call room
  *     description: Notifies the server that the authenticated user is leaving a voice call room for a specific group
@@ -191,7 +191,7 @@ router.post("/join-room", auth, joinVoiceCall);
  *                 status: { type: string, example: "error" }
  *                 message: { type: string, example: "Server error" }
  */
-router.post("/leave-room", auth, leaveVoiceCall);
+router.delete("/participants", auth, leaveVoiceCall);
 
 /**
  * @openapi

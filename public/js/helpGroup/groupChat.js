@@ -885,23 +885,17 @@ async function addSelectedMembers() {
 function markGroupAsRead() {
   if (!groupId) return;
 
-  const url = `/api/groups/${groupId}/read`;
-  const data = JSON.stringify({});
+  const url = `/api/groups/${groupId}`;
+  const data = JSON.stringify({ read: true });
 
-  // Use sendBeacon for reliable delivery even when page is unloading
-  if (navigator.sendBeacon) {
-    const blob = new Blob([data], { type: "application/json" });
-    navigator.sendBeacon(url, blob);
-  } else {
-    // Fallback for browsers without sendBeacon
-    fetch(url, {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: data,
-      keepalive: true,
-    }).catch(err => console.error("Failed to mark as read:", err));
-  }
+  // Use fetch with keepalive instead of sendBeacon since sendBeacon doesn't support PATCH
+  fetch(url, {
+    method: "PATCH",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: data,
+    keepalive: true,
+  }).catch(err => console.warn("[groupChat] Failed to mark group as read:", err));
 }
 
 // Mark as read when user leaves or hides the page

@@ -57,11 +57,11 @@ const router = Router();
 router.post("/registrations", register);
 /**
  * @openapi
- * /api/authentications/login:
+ * /api/authentications/sessions:
  *   post:
  *     tags: [Auth]
  *     summary: Log in and get a JWT
- *     description: Authenticates a user and sets an HTTP-only `jwt_token` cookie on success.
+ *     description: Authenticates a user and sets an HTTP-only `jwt_token` cookie on success. Creates a new session.
  *     requestBody:
  *       required: true
  *       content:
@@ -113,7 +113,7 @@ router.post("/registrations", register);
  *             schema:
  *               $ref: '#/components/schemas/ServerError'
  */
-router.post("/login", login);
+router.post("/sessions", login);
 /**
  * @openapi
  * /api/authentications/users/usernames:
@@ -211,11 +211,11 @@ router.post("/users/usernames", usernameStatus);
 router.get("/accounts", auth, getMe);
 /**
  * @openapi
- * /api/authentications/logout:
- *   post:
+ * /api/authentications/sessions:
+ *   delete:
  *     tags: [Auth]
  *     summary: Log out current user
- *     description: Clears the `jwt_token` cookie.
+ *     description: Clears the `jwt_token` cookie and destroys the session.
  *     security:
  *       - cookieAuth: []
  *     responses:
@@ -256,7 +256,7 @@ router.get("/accounts", auth, getMe);
  *             schema:
  *               $ref: '#/components/schemas/ServerError'
  */
-router.post("/logout", auth, logout);
+router.delete("/sessions", auth, logout);
 /**
  * @openapi
  * /api/authentications/lists:
@@ -305,8 +305,8 @@ router.post("/logout", auth, logout);
 router.get("/lists", auth, listMembers);
 /**
  * @openapi
- * /api/authentications/status:
- *   put:
+ * /api/authentications/statuses:
+ *   post:
  *     tags: [Auth]
  *     summary: Update a user's status by ID
  *     description: Update the status field of a specific user identified by userId in the request body.
@@ -390,7 +390,7 @@ router.get("/lists", auth, listMembers);
  *                 status: { type: string, example: "error" }
  *                 message: { type: string, example: "Server error" }
  */
-router.patch("/statuses/new", auth, updateStatusById);
+router.post("/statuses", auth, updateStatusById);
 
 
 export default router;

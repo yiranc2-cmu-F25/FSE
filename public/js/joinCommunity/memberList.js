@@ -213,7 +213,7 @@ function setupAvatarNavigation() {
 
 // ---------- fetch unread messages and show toasts ----------
 async function fetchUnreadMessages() {
-  const res = await fetch("/api/messages/private/unread", {
+  const res = await fetch("/api/messages/unread", {
     credentials: "include",
     headers: { "Accept": "application/json" },
   });

@@ -9,8 +9,8 @@ let seenNotificationIds = new Set();
 async function markNotificationSeen(boardId) {
 	try {
 		console.log("[boardNotifications] Marking notification as seen for boardId:", boardId);
-		const res = await fetch(`/api/coaching-boards/${boardId}/notifications/seen`, {
-			method: "POST",
+		const res = await fetch(`/api/coaching-boards/${boardId}/notifications`, {
+			method: "PATCH",
 			credentials: "include"
 		});
 		if (!res.ok) {

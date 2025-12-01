@@ -35,7 +35,7 @@ const router = Router();
  *       500:
  *         description: Server error
  */
-router.post("/start", auth, requireAdmin, startSpeedTest);
+router.post("/tests", auth, requireAdmin, startSpeedTest);
 
 /**
  * @openapi
@@ -126,7 +126,7 @@ router.get("/messages", auth, requireAdmin, getFromSpeedTest);
  *       500:
  *         description: Server error
  */
-router.post("/next-phase", auth, requireAdmin, switchTestPhase);
+router.patch("/tests", auth, requireAdmin, switchTestPhase);
 
 /**
  * @openapi
@@ -151,7 +151,7 @@ router.post("/next-phase", auth, requireAdmin, switchTestPhase);
  *       500:
  *         description: Server error
  */
-router.post("/stop", auth, requireAdmin, stopSpeedTest);
+router.delete("/tests", auth, requireAdmin, stopSpeedTest);
 
 /**
  * @openapi

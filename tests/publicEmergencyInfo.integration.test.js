@@ -364,7 +364,7 @@ describe("Public Emergency Info Integration Tests", () => {
     });
   });
 
-  describe("GET /api/public/emergency-profiles/:profileId/photo", () => {
+  describe("GET /api/public/emergency-profiles/:profileId/photos", () => {
     test("returns photo", async () => {
       const aliceClient = request.agent();
       const bobClient = request.agent();
@@ -392,14 +392,14 @@ describe("Public Emergency Info Integration Tests", () => {
       );
 
       await bobClient
-        .post(`${BASE_URL}/api/emergency-profiles/photo`)
+        .post(`${BASE_URL}/api/emergency-profiles/photos`)
         .attach("photo", imageBuffer, "test.png")
         .field("visibility", "emergencyOnly")
         .ok((res) => true);
 
       // Get photo via public API
       const res = await aliceClient
-        .get(`${PUBLIC_PROFILE_BASE}/${profileId}/photo`)
+        .get(`${PUBLIC_PROFILE_BASE}/${profileId}/photos`)
         .ok((res) => true);
 
       expect(res.status).toBe(200);
@@ -429,7 +429,7 @@ describe("Public Emergency Info Integration Tests", () => {
 
       // Try to get photo that doesn't exist
       const res = await aliceClient
-        .get(`${PUBLIC_PROFILE_BASE}/${profileId}/photo`)
+        .get(`${PUBLIC_PROFILE_BASE}/${profileId}/photos`)
         .ok((res) => true);
 
       expect(res.status).toBe(404);

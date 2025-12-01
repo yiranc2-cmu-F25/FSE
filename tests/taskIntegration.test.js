@@ -113,7 +113,7 @@ describe("Task Management REST API Integration Tests", () => {
       // Verify state was persisted - GET the task to verify
       const taskId = createRes.body.task.id || createRes.body.task._id;
       const getRes = await agent
-        .get(`/api/tasks/single/${taskId}`)
+        .get(`/api/tasks/${taskId}`)
         .expect(200);
 
       expect(getRes.body.id).toBe(taskId);
@@ -152,7 +152,7 @@ describe("Task Management REST API Integration Tests", () => {
       // Verify state with GET
       const taskId = createRes.body.task.id || createRes.body.task._id;
       const getRes = await agent
-        .get(`/api/tasks/single/${taskId}`)
+        .get(`/api/tasks/${taskId}`)
         .expect(200);
 
       expect(getRes.body.taskType).toBe("asap");
@@ -355,7 +355,7 @@ describe("Task Management REST API Integration Tests", () => {
       const taskId = createRes.body.task.id || createRes.body.task._id;
 
       // Close the task
-      await agent.put(`/api/tasks/single/${taskId}`)
+      await agent.put(`/api/tasks/${taskId}`)
         .send({ isOpen: false })
         .expect(200);
 
@@ -394,7 +394,7 @@ describe("Task Management REST API Integration Tests", () => {
     });
   });
 
-  describe("GET /api/tasks/single/:id - Get Task by ID (Query Test)", () => {
+  describe("GET /api/tasks/:id - Get Task by ID (Query Test)", () => {
     test("should retrieve a specific task with all details including participants and logs", async () => {
       const agent = request.agent(app);
       const user = await registerAndLogin(agent, `detail_user_${Date.now()}`);
@@ -412,18 +412,18 @@ describe("Task Management REST API Integration Tests", () => {
       const taskId = createRes.body.task.id || createRes.body.task._id;
 
       // Join the task
-      await agent.post(`/api/tasks/single/${taskId}/join`)
+      await agent.post(`/api/tasks/${taskId}/participants`)
         .send({ note: "I can help!" })
         .expect(200);
 
       // Add a log
-      await agent.post(`/api/tasks/single/${taskId}/logs`)
+      await agent.post(`/api/tasks/${taskId}/logs`)
         .send({ summary: "Started work on the repair" })
         .expect(201);
 
       // GET the task and verify all details
       const getRes = await agent
-        .get(`/api/tasks/single/${taskId}`)
+        .get(`/api/tasks/${taskId}`)
         .expect(200);
 
       expect(getRes.body.id).toBe(taskId);
@@ -446,7 +446,7 @@ describe("Task Management REST API Integration Tests", () => {
 
       // Use a valid ObjectId format that doesn't exist
       const getRes = await agent
-        .get("/api/tasks/single/507f1f77bcf86cd799439011")
+        .get("/api/tasks/507f1f77bcf86cd799439011")
         .expect(404);
 
       expect(getRes.body.status).toBe("error");
@@ -514,7 +514,7 @@ describe("Task Management REST API Integration Tests", () => {
     });
   });
 
-  describe("PUT /api/tasks/single/:id - Update Task (State-Updating Test)", () => {
+  describe("PUT /api/tasks/:id - Update Task (State-Updating Test)", () => {
     test("should update task successfully and verify state change with GET request", async () => {
       const agent = request.agent(app);
       const user = await registerAndLogin(agent, `updater_${Date.now()}`);
@@ -538,7 +538,7 @@ describe("Task Management REST API Integration Tests", () => {
 
       // Update the task
       const updateRes = await agent
-        .put(`/api/tasks/single/${taskId}`)
+        .put(`/api/tasks/${taskId}`)
         .send({
           title: "Updated Title",
           description: "Updated description",
@@ -558,7 +558,7 @@ describe("Task Management REST API Integration Tests", () => {
 
       // Verify state change with GET request
       const getRes = await agent
-        .get(`/api/tasks/single/${taskId}`)
+        .get(`/api/tasks/${taskId}`)
         .expect(200);
 
       expect(getRes.body.title).toBe("Updated Title");
@@ -585,21 +585,21 @@ describe("Task Management REST API Integration Tests", () => {
       const taskId = createRes.body.task.id || createRes.body.task._id;
 
       // Verify task is open initially
-      let getRes = await agent.get(`/api/tasks/single/${taskId}`).expect(200);
+      let getRes = await agent.get(`/api/tasks/${taskId}`).expect(200);
       expect(getRes.body.isOpen).toBe(true);
 
       // Close the task
-      await agent.put(`/api/tasks/single/${taskId}`)
+      await agent.put(`/api/tasks/${taskId}`)
         .send({ isOpen: false })
         .expect(200);
 
       // Verify state change with GET
-      getRes = await agent.get(`/api/tasks/single/${taskId}`).expect(200);
+      getRes = await agent.get(`/api/tasks/${taskId}`).expect(200);
       expect(getRes.body.isOpen).toBe(false);
     });
   });
 
-  describe("PUT /api/tasks/single/:id - Update Task (Negative Tests)", () => {
+  describe("PUT /api/tasks/:id - Update Task (Negative Tests)", () => {
     test("should return 403 when non-owner tries to update task", async () => {
       const agent1 = request.agent(app);
       const agent2 = request.agent(app);
@@ -620,7 +620,7 @@ describe("Task Management REST API Integration Tests", () => {
 
       // Non-owner tries to update
       const updateRes = await agent2
-        .put(`/api/tasks/single/${taskId}`)
+        .put(`/api/tasks/${taskId}`)
         .send({ title: "Hacked Title" })
         .expect(403);
 
@@ -628,12 +628,12 @@ describe("Task Management REST API Integration Tests", () => {
       expect(updateRes.body.message).toContain("Unauthorized");
 
       // Verify task was NOT updated
-      const getRes = await agent1.get(`/api/tasks/single/${taskId}`).expect(200);
+      const getRes = await agent1.get(`/api/tasks/${taskId}`).expect(200);
       expect(getRes.body.title).toBe("Owner's Task");
     });
   });
 
-  describe("DELETE /api/tasks/single/:id - Delete Task (State-Updating Test)", () => {
+  describe("DELETE /api/tasks/:id - Delete Task (State-Updating Test)", () => {
     test("should delete task successfully and verify deletion with GET request", async () => {
       const agent = request.agent(app);
       await registerAndLogin(agent, `deleter_${Date.now()}`);
@@ -650,11 +650,11 @@ describe("Task Management REST API Integration Tests", () => {
       const taskId = createRes.body.task.id || createRes.body.task._id;
 
       // Verify task exists
-      await agent.get(`/api/tasks/single/${taskId}`).expect(200);
+      await agent.get(`/api/tasks/${taskId}`).expect(200);
 
       // Delete the task
       const deleteRes = await agent
-        .delete(`/api/tasks/single/${taskId}`)
+        .delete(`/api/tasks/${taskId}`)
         .expect(200);
 
       expect(deleteRes.body.status).toBe("success");
@@ -662,7 +662,7 @@ describe("Task Management REST API Integration Tests", () => {
 
       // Verify deletion with GET request
       const getRes = await agent
-        .get(`/api/tasks/single/${taskId}`)
+        .get(`/api/tasks/${taskId}`)
         .expect(404);
 
       expect(getRes.body.status).toBe("error");
@@ -689,18 +689,18 @@ describe("Task Management REST API Integration Tests", () => {
 
       // Non-owner tries to delete
       const deleteRes = await agent2
-        .delete(`/api/tasks/single/${taskId}`)
+        .delete(`/api/tasks/${taskId}`)
         .expect(403);
 
       expect(deleteRes.body.status).toBe("error");
       expect(deleteRes.body.message).toContain("Unauthorized");
 
       // Verify task still exists
-      await agent1.get(`/api/tasks/single/${taskId}`).expect(200);
+      await agent1.get(`/api/tasks/${taskId}`).expect(200);
     });
   });
 
-  describe("POST /api/tasks/single/:id/join - Join Task (State-Updating Test)", () => {
+  describe("POST /api/tasks/:id/join - Join Task (State-Updating Test)", () => {
     test("should allow user to join an open task and verify participation state", async () => {
       const agent1 = request.agent(app);
       const agent2 = request.agent(app);
@@ -720,13 +720,13 @@ describe("Task Management REST API Integration Tests", () => {
       const taskId = createRes.body.task.id || createRes.body.task._id;
 
       // Verify initial state
-      let getRes = await agent2.get(`/api/tasks/single/${taskId}`).expect(200);
+      let getRes = await agent2.get(`/api/tasks/${taskId}`).expect(200);
       expect(getRes.body.helpersJoined).toBe(0);
       expect(getRes.body.isParticipant).toBe(false);
 
       // Join the task
       const joinRes = await agent2
-        .post(`/api/tasks/single/${taskId}/join`)
+        .post(`/api/tasks/${taskId}/participants`)
         .send({ note: "I can help with this task!" })
         .expect(200);
 
@@ -734,7 +734,7 @@ describe("Task Management REST API Integration Tests", () => {
       expect(joinRes.body.message).toBe("Task joined successfully");
 
       // Verify state change with GET request
-      getRes = await agent2.get(`/api/tasks/single/${taskId}`).expect(200);
+      getRes = await agent2.get(`/api/tasks/${taskId}`).expect(200);
       expect(getRes.body.helpersJoined).toBe(1);
       expect(getRes.body.isParticipant).toBe(true);
       expect(getRes.body.participantNames.length).toBeGreaterThanOrEqual(1);
@@ -759,13 +759,13 @@ describe("Task Management REST API Integration Tests", () => {
       const taskId = createRes.body.task.id || createRes.body.task._id;
 
       // Close the task
-      await agent1.put(`/api/tasks/single/${taskId}`)
+      await agent1.put(`/api/tasks/${taskId}`)
         .send({ isOpen: false })
         .expect(200);
 
       // Try to join closed task
       const joinRes = await agent2
-        .post(`/api/tasks/single/${taskId}/join`)
+        .post(`/api/tasks/${taskId}/participants`)
         .send({})
         .expect(400);
 
@@ -773,7 +773,7 @@ describe("Task Management REST API Integration Tests", () => {
       expect(joinRes.body.message).toBe("Task is closed");
 
       // Verify user did NOT join
-      const getRes = await agent2.get(`/api/tasks/single/${taskId}`).expect(200);
+      const getRes = await agent2.get(`/api/tasks/${taskId}`).expect(200);
       expect(getRes.body.isParticipant).toBe(false);
     });
 
@@ -798,16 +798,16 @@ describe("Task Management REST API Integration Tests", () => {
       const taskId = createRes.body.task.id || createRes.body.task._id;
 
       // First user joins
-      await agent2.post(`/api/tasks/single/${taskId}/join`).send({}).expect(200);
+      await agent2.post(`/api/tasks/${taskId}/participants`).send({}).expect(200);
 
       // Verify task is full
-      let getRes = await agent3.get(`/api/tasks/single/${taskId}`).expect(200);
+      let getRes = await agent3.get(`/api/tasks/${taskId}`).expect(200);
       expect(getRes.body.helpersJoined).toBe(1);
       expect(getRes.body.helpers).toBe(1);
 
       // Second user tries to join (should fail - task is full)
       const joinRes = await agent3
-        .post(`/api/tasks/single/${taskId}/join`)
+        .post(`/api/tasks/${taskId}/participants`)
         .send({})
         .expect(400);
 
@@ -815,13 +815,13 @@ describe("Task Management REST API Integration Tests", () => {
       expect(joinRes.body.message).toBe("Task is full");
 
       // Verify second user did NOT join
-      getRes = await agent3.get(`/api/tasks/single/${taskId}`).expect(200);
+      getRes = await agent3.get(`/api/tasks/${taskId}`).expect(200);
       expect(getRes.body.helpersJoined).toBe(1);
       expect(getRes.body.isParticipant).toBe(false);
     });
   });
 
-  describe("POST /api/tasks/single/:id/quit - Quit Task (State-Updating Test)", () => {
+  describe("POST /api/tasks/:id/quit - Quit Task (State-Updating Test)", () => {
     test("should allow participant to quit task and verify state change", async () => {
       const agent1 = request.agent(app);
       const agent2 = request.agent(app);
@@ -841,23 +841,23 @@ describe("Task Management REST API Integration Tests", () => {
       const taskId = createRes.body.task.id || createRes.body.task._id;
 
       // Join the task
-      await agent2.post(`/api/tasks/single/${taskId}/join`).send({}).expect(200);
+      await agent2.post(`/api/tasks/${taskId}/participants`).send({}).expect(200);
 
       // Verify joined state
-      let getRes = await agent2.get(`/api/tasks/single/${taskId}`).expect(200);
+      let getRes = await agent2.get(`/api/tasks/${taskId}`).expect(200);
       expect(getRes.body.helpersJoined).toBe(1);
       expect(getRes.body.isParticipant).toBe(true);
 
       // Quit the task
       const quitRes = await agent2
-        .post(`/api/tasks/single/${taskId}/quit`)
+        .delete(`/api/tasks/${taskId}/participants`)
         .expect(200);
 
       expect(quitRes.body.status).toBe("success");
       expect(quitRes.body.message).toBe("Task quit successfully");
 
       // Verify state change with GET request
-      getRes = await agent2.get(`/api/tasks/single/${taskId}`).expect(200);
+      getRes = await agent2.get(`/api/tasks/${taskId}`).expect(200);
       expect(getRes.body.helpersJoined).toBe(0);
       expect(getRes.body.isParticipant).toBe(false);
     });
@@ -882,7 +882,7 @@ describe("Task Management REST API Integration Tests", () => {
 
       // Non-participant tries to quit
       const quitRes = await agent2
-        .post(`/api/tasks/single/${taskId}/quit`)
+        .delete(`/api/tasks/${taskId}/participants`)
         .expect(400);
 
       expect(quitRes.body.status).toBe("error");
@@ -890,7 +890,7 @@ describe("Task Management REST API Integration Tests", () => {
     });
   });
 
-  describe("POST /api/tasks/single/:id/logs - Add Task Log (State-Updating Test)", () => {
+  describe("POST /api/tasks/:id/logs - Add Task Log (State-Updating Test)", () => {
     test("should allow participant to add log and verify log appears in task details", async () => {
       const agent1 = request.agent(app);
       const agent2 = request.agent(app);
@@ -910,15 +910,15 @@ describe("Task Management REST API Integration Tests", () => {
       const taskId = createRes.body.task.id || createRes.body.task._id;
 
       // Join the task
-      await agent2.post(`/api/tasks/single/${taskId}/join`).send({}).expect(200);
+      await agent2.post(`/api/tasks/${taskId}/participants`).send({}).expect(200);
 
       // Verify no logs initially
-      let getRes = await agent2.get(`/api/tasks/single/${taskId}`).expect(200);
+      let getRes = await agent2.get(`/api/tasks/${taskId}`).expect(200);
       expect(getRes.body.taskLogs.length).toBe(0);
 
       // Add a log
       const logRes = await agent2
-        .post(`/api/tasks/single/${taskId}/logs`)
+        .post(`/api/tasks/${taskId}/logs`)
         .send({ summary: "Completed the first phase of cleanup" })
         .expect(201);
 
@@ -928,7 +928,7 @@ describe("Task Management REST API Integration Tests", () => {
       expect(logRes.body.log.summary).toBe("Completed the first phase of cleanup");
 
       // Verify state change with GET request
-      getRes = await agent2.get(`/api/tasks/single/${taskId}`).expect(200);
+      getRes = await agent2.get(`/api/tasks/${taskId}`).expect(200);
       expect(getRes.body.taskLogs.length).toBe(1);
       expect(getRes.body.taskLogs[0].summary).toBe("Completed the first phase of cleanup");
       expect(getRes.body.taskLogs[0].timestamp).toBeDefined();
@@ -954,7 +954,7 @@ describe("Task Management REST API Integration Tests", () => {
 
       // Non-participant tries to add log
       const logRes = await agent2
-        .post(`/api/tasks/single/${taskId}/logs`)
+        .post(`/api/tasks/${taskId}/logs`)
         .send({ summary: "I wasn't there but here's a log" })
         .expect(403);
 
@@ -962,7 +962,7 @@ describe("Task Management REST API Integration Tests", () => {
       expect(logRes.body.message).toBe("Only participants can add task logs");
 
       // Verify no log was added
-      const getRes = await agent2.get(`/api/tasks/single/${taskId}`).expect(200);
+      const getRes = await agent2.get(`/api/tasks/${taskId}`).expect(200);
       expect(getRes.body.taskLogs.length).toBe(0);
     });
 
@@ -984,11 +984,11 @@ describe("Task Management REST API Integration Tests", () => {
 
       const taskId = createRes.body.task.id || createRes.body.task._id;
 
-      await agent2.post(`/api/tasks/single/${taskId}/join`).send({}).expect(200);
+      await agent2.post(`/api/tasks/${taskId}/participants`).send({}).expect(200);
 
       // Try to add log without summary
       const logRes1 = await agent2
-        .post(`/api/tasks/single/${taskId}/logs`)
+        .post(`/api/tasks/${taskId}/logs`)
         .send({})
         .expect(400);
 
@@ -997,7 +997,7 @@ describe("Task Management REST API Integration Tests", () => {
 
       // Try to add log with empty summary
       const logRes2 = await agent2
-        .post(`/api/tasks/single/${taskId}/logs`)
+        .post(`/api/tasks/${taskId}/logs`)
         .send({ summary: "   " })
         .expect(400);
 
@@ -1094,7 +1094,7 @@ describe("Task Management REST API Integration Tests", () => {
     });
   });
 
-  describe("GET /api/tasks/participated/count - Count Participated Tasks (Query Test)", () => {
+  describe("GET /api/tasks/participants/count - Count Participated Tasks (Query Test)", () => {
     test("should return correct count of tasks where user is a participant", async () => {
       const agent1 = request.agent(app);
       const agent2 = request.agent(app);
@@ -1117,12 +1117,12 @@ describe("Task Management REST API Integration Tests", () => {
       }
 
       // Participant joins 2 tasks
-      await agent2.post(`/api/tasks/single/${taskIds[0]}/join`).send({}).expect(200);
-      await agent2.post(`/api/tasks/single/${taskIds[1]}/join`).send({}).expect(200);
+      await agent2.post(`/api/tasks/${taskIds[0]}/participants`).send({}).expect(200);
+      await agent2.post(`/api/tasks/${taskIds[1]}/participants`).send({}).expect(200);
 
       // Count participated tasks
       const countRes = await agent2
-        .get("/api/tasks/participated/count")
+        .get("/api/tasks/participants/count")
         .expect(200);
 
       expect(countRes.body.count).toBeGreaterThanOrEqual(2);
@@ -1151,54 +1151,54 @@ describe("Task Management REST API Integration Tests", () => {
       const taskId = createRes.body.task.id || createRes.body.task._id;
 
       // 2. Verify task creation
-      let getRes = await agent1.get(`/api/tasks/single/${taskId}`).expect(200);
+      let getRes = await agent1.get(`/api/tasks/${taskId}`).expect(200);
       expect(getRes.body.title).toBe("Workflow Task");
       expect(getRes.body.isOpen).toBe(true);
       expect(getRes.body.helpersJoined).toBe(0);
 
       // 3. Participant joins
-      await agent2.post(`/api/tasks/single/${taskId}/join`)
+      await agent2.post(`/api/tasks/${taskId}/participants`)
         .send({ note: "I'm available to help" })
         .expect(200);
 
       // 4. Verify join
-      getRes = await agent2.get(`/api/tasks/single/${taskId}`).expect(200);
+      getRes = await agent2.get(`/api/tasks/${taskId}`).expect(200);
       expect(getRes.body.helpersJoined).toBe(1);
       expect(getRes.body.isParticipant).toBe(true);
 
       // 5. Participant adds log
-      await agent2.post(`/api/tasks/single/${taskId}/logs`)
+      await agent2.post(`/api/tasks/${taskId}/logs`)
         .send({ summary: "Started working on the repair" })
         .expect(201);
 
       // 6. Verify log
-      getRes = await agent2.get(`/api/tasks/single/${taskId}`).expect(200);
+      getRes = await agent2.get(`/api/tasks/${taskId}`).expect(200);
       expect(getRes.body.taskLogs.length).toBe(1);
       expect(getRes.body.taskLogs[0].summary).toBe("Started working on the repair");
 
       // 7. Owner updates task
-      await agent1.put(`/api/tasks/single/${taskId}`)
+      await agent1.put(`/api/tasks/${taskId}`)
         .send({ emergencyLevel: "critical", location: "456 Updated St" })
         .expect(200);
 
       // 8. Verify update
-      getRes = await agent1.get(`/api/tasks/single/${taskId}`).expect(200);
+      getRes = await agent1.get(`/api/tasks/${taskId}`).expect(200);
       expect(getRes.body.emergencyLevel).toBe("critical");
       expect(getRes.body.location).toBe("456 Updated St");
 
       // 9. Participant quits
-      await agent2.post(`/api/tasks/single/${taskId}/quit`).expect(200);
+      await agent2.delete(`/api/tasks/${taskId}/participants`).expect(200);
 
       // 10. Verify quit
-      getRes = await agent2.get(`/api/tasks/single/${taskId}`).expect(200);
+      getRes = await agent2.get(`/api/tasks/${taskId}`).expect(200);
       expect(getRes.body.helpersJoined).toBe(0);
       expect(getRes.body.isParticipant).toBe(false);
 
       // 11. Owner deletes task
-      await agent1.delete(`/api/tasks/single/${taskId}`).expect(200);
+      await agent1.delete(`/api/tasks/${taskId}`).expect(200);
 
       // 12. Verify deletion
-      await agent1.get(`/api/tasks/single/${taskId}`).expect(404);
+      await agent1.get(`/api/tasks/${taskId}`).expect(404);
     });
   });
 
@@ -1399,7 +1399,7 @@ describe("Task Management REST API Integration Tests", () => {
       // Verify state with GET
       const taskId = createRes.body.task.id || createRes.body.task._id;
       const getRes = await agent
-        .get(`/api/tasks/single/${taskId}`)
+        .get(`/api/tasks/${taskId}`)
         .expect(200);
 
       expect(getRes.body.taskType).toBe("schedule");
@@ -1655,7 +1655,7 @@ describe("Task Management REST API Integration Tests", () => {
       }).expect(201);
 
       const taskId2 = createRes2.body.task.id || createRes2.body.task._id;
-      await agent.put(`/api/tasks/single/${taskId2}`)
+      await agent.put(`/api/tasks/${taskId2}`)
         .send({ isOpen: false })
         .expect(200);
 
@@ -1693,7 +1693,7 @@ describe("Task Management REST API Integration Tests", () => {
       const taskId = createRes.body.task.id || createRes.body.task._id;
 
       // Participant joins the task
-      await agent2.post(`/api/tasks/single/${taskId}/join`).send({}).expect(200);
+      await agent2.post(`/api/tasks/${taskId}/participants`).send({}).expect(200);
 
       // Participant should see this task in their my-tasks
       const getRes = await agent2
@@ -1729,7 +1729,7 @@ describe("Task Management REST API Integration Tests", () => {
       }).expect(201);
 
       const taskId2 = createRes2.body.task.id || createRes2.body.task._id;
-      await agent.put(`/api/tasks/single/${taskId2}`)
+      await agent.put(`/api/tasks/${taskId2}`)
         .send({ isOpen: false })
         .expect(200);
 
@@ -1745,7 +1745,7 @@ describe("Task Management REST API Integration Tests", () => {
     });
   });
 
-  describe("POST /api/tasks/single/:id/join - Join Task Additional Tests (Negative Tests)", () => {
+  describe("POST /api/tasks/:id/join - Join Task Additional Tests (Negative Tests)", () => {
     test("should prevent joining the same task twice", async () => {
       const agent1 = request.agent(app);
       const agent2 = request.agent(app);
@@ -1765,11 +1765,11 @@ describe("Task Management REST API Integration Tests", () => {
       const taskId = createRes.body.task.id || createRes.body.task._id;
 
       // Join the task first time
-      await agent2.post(`/api/tasks/single/${taskId}/join`).send({}).expect(200);
+      await agent2.post(`/api/tasks/${taskId}/participants`).send({}).expect(200);
 
       // Try to join again (should fail)
       const joinRes = await agent2
-        .post(`/api/tasks/single/${taskId}/join`)
+        .post(`/api/tasks/${taskId}/participants`)
         .send({})
         .expect(400);
 
@@ -1777,7 +1777,7 @@ describe("Task Management REST API Integration Tests", () => {
       expect(joinRes.body.message).toBe("User is already a participant in this task");
 
       // Verify user is still only joined once
-      const getRes = await agent2.get(`/api/tasks/single/${taskId}`).expect(200);
+      const getRes = await agent2.get(`/api/tasks/${taskId}`).expect(200);
       expect(getRes.body.helpersJoined).toBe(1);
     });
 
@@ -1787,7 +1787,7 @@ describe("Task Management REST API Integration Tests", () => {
 
       // Use a valid ObjectId format that doesn't exist
       const joinRes = await agent
-        .post("/api/tasks/single/507f1f77bcf86cd799439011/join")
+        .post("/api/tasks/507f1f77bcf86cd799439011/participants")
         .send({})
         .expect(404);
 
@@ -1814,7 +1814,7 @@ describe("Task Management REST API Integration Tests", () => {
 
       // Agent2 is not authenticated
       const joinRes = await agent2
-        .post(`/api/tasks/single/${taskId}/join`)
+        .post(`/api/tasks/${taskId}/participants`)
         .send({})
         .expect(401);
 
@@ -1822,7 +1822,7 @@ describe("Task Management REST API Integration Tests", () => {
     });
   });
 
-  describe("POST /api/tasks/single/:id/quit - Quit Task Additional Tests (Negative Tests)", () => {
+  describe("POST /api/tasks/:id/quit - Quit Task Additional Tests (Negative Tests)", () => {
     test("should return 400 or 500 when trying to quit non-existent task", async () => {
       const agent = request.agent(app);
       await registerAndLogin(agent, `quit_notfound_${Date.now()}`);
@@ -1830,7 +1830,7 @@ describe("Task Management REST API Integration Tests", () => {
       // Use a valid ObjectId format that doesn't exist
       // quitTask might return 400 if it throws "User is not a participant" or 500 for other errors
       const quitRes = await agent
-        .post("/api/tasks/single/507f1f77bcf86cd799439011/quit");
+        .delete("/api/tasks/507f1f77bcf86cd799439011/participants");
 
       expect([400, 404, 500]).toContain(quitRes.status);
       expect(quitRes.body.status).toBe("error");
@@ -1862,14 +1862,14 @@ describe("Task Management REST API Integration Tests", () => {
 
       // Agent2 is not authenticated
       const quitRes = await agent2
-        .post(`/api/tasks/single/${taskId}/quit`)
+        .delete(`/api/tasks/${taskId}/participants`)
         .expect(401);
 
       expect(quitRes.body.error).toBe("Unauthorized");
     });
   });
 
-  describe("POST /api/tasks/single/:id/logs - Add Task Log Additional Tests (State-Updating Tests)", () => {
+  describe("POST /api/tasks/:id/logs - Add Task Log Additional Tests (State-Updating Tests)", () => {
     test("should allow multiple participants to add logs to the same task", async () => {
       const agent1 = request.agent(app);
       const agent2 = request.agent(app);
@@ -1891,20 +1891,20 @@ describe("Task Management REST API Integration Tests", () => {
       const taskId = createRes.body.task.id || createRes.body.task._id;
 
       // Both participants join
-      await agent2.post(`/api/tasks/single/${taskId}/join`).send({}).expect(200);
-      await agent3.post(`/api/tasks/single/${taskId}/join`).send({}).expect(200);
+      await agent2.post(`/api/tasks/${taskId}/participants`).send({}).expect(200);
+      await agent3.post(`/api/tasks/${taskId}/participants`).send({}).expect(200);
 
       // Both participants add logs
-      await agent2.post(`/api/tasks/single/${taskId}/logs`)
+      await agent2.post(`/api/tasks/${taskId}/logs`)
         .send({ summary: "Participant 1 started work" })
         .expect(201);
 
-      await agent3.post(`/api/tasks/single/${taskId}/logs`)
+      await agent3.post(`/api/tasks/${taskId}/logs`)
         .send({ summary: "Participant 2 completed their part" })
         .expect(201);
 
       // Verify both logs appear
-      const getRes = await agent1.get(`/api/tasks/single/${taskId}`).expect(200);
+      const getRes = await agent1.get(`/api/tasks/${taskId}`).expect(200);
       expect(getRes.body.taskLogs.length).toBeGreaterThanOrEqual(2);
       const summaries = getRes.body.taskLogs.map(log => log.summary);
       expect(summaries).toContain("Participant 1 started work");
@@ -1917,7 +1917,7 @@ describe("Task Management REST API Integration Tests", () => {
 
       // Use a valid ObjectId format that doesn't exist
       const logRes = await agent
-        .post("/api/tasks/single/507f1f77bcf86cd799439011/logs")
+        .post("/api/tasks/507f1f77bcf86cd799439011/logs")
         .send({ summary: "This should fail" })
         .expect(404);
 
@@ -1944,7 +1944,7 @@ describe("Task Management REST API Integration Tests", () => {
 
       // Agent2 is not authenticated
       const logRes = await agent2
-        .post(`/api/tasks/single/${taskId}/logs`)
+        .post(`/api/tasks/${taskId}/logs`)
         .send({ summary: "Unauthorized log" })
         .expect(401);
 
@@ -1952,14 +1952,14 @@ describe("Task Management REST API Integration Tests", () => {
     });
   });
 
-  describe("PUT /api/tasks/single/:id - Update Task Additional Tests (Negative Tests)", () => {
+  describe("PUT /api/tasks/:id - Update Task Additional Tests (Negative Tests)", () => {
     test("should return 500 when updating with invalid task ID format that causes mongoose error", async () => {
       const agent = request.agent(app);
       await registerAndLogin(agent, `invalid_id_${Date.now()}`);
 
       // Invalid ID format might cause mongoose to throw, resulting in 500
       const updateRes = await agent
-        .put("/api/tasks/single/invalid_id_format")
+        .put("/api/tasks/invalid_id_format")
         .send({ title: "Updated Title" });
 
       // Could be 404 or 500 depending on how mongoose handles it
@@ -1989,7 +1989,7 @@ describe("Task Management REST API Integration Tests", () => {
       const taskId = createRes.body.task.id || createRes.body.task._id;
 
       const updateRes = await agent
-        .put(`/api/tasks/single/${taskId}`)
+        .put(`/api/tasks/${taskId}`)
         .send({ helpers: 0 });
 
       // Validation might happen in entity which throws, causing 500, or be caught and return 400
@@ -2020,7 +2020,7 @@ describe("Task Management REST API Integration Tests", () => {
       const taskId = createRes.body.task.id || createRes.body.task._id;
 
       const updateRes = await agent
-        .put(`/api/tasks/single/${taskId}`)
+        .put(`/api/tasks/${taskId}`)
         .send({ title: "A".repeat(51) });
 
       // Validation might happen in entity which throws, causing 500, or be caught and return 400
@@ -2038,7 +2038,7 @@ describe("Task Management REST API Integration Tests", () => {
       await registerAndLogin(agent, `update_notfound_${Date.now()}`);
 
       const updateRes = await agent
-        .put("/api/tasks/single/507f1f77bcf86cd799439011")
+        .put("/api/tasks/507f1f77bcf86cd799439011")
         .send({ title: "Updated Title" })
         .expect(404);
 
@@ -2065,7 +2065,7 @@ describe("Task Management REST API Integration Tests", () => {
 
       // Agent2 is not authenticated
       const updateRes = await agent2
-        .put(`/api/tasks/single/${taskId}`)
+        .put(`/api/tasks/${taskId}`)
         .send({ title: "Unauthorized Update" })
         .expect(401);
 
@@ -2073,14 +2073,14 @@ describe("Task Management REST API Integration Tests", () => {
     });
   });
 
-  describe("DELETE /api/tasks/single/:id - Delete Task Additional Tests (Negative Tests)", () => {
+  describe("DELETE /api/tasks/:id - Delete Task Additional Tests (Negative Tests)", () => {
     test("should return 500 or 404 when deleting with invalid task ID format", async () => {
       const agent = request.agent(app);
       await registerAndLogin(agent, `delete_invalid_id_${Date.now()}`);
 
       // Invalid ID format might cause mongoose to throw, resulting in 500
       const deleteRes = await agent
-        .delete("/api/tasks/single/invalid_id_format");
+        .delete("/api/tasks/invalid_id_format");
 
       // Could be 404 or 500 depending on how mongoose handles it
       expect([404, 500]).toContain(deleteRes.status);
@@ -2098,7 +2098,7 @@ describe("Task Management REST API Integration Tests", () => {
       await registerAndLogin(agent, `delete_notfound_${Date.now()}`);
 
       const deleteRes = await agent
-        .delete("/api/tasks/single/507f1f77bcf86cd799439011")
+        .delete("/api/tasks/507f1f77bcf86cd799439011")
         .expect(404);
 
       expect(deleteRes.body.status).toBe("error");
@@ -2124,7 +2124,7 @@ describe("Task Management REST API Integration Tests", () => {
 
       // Agent2 is not authenticated
       const deleteRes = await agent2
-        .delete(`/api/tasks/single/${taskId}`)
+        .delete(`/api/tasks/${taskId}`)
         .expect(401);
 
       expect(deleteRes.body.error).toBe("Unauthorized");
@@ -2186,7 +2186,7 @@ describe("Task Management REST API Integration Tests", () => {
       }).expect(201);
 
       const taskId = createRes.body.task.id || createRes.body.task._id;
-      await agent.put(`/api/tasks/single/${taskId}`)
+      await agent.put(`/api/tasks/${taskId}`)
         .send({ isOpen: false })
         .expect(200);
 
@@ -2199,17 +2199,17 @@ describe("Task Management REST API Integration Tests", () => {
     });
   });
 
-  describe("GET /api/tasks/single/:id - Get Task Additional Tests (Query Tests)", () => {
+  describe("GET /api/tasks/:id - Get Task Additional Tests (Query Tests)", () => {
     test("should return appropriate error when task ID is invalid format", async () => {
       const agent = request.agent(app);
       await registerAndLogin(agent, `get_missing_id_${Date.now()}`);
 
       // Test with empty string ID (after trim) - might be handled as missing ID or route not found
       const getRes = await agent
-        .get("/api/tasks/single/ ");
+        .get("/api/tasks/ ");
 
-      // Could be 400 (missing ID), 404 (route not found or task not found), or 500
-      expect([400, 404, 500]).toContain(getRes.status);
+      // Could be 200 (route matches /api/tasks/), 400 (missing ID), 404 (route not found or task not found), or 500
+      expect([200, 400, 404, 500]).toContain(getRes.status);
       if (getRes.status === 400) {
         expect(getRes.body.status).toBe("error");
         expect(getRes.body.message).toBe("Task ID is required");
@@ -2245,7 +2245,7 @@ describe("Task Management REST API Integration Tests", () => {
 
       // Agent2 is not authenticated
       const getRes = await agent2
-        .get(`/api/tasks/single/${taskId}`)
+        .get(`/api/tasks/${taskId}`)
         .expect(401);
 
       expect(getRes.body.error).toBe("Unauthorized");
@@ -2270,7 +2270,7 @@ describe("Task Management REST API Integration Tests", () => {
       const taskId = createRes.body.task.id || createRes.body.task._id;
 
       // Agent2 views task without joining
-      const getRes = await agent2.get(`/api/tasks/single/${taskId}`).expect(200);
+      const getRes = await agent2.get(`/api/tasks/${taskId}`).expect(200);
       expect(getRes.body.isParticipant).toBe(false);
       expect(getRes.body.helpersJoined).toBe(0);
     });

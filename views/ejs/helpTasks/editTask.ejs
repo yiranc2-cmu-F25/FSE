@@ -48,7 +48,7 @@
           <!-- Form (action/method are placeholders for later wiring) -->
           <form
             id="create-task-form"
-            action="/api/tasks/single/<%= task?.id || task?._id || '' %>"
+            action="/api/tasks/<%= task?.id || task?._id || '' %>"
             method="POST"
             class="space-y-6"
             data-task-id="<%= task?.id || task?._id || '' %>"

@@ -145,7 +145,7 @@ router.post("/public", auth, sendPublicMessage);
 
 /**
  * @openapi
- * /api/messages/private/unread:
+ * /api/messages/unread:
  *   get:
  *     tags: [Messages]
  *     summary: Get latest unread private messages
@@ -199,7 +199,7 @@ router.post("/public", auth, sendPublicMessage);
  *                 status: { type: string, example: "error" }
  *                 message: { type: string, example: "Server error" }
  */
-router.get("/private/unread", auth, getUnreadMessages);
+router.get("/unread", auth, getUnreadMessages);
 
 /**
  * @openapi
@@ -356,8 +356,8 @@ router.post("/private", auth, sendPrivateMessage);
 
 /**
  * @openapi
- * /api/messages/private/read:
- *   post:
+ * /api/messages/private:
+ *   patch:
  *     tags: [Messages]
  *     summary: Mark private messages as read
  *     description: Marks all messages from a specific sender to the authenticated user as read
@@ -370,12 +370,16 @@ router.post("/private", auth, sendPrivateMessage);
  *           schema:
  *             type: object
  *             required:
- *               - senderId
+ *               - peerId
  *             properties:
- *               senderId:
+ *               peerId:
  *                 type: string
  *                 description: User ID of the sender whose messages should be marked as read
  *                 example: "4"
+ *               read:
+ *                 type: boolean
+ *                 description: Whether to mark messages as read (true) or unread (false)
+ *                 example: true
  *     responses:
  *       200:
  *         description: Messages marked as read successfully
@@ -412,6 +416,6 @@ router.post("/private", auth, sendPrivateMessage);
  *                 status: { type: string, example: "error" }
  *                 message: { type: string, example: "Server error" }
  */
-router.post("/private/read", auth, markPrivateMessagesAsRead);
+router.patch("/private", auth, markPrivateMessagesAsRead);
 
 export default router;

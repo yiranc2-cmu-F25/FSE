@@ -143,8 +143,8 @@ router.get("/notifications", auth, getPendingNotifications);
 
 /**
  * @openapi
- * /api/coaching-boards/{bid}/notifications/seen:
- *   post:
+ * /api/coaching-boards/{bid}/notifications:
+ *   patch:
  *     tags: [Coaching Boards]
  *     summary: Mark notification as seen for a board
  *     description: Marks all notifications for a specific board as seen by the current user
@@ -157,6 +157,16 @@ router.get("/notifications", auth, getPendingNotifications);
  *         schema:
  *           type: string
  *         description: Board ID
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               seen:
+ *                 type: boolean
+ *                 example: true
  *     responses:
  *       200:
  *         description: Notification marked as seen
@@ -165,7 +175,7 @@ router.get("/notifications", auth, getPendingNotifications);
  *       401:
  *         description: Unauthorized
  */
-router.post("/:bid/notifications/seen", auth, markNotificationSeen);
+router.patch("/:bid/notifications", auth, markNotificationSeen);
 
 /**
  * @openapi

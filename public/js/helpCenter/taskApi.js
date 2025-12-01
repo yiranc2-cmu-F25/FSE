@@ -1,6 +1,6 @@
 export async function joinTask(taskId, note) {
   try {
-    const response = await fetch(`/api/tasks/single/${encodeURIComponent(taskId)}/join`, {
+    const response = await fetch(`/api/tasks/${encodeURIComponent(taskId)}/participants`, {
       method: "POST",
       credentials: "include",
       headers: {
@@ -33,8 +33,8 @@ export async function joinTask(taskId, note) {
 
 export async function quitTask(taskId) {
   try {
-    const response = await fetch(`/api/tasks/single/${encodeURIComponent(taskId)}/quit`, {
-      method: "POST",
+    const response = await fetch(`/api/tasks/${encodeURIComponent(taskId)}/participants`, {
+      method: "DELETE",
       credentials: "include",
       headers: {
         "Content-Type": "application/json",
@@ -64,7 +64,7 @@ export async function quitTask(taskId) {
 
 export async function uploadTaskLog(taskId, logText) {
   try {
-    const response = await fetch(`/api/tasks/single/${encodeURIComponent(taskId)}/logs`, {
+    const response = await fetch(`/api/tasks/${encodeURIComponent(taskId)}/logs`, {
       method: "POST",
       credentials: "include",
       headers: {
@@ -103,7 +103,7 @@ export async function uploadTaskLog(taskId, logText) {
 
 export async function fetchTask(taskId) {
   try {
-    const response = await fetch(`/api/tasks/single/${encodeURIComponent(taskId)}`, {
+    const response = await fetch(`/api/tasks/${encodeURIComponent(taskId)}`, {
       method: "GET",
       credentials: "include",
       headers: {

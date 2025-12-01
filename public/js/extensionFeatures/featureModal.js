@@ -142,8 +142,8 @@ function setupCloseOnEscape() {
 }
 
 async function fetchLogout() {
-  const res = await fetch("/api/authentications/logout", {
-    method: "POST",
+  const res = await fetch("/api/authentications/sessions", {
+    method: "DELETE",
     credentials: "include",
     headers: { Accept: "application/json" },
   });

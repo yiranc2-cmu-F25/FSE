@@ -332,6 +332,6 @@ const upload = multer({
  *       500:
  *         description: Server error
  */
-router.post("/photo", auth, upload.single("photo"), updatePersonalEmergencyProfilePhoto);
+router.post("/photos", auth, upload.single("photo"), updatePersonalEmergencyProfilePhoto);
 
 export default router;

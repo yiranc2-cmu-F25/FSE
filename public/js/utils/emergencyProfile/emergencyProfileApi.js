@@ -82,7 +82,7 @@ export async function uploadPhoto(file, visibility) {
 
   console.log("Uploading photo:", file.name, "Visibility:", visibility);
 
-  const res = await fetch("/api/emergency-profiles/photo", {
+  const res = await fetch("/api/emergency-profiles/photos", {
     method: "POST",
     credentials: "include",
     body: formData,
