@@ -57,7 +57,7 @@ export async function auth(req, res, next) {
         
         req.username = userObj.username; // Use database username (not JWT)
         req.userId = userId;
-        req.role = userObj.role; // Use database role (not JWT)
+        req.role = payload.role; // Use JWT role
         req.user = { id: userId, username: userObj.username, role: userObj.role };
         next();
     } catch (err){
@@ -109,7 +109,7 @@ export async function authView(req, res, next) {
     
     req.username = userObj.username; // Use database username (not JWT)
     req.userId = userId;
-    req.role = userObj.role; // Use database role (not JWT)
+    req.role = payload.role; // Use JWT role
     req.user = { id: userId, username: userObj.username, role: userObj.role };
     next();
   } catch (err) {

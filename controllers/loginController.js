@@ -59,7 +59,7 @@ export async function getMe(req, res) {
       id: String(userObj._id || userObj.id),
       username: userObj.username, // Return current username from database (not JWT)
       status: userObj.sharedstatus ?? "undefined",
-      role: userObj.role, // Return current role from database (not JWT)
+      role: req.role, // Return JWT role
       image: "images/photos/user-profiles/user1-james.png",
     });
   } catch (err) {

@@ -56,7 +56,7 @@ function setupLoginRoutes() {
                 currentUserId: req.userId,
                 searchMode: "all",
                 searchMembers: true,
-                privilege: currentUserObj?.role || req.role || "citizen" // Use database role, fallback to JWT
+                privilege: req.role || "citizen" // Use JWT role
             });
         } catch (err) {
             console.error("Error fetching user for members page:", err);
@@ -247,7 +247,7 @@ function setupMyHelpCenterRoutes() {
         currentUserId: currentUserId,
         task: null,
         viewer: null,
-        privilege: currentUserObj?.role || req.role || "citizen" // Use database role, fallback to JWT
+        privilege: req.role || "citizen" // Use database role, fallback to JWT
       });
     } catch (err) {
       console.error("Error fetching user for my-tasks page:", err);
@@ -341,7 +341,7 @@ function setupCoachingBoardPages() {
                 username: currentUserObj?.username || req.username || "",
                 searchMode: "set",
                 currentUserId: req.userId,
-                privilege: currentUserObj?.role || req.role || "citizen" // Use database role, fallback to JWT
+                privilege: req.role || "citizen" // Use database role, fallback to JWT
             });
         } catch (err) {
             console.error("Error fetching user for boards page:", err);
