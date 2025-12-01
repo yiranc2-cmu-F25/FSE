@@ -118,11 +118,41 @@ setupErrorHandling();
 
 export default app;
 
-function setupRoutes() {
+// Helper function to map backend role to frontend privilege
+function mapRoleToPrivilege(role) {
+  if (role === USER_ROLE.ADMIN) return "Administrator";
+  if (role === USER_ROLE.COORDINATOR) return "Coordinator";
+  if (role === USER_ROLE.CITIZEN) return "Citizen";
+  return "Citizen"; // default
+}
+
+// Helper function to map backend status to frontend status
+function mapStatusToDisplay(status) {
+  if (status === USER_STATUS.ACTIVE) return "Active";
+  if (status === USER_STATUS.INACTIVE) return "Inactive";
+  return "Inactive"; // default
+}
+
+// Helper function to map frontend privilege to backend role
+function mapPrivilegeToRole(privilege) {
+  if (privilege === "Administrator") return USER_ROLE.ADMIN;
+  if (privilege === "Coordinator") return USER_ROLE.COORDINATOR;
+  if (privilege === "Citizen") return USER_ROLE.CITIZEN;
+  return USER_ROLE.CITIZEN; // default
+}
+
+// Helper function to map frontend status to backend status
+function mapDisplayToStatus(status) {
+  if (status === "Active") return USER_STATUS.ACTIVE;
+  if (status === "Inactive") return USER_STATUS.INACTIVE;
+  return USER_STATUS.INACTIVE; // default
+}
+
+function setupAPIRoutes() {
   // API Routes
   app.use("/api/authentications", authRoutes); // User Login/logout; Account Info retrieval
   app.use("/api/messages/", messageRoutes); // Get & Post Messages
-  app.use("/api/users/", userInfoRoutes); 
+  app.use("/api/users/", userInfoRoutes);
   app.use("/api/announcements", announcementRoutes); // announcement Routes
   app.use("/api/queries", searchRoutes); // search Routes
   app.use("/api/tasks", taskRoutes); // task Routes
@@ -135,40 +165,14 @@ function setupRoutes() {
   app.use("/api/emergency-profiles", emergencyProfileRoutes); // emergency profile Routes
   app.use("/api/public/emergency-profiles", publicEmergencyInfoRoutes); // public emergency profile Routes
   app.use("/api/admin/profiles", administratorProfileRoutes); // administrator profile management Routes
+}
 
+function setupSpeedTestRoutes() {
   // Non-API Routes
   app.use("/speed-test", speedTestRoutes); // Speed Test Routes
-  
-  // Helper function to map backend role to frontend privilege
-  function mapRoleToPrivilege(role) {
-    if (role === USER_ROLE.ADMIN) return "Administrator";
-    if (role === USER_ROLE.COORDINATOR) return "Coordinator";
-    if (role === USER_ROLE.CITIZEN) return "Citizen";
-    return "Citizen"; // default
-  }
+}
 
-  // Helper function to map backend status to frontend status
-  function mapStatusToDisplay(status) {
-    if (status === USER_STATUS.ACTIVE) return "Active";
-    if (status === USER_STATUS.INACTIVE) return "Inactive";
-    return "Inactive"; // default
-  }
-
-  // Helper function to map frontend privilege to backend role
-  function mapPrivilegeToRole(privilege) {
-    if (privilege === "Administrator") return USER_ROLE.ADMIN;
-    if (privilege === "Coordinator") return USER_ROLE.COORDINATOR;
-    if (privilege === "Citizen") return USER_ROLE.CITIZEN;
-    return USER_ROLE.CITIZEN; // default
-  }
-
-  // Helper function to map frontend status to backend status
-  function mapDisplayToStatus(status) {
-    if (status === "Active") return USER_STATUS.ACTIVE;
-    if (status === "Inactive") return USER_STATUS.INACTIVE;
-    return USER_STATUS.INACTIVE; // default
-  }
-
+function setupAdminUserListRoute() {
   // Admin User Profile Pages - must be before pageRoutes to avoid 404
   app.get('/admin/users', authView, async (req, res) => {
     try {
@@ -200,7 +204,7 @@ function setupRoutes() {
         };
       });
 
-      res.render('adminUserProfile/pages/member-list', { 
+      res.render('adminUserProfile/pages/member-list', {
         members: members,
         pageTitle: 'Administer User Profile',
         privilege: currentUserObj.role, // Pass current user's role (lowercase: "admin", "coordinator", "citizen")
@@ -208,7 +212,7 @@ function setupRoutes() {
       });
     } catch (err) {
       console.error("Error fetching users for admin page:", err);
-      res.render('adminUserProfile/pages/member-list', { 
+      res.render('adminUserProfile/pages/member-list', {
         members: [],
         pageTitle: 'Administer User Profile',
         privilege: "citizen", // Default fallback
@@ -216,7 +220,9 @@ function setupRoutes() {
       });
     }
   });
+}
 
+function setupAdminUserEditRoute() {
   app.get('/admin/users/:id/edit', authView, async (req, res) => {
     try {
       // Fetch current user from database to get up-to-date role (not from JWT)
@@ -232,10 +238,10 @@ function setupRoutes() {
       }
 
       const userId = req.params.id;
-      
+
       // Fetch user from database
       const user = await User.findById(userId);
-      
+
       if (!user) {
         return res.status(404).render('errorPages/404-pageNotFound');
       }
@@ -250,7 +256,7 @@ function setupRoutes() {
         status: mapStatusToDisplay(userObj.status)
       };
 
-      res.render('adminUserProfile/pages/edit-profile', { 
+      res.render('adminUserProfile/pages/edit-profile', {
         user: frontendUser,
         pageTitle: 'Edit User Profile',
         privilege: currentUserObj.role, // Pass current user's role (lowercase: "admin", "coordinator", "citizen")
@@ -261,6 +267,16 @@ function setupRoutes() {
       res.status(500).render('errorPages/404-pageNotFound');
     }
   });
-  
+}
+
+function setupPageRoutes() {
   app.use("/", pageRoutes); // All routes for separate pages e.g. public chat wall
+}
+
+function setupRoutes() {
+  setupAPIRoutes();
+  setupSpeedTestRoutes();
+  setupAdminUserListRoute();
+  setupAdminUserEditRoute();
+  setupPageRoutes();
 }

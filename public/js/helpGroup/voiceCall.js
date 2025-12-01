@@ -120,77 +120,107 @@ async function loadCallStatus() {
 }
 
 /**
+ * Handler: Call status update
+ */
+function handleCallStatusUpdate(data) {
+  if (data.groupId !== currentGroupId) return;
+  updateCallStatus(data);
+}
+
+/**
+ * Handler: User joined voice call
+ */
+async function handleUserJoined(data) {
+  if (data.groupId !== currentGroupId || !isInCall) return;
+
+  console.log("Voice user joined:", data);
+  // Existing users should NOT initiate - wait for the new user to send offer
+  await createPeerConnection(data.socketId, data.username, data.userId, false);
+}
+
+/**
+ * Handler: WebRTC offer received
+ */
+async function handleVoiceOffer(data) {
+  if (!isInCall) return;
+
+  console.log("Received voice offer from:", data.from);
+  const peerConnection = peerConnections.get(data.from);
+
+  if (peerConnection) {
+    await peerConnection.setRemoteDescription(
+      new RTCSessionDescription(data.offer)
+    );
+    const answer = await peerConnection.createAnswer();
+    await peerConnection.setLocalDescription(answer);
+
+    socket.emit("voice-answer", {
+      answer: answer,
+      target: data.from,
+    });
+  }
+}
+
+/**
+ * Handler: WebRTC answer received
+ */
+async function handleVoiceAnswer(data) {
+  if (!isInCall) return;
+
+  console.log("Received voice answer from:", data.from);
+  const peerConnection = peerConnections.get(data.from);
+
+  if (peerConnection) {
+    await peerConnection.setRemoteDescription(
+      new RTCSessionDescription(data.answer)
+    );
+  }
+}
+
+/**
+ * Handler: ICE candidate received
+ */
+async function handleIceCandidate(data) {
+  if (!isInCall) return;
+
+  const peerConnection = peerConnections.get(data.from);
+
+  if (peerConnection && data.candidate) {
+    await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+  }
+}
+
+/**
+ * Handler: User left voice call
+ */
+function handleUserLeft(data) {
+  if (data.groupId !== currentGroupId || !isInCall) return;
+
+  console.log("Voice user left:", data);
+  removeParticipant(data.socketId);
+}
+
+/**
  * Setup Socket.IO listeners for WebRTC signaling and call updates
  */
 function setupSocketListeners() {
   // Listen for call status updates (for ALL users in group)
-  socket.on("voice-call-status-update", (data) => {
-    if (data.groupId !== currentGroupId) return;
-    updateCallStatus(data);
-  });
+  socket.on("voice-call-status-update", handleCallStatusUpdate);
 
   // Handle user joined (existing user receives this - DO NOT initiate)
-  socket.on("voice-user-joined", async (data) => {
-    if (data.groupId !== currentGroupId || !isInCall) return;
-
-    console.log("Voice user joined:", data);
-    // Existing users should NOT initiate - wait for the new user to send offer
-    await createPeerConnection(data.socketId, data.username, data.userId, false);
-  });
+  socket.on("voice-user-joined", handleUserJoined);
 
   // Handle WebRTC offer
-  socket.on("voice-offer", async (data) => {
-    if (!isInCall) return;
-
-    console.log("Received voice offer from:", data.from);
-    const peerConnection = peerConnections.get(data.from);
-
-    if (peerConnection) {
-      await peerConnection.setRemoteDescription(
-        new RTCSessionDescription(data.offer)
-      );
-      const answer = await peerConnection.createAnswer();
-      await peerConnection.setLocalDescription(answer);
-
-      socket.emit("voice-answer", {
-        answer: answer,
-        target: data.from,
-      });
-    }
-  });
+  socket.on("voice-offer", handleVoiceOffer);
 
   // Handle WebRTC answer
-  socket.on("voice-answer", async (data) => {
-    if (!isInCall) return;
-
-    console.log("Received voice answer from:", data.from);
-    const peerConnection = peerConnections.get(data.from);
-
-    if (peerConnection) {
-      await peerConnection.setRemoteDescription(
-        new RTCSessionDescription(data.answer)
-      );
-    }
-  });
+  socket.on("voice-answer", handleVoiceAnswer);
 
   // Handle ICE candidate
-  socket.on("voice-ice-candidate", async (data) => {
-    if (!isInCall) return;
-
-    const peerConnection = peerConnections.get(data.from);
-
-    if (peerConnection && data.candidate) {
-      await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
-    }
-  });
+  socket.on("voice-ice-candidate", handleIceCandidate);
 
   // Handle user left
-  socket.on("voice-user-left", (data) => {
-    if (data.groupId !== currentGroupId || !isInCall) return;
-
-    console.log("Voice user left:", data);
-    removeParticipant(data.socketId);
-  });
+  socket.on("voice-user-left", handleUserLeft);
 }
 
 /**

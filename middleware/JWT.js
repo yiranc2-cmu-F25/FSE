@@ -11,6 +11,51 @@ const requireAuth = process.env.REQUIRE_AUTH !== "false";
 // jwt middleware
 // example useage: app.get('/protected', auth, (req, res) => { ... });
 
+/**
+ * Helper: Clear JWT cookie
+ */
+function clearJwtCookie(res) {
+    res.clearCookie("jwt_token", {
+        httpOnly: true,
+        secure: isProd,
+        sameSite: "lax",
+        path: "/"
+    });
+}
+
+/**
+ * Helper: Handle user not found
+ */
+function handleUserNotFound(res) {
+    clearJwtCookie(res);
+    return res.status(401).json({ error: "Unauthorized", reason: "User not found" });
+}
+
+/**
+ * Helper: Handle inactive user
+ */
+function handleInactiveUser(res, req, userObj) {
+    clearJwtCookie(res);
+
+    // Disconnect socket if available
+    const socketInstance = req.app.get("socketInstance");
+    if (socketInstance && userObj.username) {
+        socketInstance.disconnectUser(userObj.username);
+    }
+
+    return res.status(403).json({ error: "Account inactive", reason: "Your account has been deactivated" });
+}
+
+/**
+ * Helper: Set user info on request
+ */
+function setUserInfo(req, userId, userObj, payload) {
+    req.username = userObj.username; // Use database username (not JWT)
+    req.userId = userId;
+    req.role = payload.role; // Use JWT role
+    req.user = { id: userId, username: userObj.username, role: payload.role };
+}
+
 export async function auth(req, res, next) {
     if (!requireAuth) {
         next();
@@ -22,43 +67,21 @@ export async function auth(req, res, next) {
     try {
         const payload = jwt.verify(token, JWT_SECRET);
         const userId = String(payload.userId ?? payload.sub ?? "");
-        
+
         // Check user status from database (not JWT) - status can change anytime
         const user = await User.findById(userId);
         if (!user) {
-            res.clearCookie("jwt_token", { 
-                httpOnly: true, 
-                secure: isProd, 
-                sameSite: "lax",
-                path: "/" 
-            });
-            return res.status(401).json({ error: "Unauthorized", reason: "User not found" });
+            return handleUserNotFound(res);
         }
-        
+
         const userObj = user.toObject ? user.toObject() : user;
-        
+
         // If user is inactive, logout and return error
         if (userObj.status === USER_STATUS.INACTIVE) {
-            res.clearCookie("jwt_token", { 
-                httpOnly: true, 
-                secure: isProd, 
-                sameSite: "lax",
-                path: "/" 
-            });
-            
-            // Disconnect socket if available
-            const socketInstance = req.app.get("socketInstance");
-            if (socketInstance && userObj.username) {
-                socketInstance.disconnectUser(userObj.username);
-            }
-            
-            return res.status(403).json({ error: "Account inactive", reason: "Your account has been deactivated" });
+            return handleInactiveUser(res, req, userObj);
         }
-        
-        req.username = userObj.username; // Use database username (not JWT)
-        req.userId = userId;
-        req.role = payload.role; // Use JWT role
-        req.user = { id: userId, username: userObj.username, role: userObj.role };
+
+        setUserInfo(req, userId, userObj, payload);
         next();
     } catch (err){
         return res.status(403).json({ error: "Forbidden", reason: err.name });
@@ -110,7 +133,7 @@ export async function authView(req, res, next) {
     req.username = userObj.username; // Use database username (not JWT)
     req.userId = userId;
     req.role = payload.role; // Use JWT role
-    req.user = { id: userId, username: userObj.username, role: userObj.role };
+    req.user = { id: userId, username: userObj.username, role: payload.role };
     next();
   } catch (err) {
     return res.redirect("/");
