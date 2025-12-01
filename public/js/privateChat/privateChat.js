@@ -296,12 +296,17 @@ function setupMarkReadOnUnload() {
   window.addEventListener("beforeunload", () => {
     if (!peerId) return;
 
-    const url = `/api/messages/private/read`;
+    const url = `/api/messages/private`;
     console.log("[dm] marking messages as read:", url);
-    const body = JSON.stringify({ peerId });
+    const body = JSON.stringify({ peerId, read: true });
 
-    const data = new Blob([body], { type: "application/json" });
-    navigator.sendBeacon(url, data);
+    // Use fetch with keepalive instead of sendBeacon since sendBeacon doesn't support PATCH
+    fetch(url, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: body,
+      keepalive: true,
+    }).catch(err => console.warn("[dm] Failed to mark messages as read:", err));
   });
 }
 

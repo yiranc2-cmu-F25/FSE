@@ -169,7 +169,8 @@ export function clearAuthCookie(res) {
 }
 
 // Optional auth middleware - sets req.userId if token exists, but doesn't require it
-export function optionalAuth(req, res, next) {
+// If user is authenticated but inactive, logs them out and redirects to splash page
+export async function optionalAuth(req, res, next) {
     const token = req.cookies.jwt_token;
     if (!token) {
         // No token, continue without user info
@@ -180,10 +181,36 @@ export function optionalAuth(req, res, next) {
     try {
         const payload = jwt.verify(token, JWT_SECRET);
         const userId = String(payload.userId ?? payload.sub ?? "");
-        req.username = payload.username;
+        
+        // Check user status from database (not JWT) - status can change anytime
+        const user = await User.findById(userId);
+        if (!user) {
+            // User not found, clear cookie and continue without user info
+            clearJwtCookie(res);
+            next();
+            return;
+        }
+        
+        const userObj = user.toObject ? user.toObject() : user;
+        
+        // If user is inactive, logout and redirect to splash page with error modal
+        if (userObj.status === USER_STATUS.INACTIVE) {
+            clearJwtCookie(res);
+            
+            // Disconnect socket if available
+            const socketInstance = req.app.get("socketInstance");
+            if (socketInstance && userObj.username) {
+                socketInstance.disconnectUser(userObj.username);
+            }
+            
+            return res.redirect("/?inactive=true");
+        }
+        
+        // User is active, set user info from database (not JWT) for consistency
+        req.username = userObj.username; // Use database username (not JWT)
         req.userId = userId;
-        req.role = payload.role;
-        req.user = { id: userId, username: payload.username, role: payload.role };
+        req.role = userObj.role || payload.role; // Prefer database role, fallback to JWT
+        req.user = { id: userId, username: userObj.username, role: userObj.role || payload.role };
     } catch (err) {
         // Invalid token, continue without user info
         // Don't set req.userId

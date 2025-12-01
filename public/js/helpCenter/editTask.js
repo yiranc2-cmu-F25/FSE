@@ -306,7 +306,7 @@ function overrideFormSubmission() {
     }
 
     // Submit to API using PUT method
-    const apiUrl = `/api/tasks/single/${encodeURIComponent(taskId)}`;
+    const apiUrl = `/api/tasks/${encodeURIComponent(taskId)}`;
     console.log("[Edit Task] Submitting update to:", apiUrl, "with method: PUT");
     console.log("[Edit Task] Request body:", requestBody);
     

@@ -3,7 +3,7 @@
 // Fetch task details from API
 async function fetchTaskDetails(taskId) {
   try {
-    const response = await fetch(`/api/tasks/single/${encodeURIComponent(taskId)}`, {
+    const response = await fetch(`/api/tasks/${encodeURIComponent(taskId)}`, {
       method: "GET",
       credentials: "include",
       headers: {

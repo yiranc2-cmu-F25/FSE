@@ -558,7 +558,7 @@ router.get("/self/count", auth, TaskController.countMyTasks);
 
 /**
  * @openapi
- * /api/tasks/participated/count:
+ * /api/tasks/participants/count:
  *   get:
  *     tags: [Tasks]
  *     summary: Count tasks where current user is a participant
@@ -599,13 +599,13 @@ router.get("/self/count", auth, TaskController.countMyTasks);
  *       500:
  *         description: Server error
  */
-router.get("/participated/count", auth, TaskController.countParticipatedTasks);
+router.get("/participants/count", auth, TaskController.countParticipatedTasks);
 
-// Note: Specific routes (/self, /self/count, /count, /single) are defined before parameterized routes
+// Note: Specific routes (/self, /self/count, /count, /participants/count) are defined before parameterized routes
 
 /**
  * @openapi
- * /api/tasks/single/{id}:
+ * /api/tasks/{id}:
  *   get:
  *     tags: [Tasks]
  *     summary: Get a single task by ID
@@ -721,11 +721,11 @@ router.get("/participated/count", auth, TaskController.countParticipatedTasks);
  *                   type: string
  *                   example: "Server error"
  */
-router.get("/single/:id", auth, TaskController.getTask);
+router.get("/:id", auth, TaskController.getTask);
 
 /**
  * @openapi
- * /api/tasks/single/{id}:
+ * /api/tasks/{id}:
  *   put:
  *     tags: [Tasks]
  *     summary: Update a task
@@ -860,11 +860,11 @@ router.get("/single/:id", auth, TaskController.getTask);
  *                   type: string
  *                   example: "Server error"
  */
-router.put("/single/:id", auth, TaskController.updateTask);
+router.put("/:id", auth, TaskController.updateTask);
 
 /**
  * @openapi
- * /api/tasks/single/{id}:
+ * /api/tasks/{id}:
  *   delete:
  *     tags: [Tasks]
  *     summary: Delete a task
@@ -959,11 +959,11 @@ router.put("/single/:id", auth, TaskController.updateTask);
  *                   type: string
  *                   example: "Server error"
  */
-router.delete("/single/:id", auth, TaskController.deleteTask);
+router.delete("/:id", auth, TaskController.deleteTask);
 
 /**
  * @openapi
- * /api/tasks/single/{id}/join:
+ * /api/tasks/{id}/participants:
  *   post:
  *     tags: [Tasks]
  *     summary: Join a task
@@ -1023,15 +1023,15 @@ router.delete("/single/:id", auth, TaskController.deleteTask);
  *       500:
  *         description: Server error
  */
-router.post("/single/:id/join", auth, TaskController.joinTask);
+router.post("/:id/participants", auth, TaskController.joinTask);
 
 /**
  * @openapi
- * /api/tasks/single/{id}/quit:
- *   post:
+ * /api/tasks/{id}/participants:
+ *   delete:
  *     tags: [Tasks]
  *     summary: Quit a task
- *     description: Allows a participant to quit a task they have joined.
+ *     description: Allows a participant to quit a task they have joined. The authenticated user is automatically removed from the task participants.
  *     security:
  *       - cookieAuth: []
  *     parameters:
@@ -1074,11 +1074,11 @@ router.post("/single/:id/join", auth, TaskController.joinTask);
  *       500:
  *         description: Server error
  */
-router.post("/single/:id/quit", auth, TaskController.quitTask);
+router.delete("/:id/participants", auth, TaskController.quitTask);
 
 /**
  * @openapi
- * /api/tasks/single/{id}/logs:
+ * /api/tasks/{id}/logs:
  *   post:
  *     tags: [Tasks]
  *     summary: Add a task log
@@ -1133,6 +1133,6 @@ router.post("/single/:id/quit", auth, TaskController.quitTask);
  *       500:
  *         description: Server error
  */
-router.post("/single/:id/logs", auth, TaskController.addTaskLog);
+router.post("/:id/logs", auth, TaskController.addTaskLog);
 
 export default router;

@@ -9,7 +9,7 @@
 const API = {
   usernameStatus: "/api/authentications/users/usernames",
   register: "/api/authentications/registrations",
-  login: "/api/authentications/login",
+  login: "/api/authentications/sessions",
 };
 const HOME = "/";
 const NEXT_ROUTE_AFTER_LOGIN_VALIDATION = "/members";

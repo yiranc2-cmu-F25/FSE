@@ -43,6 +43,20 @@ export async function initHeaderAvatar() {
     });
 
     if (!res.ok) {
+      // Check if user is inactive (403 with Account inactive error)
+      if (res.status === 403) {
+        try {
+          const errorData = await res.json();
+          if (errorData.error === "Account inactive" || errorData.reason === "Your account has been deactivated") {
+            // User is inactive, redirect to splash page
+            console.warn("[initHeaderAvatar] User account is inactive, redirecting to splash page");
+            window.location.href = "/?inactive=true";
+            return;
+          }
+        } catch (e) {
+          // Failed to parse error response, continue with warning
+        }
+      }
       console.warn("[initHeaderAvatar] Failed to fetch user:", res.status);
       return;
     }

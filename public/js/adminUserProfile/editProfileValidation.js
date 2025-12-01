@@ -14,9 +14,9 @@ const API = {
 function setupPasswordToggle() {
   const checkbox = document.getElementById("change-password-checkbox");
   const passwordInput = document.getElementById("input-password");
-  
+
   if (!checkbox || !passwordInput) return;
-  
+
   checkbox.addEventListener("change", (e) => {
     if (e.target.checked) {
       // Enable password field and clear it
@@ -73,8 +73,12 @@ async function postJSON(url, body) {
   return { res, data };
 }
 
-async function requestUsernameStatus(username) {
-  return postJSON(API.usernameStatus, { username });
+async function requestUsernameStatus(username, excludeUserId = null) {
+  const body = { username };
+  if (excludeUserId) {
+    body.excludeUserId = excludeUserId;
+  }
+  return postJSON(API.usernameStatus, body);
 }
 
 // --- Validation Logic (matching joinCommunity.js rules) ---
@@ -100,22 +104,37 @@ async function validateUsernameAsync(username) {
   // Empty username is valid (user hasn't typed yet)
   if (!username.trim()) return null;
 
+  // Get the current username and ID of the user being edited
+  const currentUsername = window.__EDITING_USER_USERNAME__ || "";
+  const currentUserId = window.__EDITING_USER_ID__ || "";
+  const trimmedUsername = username.trim();
+
+  // If username hasn't changed (case-insensitive comparison), it's valid (no change)
+  if (trimmedUsername.toLowerCase() === currentUsername.toLowerCase()) {
+    return null;
+  }
+
   try {
-    const { res, data } = await requestUsernameStatus(username.trim());
-    
+    // Request username status, excluding the current user's ID from the check
+    const { res, data } = await requestUsernameStatus(
+      trimmedUsername,
+      currentUserId,
+    );
+
     if (!res.ok) {
       return data?.message || "Unable to validate username.";
     }
-    
+
     if (data.status === "reserved") {
       return data.message || "This username is not allowed.";
     }
-    
-    // Note: For edit profile, "exists" status might be OK if it's the current user's username
-    // But we'll still show it as a warning/info. The backend should handle this case.
-    // For now, we'll allow "exists" status since user might be editing their own profile
-    
-    return null; // Valid
+
+    // If username exists (and it's not the current user's username), it's taken by another user
+    if (data.status === "exists") {
+      return "This username already exists. Please try again.";
+    }
+
+    return null; // Valid (available)
   } catch (err) {
     console.error("Username validation error:", err);
     return "Network error. Please check your connection.";
@@ -138,20 +157,20 @@ function triggerWiggle(inputId) {
     "input-username": "username-section",
     "input-password": "password-section",
   };
-  
+
   const sectionId = inputToSectionMap[inputId] || inputId;
   const section = document.getElementById(sectionId);
   if (!section) return;
-  
+
   // Remove existing wiggle class if present
   section.classList.remove("wiggle");
-  
+
   // Force reflow to restart animation
   void section.offsetWidth;
-  
+
   // Add wiggle class
   section.classList.add("wiggle");
-  
+
   // Remove after animation completes
   setTimeout(() => {
     section.classList.remove("wiggle");
@@ -162,7 +181,7 @@ function triggerWiggle(inputId) {
 function showError(inputId, message) {
   const input = document.getElementById(inputId);
   const errorDiv = document.getElementById(inputId + "-error");
-  
+
   if (!input || !errorDiv) return;
 
   if (message) {
@@ -171,7 +190,7 @@ function showError(inputId, message) {
     input.classList.remove("border-gray-300");
     errorDiv.textContent = message;
     errorDiv.classList.remove("hidden");
-    
+
     // Update validation state
     if (inputId === "input-username") {
       validationState.username = { isValid: false, error: message };
@@ -184,7 +203,7 @@ function showError(inputId, message) {
     input.classList.add("border-gray-300");
     errorDiv.textContent = "";
     errorDiv.classList.add("hidden");
-    
+
     // Update validation state
     if (inputId === "input-username") {
       validationState.username = { isValid: true, error: null };
@@ -198,13 +217,13 @@ function validatePassword(value) {
   // Only validate password if "Change Password" checkbox is checked
   const checkbox = document.getElementById("change-password-checkbox");
   const isPasswordChangeEnabled = checkbox && checkbox.checked;
-  
+
   if (!isPasswordChangeEnabled) {
     // Password change is disabled, clear any errors
     showError("input-password", null);
     return;
   }
-  
+
   // Validate password length only if checkbox is checked
   const error = validatePasswordLength(value);
   showError("input-password", error);
@@ -225,7 +244,7 @@ const validatePasswordDebounced = debounce((e) => {
 async function validateAllFields() {
   const usernameInput = document.getElementById("input-username");
   const passwordInput = document.getElementById("input-password");
-  
+
   let isValid = true;
   const failedInputFields = [];
 
@@ -234,7 +253,7 @@ async function validateAllFields() {
     const usernameValue = usernameInput.value.trim();
     const usernameError = await validateUsernameAsync(usernameValue);
     showError("input-username", usernameError);
-    
+
     if (usernameError) {
       isValid = false;
       failedInputFields.push("input-username");
@@ -244,12 +263,12 @@ async function validateAllFields() {
   // Validate password (only if "Change Password" checkbox is checked)
   const checkbox = document.getElementById("change-password-checkbox");
   const isPasswordChangeEnabled = checkbox && checkbox.checked;
-  
+
   if (isPasswordChangeEnabled && passwordInput) {
     const passwordValue = passwordInput.value;
     const passwordError = validatePasswordLength(passwordValue);
     showError("input-password", passwordError);
-    
+
     if (passwordError) {
       isValid = false;
       failedInputFields.push("input-password");
@@ -275,26 +294,26 @@ async function handleFormSubmit(e) {
   if (isSubmitting) {
     return true;
   }
-  
+
   // Always prevent default first, then validate
   e.preventDefault();
-  
+
   const isValid = await validateAllFields();
-  
+
   if (!isValid) {
     // Focus on first invalid field
     const usernameInput = document.getElementById("input-username");
     const passwordInput = document.getElementById("input-password");
-    
+
     if (!validationState.username.isValid && usernameInput) {
       usernameInput.focus();
     } else if (!validationState.password.isValid && passwordInput) {
       passwordInput.focus();
     }
-    
+
     return false; // Prevent form submission
   }
-  
+
   // All validations passed, show confirm modal instead of submitting directly
   if (window.showConfirmModal) {
     window.showConfirmModal();

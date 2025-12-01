@@ -328,7 +328,7 @@ describe("Personal Emergency Profile Integration Tests", () => {
     });
   });
 
-  describe("POST /api/emergency-profiles/photo", () => {
+  describe("POST /api/emergency-profiles/photos", () => {
     test("uploads photo", async () => {
       const agentClient = request.agent();
       const user = await registerUser(
@@ -360,7 +360,7 @@ describe("Personal Emergency Profile Integration Tests", () => {
       );
 
       const res = await agentClient
-        .post(`${PROFILE_BASE}/photo`)
+        .post(`${PROFILE_BASE}/photos`)
         .attach("photo", imageBuffer, "test.png")
         .field("visibility", "emergencyOnly")
         .ok((res) => true);

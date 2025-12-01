@@ -63,7 +63,7 @@ describe("Group Chat Integration Tests", () => {
       const member = await UserDac.DAO.findByUsername("member_chat");
 
       await agent
-        .post("/api/authentications/login")
+        .post("/api/authentications/sessions")
         .send({ username: "owner14", password: "password123" })
         .expect(200);
 
@@ -112,7 +112,7 @@ describe("Group Chat Integration Tests", () => {
       const member = await UserDac.DAO.findByUsername("member_exclusive");
 
       await agent
-        .post("/api/authentications/login")
+        .post("/api/authentications/sessions")
         .send({ username: "owner15", password: "password123" })
         .expect(200);
 
@@ -133,7 +133,7 @@ describe("Group Chat Integration Tests", () => {
         .expect(201);
 
       await agent
-        .post("/api/authentications/login")
+        .post("/api/authentications/sessions")
         .send({ username: "outsider2", password: "password123" })
         .expect(200);
 
@@ -170,7 +170,7 @@ describe("Group Chat Integration Tests", () => {
       const member = await UserDac.DAO.findByUsername("member_msg");
 
       await agent
-        .post("/api/authentications/login")
+        .post("/api/authentications/sessions")
         .send({ username: "owner16", password: "password123" })
         .expect(200);
 
@@ -222,7 +222,7 @@ describe("Group Chat Integration Tests", () => {
       const member = await UserDac.DAO.findByUsername("member_secret");
 
       await agent
-        .post("/api/authentications/login")
+        .post("/api/authentications/sessions")
         .send({ username: "owner17", password: "password123" })
         .expect(200);
 
@@ -243,7 +243,7 @@ describe("Group Chat Integration Tests", () => {
         .expect(201);
 
       await agent
-        .post("/api/authentications/login")
+        .post("/api/authentications/sessions")
         .send({ username: "outsider3", password: "password123" })
         .expect(200);
 

@@ -191,6 +191,16 @@ class Task {
   static async isUserParticipant(taskId, userId) {
     return await Task.DAO.isUserParticipant(taskId, userId);
   }
+
+  /**
+   * Remove user from all tasks they are participating in
+   * Called when a user's account becomes inactive
+   * @param {String} userId - User ID to remove from all tasks
+   * @returns {Promise<Number>} Number of tasks the user was removed from
+   */
+  static async removeUserFromAllTasks(userId) {
+    return await Task.DAO.removeUserFromAllTasks(userId);
+  }
 }
 
 export default Task;

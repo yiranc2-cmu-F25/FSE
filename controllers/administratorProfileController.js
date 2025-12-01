@@ -1,4 +1,5 @@
 import User from "../entities/User.js";
+import Task from "../entities/Task.js";
 import { isUsernameValid, isPasswordValid } from "../utils/validators.js";
 import { USER_ROLE } from "../constants/userRole.js";
 import { USER_STATUS } from "../constants/userStatus.js";
@@ -127,12 +128,18 @@ export async function updateUserProfile(req, res) {
             });
         }
         
-        // Store old username before update (for socket disconnection)
+        // Store old username and status before update (for socket disconnection and task removal)
         let oldUsername = null;
-        if (username !== undefined) {
+        let oldStatus = null;
+        if (username !== undefined || status !== undefined) {
             const userBeforeUpdate = await User.findById(userId);
             const userBeforeObj = userBeforeUpdate.toObject ? userBeforeUpdate.toObject() : userBeforeUpdate;
-            oldUsername = userBeforeObj.username;
+            if (username !== undefined) {
+                oldUsername = userBeforeObj.username;
+            }
+            if (status !== undefined) {
+                oldStatus = userBeforeObj.status;
+            }
         }
         
         // Fetch user document once and update all fields together to avoid race conditions
@@ -140,6 +147,11 @@ export async function updateUserProfile(req, res) {
         if (!userDoc) {
             return res.status(404).json({ error: "User not found" });
         }
+        
+        // Check if user is transitioning from ACTIVE to INACTIVE
+        const isBecomingInactive = status !== undefined && 
+                                   status === USER_STATUS.INACTIVE && 
+                                   oldStatus === USER_STATUS.ACTIVE;
         
         // Update all fields on the same document instance
         if (status !== undefined) {
@@ -156,6 +168,17 @@ export async function updateUserProfile(req, res) {
         }
         
         await userDoc.save();
+        
+        // If user is becoming inactive, remove them from all task participations
+        if (isBecomingInactive) {
+            try {
+                const removedCount = await Task.removeUserFromAllTasks(userId);
+                console.log(`[Inactive User Privacy] Removed user ${userId} from ${removedCount} task participation(s)`);
+            } catch (err) {
+                console.error(`[Inactive User Privacy] Error removing user ${userId} from tasks:`, err);
+                // Don't fail the request if task removal fails, but log the error
+            }
+        }
         
         // Get updated user
         const updatedUser = await User.findById(userId);

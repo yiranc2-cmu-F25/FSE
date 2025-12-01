@@ -228,7 +228,7 @@ router.get("/bookmarks", auth, getBookmarkedEmergencyProfiles);
  */
 /**
  * @openapi
- * /api/public/emergency-profiles/{profileId}/photo:
+ * /api/public/emergency-profiles/{profileId}/photos:
  *   get:
  *     tags: [Public Emergency Profiles]
  *     summary: Get emergency profile photo
@@ -255,7 +255,7 @@ router.get("/bookmarks", auth, getBookmarkedEmergencyProfiles);
  *       500:
  *         description: Server error
  */
-router.get("/:profileId/photo", auth, getProfilePhoto);
+router.get("/:profileId/photos", auth, getProfilePhoto);
 
 router.post("/bookmarks", auth, bookmarkEmergencyProfile);
 
@@ -308,6 +308,5 @@ router.post("/bookmarks", auth, bookmarkEmergencyProfile);
  *                 message: { type: string, example: "Error unbookmarking emergency profile" }
  */
 router.delete("/bookmarks", auth, unbookmarkEmergencyProfile);
-
 
 export default router;

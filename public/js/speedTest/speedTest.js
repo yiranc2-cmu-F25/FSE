@@ -80,7 +80,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // ---- API wrappers ----
   async function startTest(durationSec, intervalMs) {
     const res = await fetch(
-      "/speed-test/start",
+      "/speed-test/tests",
       withHeaders({
         method: "POST",
         body: JSON.stringify({ durationSec, intervalMs }),
@@ -109,8 +109,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function switchToGetPhase() {
     const res = await fetch(
-      "/speed-test/next-phase",
-      withHeaders({ method: "POST" }),
+      "/speed-test/tests",
+      withHeaders({ method: "PATCH" }),
     );
     if (!res.ok) throw new Error(`Switch phase failed (${res.status})`);
   }
@@ -127,8 +127,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function stopTest() {
     const res = await fetch(
-      "/speed-test/stop",
-      withHeaders({ method: "POST" }),
+      "/speed-test/tests",
+      withHeaders({ method: "DELETE" }),
     );
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(`Stop failed (${res.status})`);

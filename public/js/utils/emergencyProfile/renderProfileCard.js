@@ -75,7 +75,7 @@ function createAvatarElement(profile, initials, avatarColor, cacheVersion) {
   if (shouldShowPhoto(profile)) {
     const img = document.createElement("img");
     const version = cacheVersion || Date.now();
-    const photoUrl = `/api/public/emergency-profiles/${profile._id}/photo?v=${version}`;
+    const photoUrl = `/api/public/emergency-profiles/${profile._id}/photos?v=${version}`;
     img.src = photoUrl;
     img.alt = profile.username || "";
     img.className = "h-12 w-12 rounded-full object-cover";

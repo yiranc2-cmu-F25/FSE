@@ -91,7 +91,13 @@ function handlePageUnload() {
       [JSON.stringify({ groupId: currentGroupId })],
       { type: "application/json" }
     );
-    navigator.sendBeacon("/api/calls/leave-room", blob);
+    // Use fetch with keepalive instead of sendBeacon since sendBeacon doesn't support DELETE
+    fetch("/api/calls/participants", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ groupId: currentGroupId }),
+      keepalive: true,
+    }).catch(err => console.warn("[voiceCall] Failed to leave call:", err));
 
     // Also cleanup local resources
     if (localStream) {
@@ -319,7 +325,7 @@ async function joinVoiceCall() {
     });
 
     // Call join API
-    const response = await fetch("/api/calls/join-room", {
+    const response = await fetch("/api/calls/participants", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -386,8 +392,8 @@ async function leaveVoiceCall() {
 
   try {
     // Call leave API
-    await fetch("/api/calls/leave-room", {
-      method: "POST",
+    await fetch("/api/calls/participants", {
+      method: "DELETE",
       headers: {
         "Content-Type": "application/json",
       },

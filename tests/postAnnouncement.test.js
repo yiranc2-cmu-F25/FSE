@@ -77,7 +77,7 @@ describe("Announcements Test", () => {
         
         // Re-login to get a new JWT token with updated role
         await agent
-            .post("/api/authentications/login")
+            .post("/api/authentications/sessions")
             .send({ username: "testUser", password: "testPassword" })
             .expect(200);
         

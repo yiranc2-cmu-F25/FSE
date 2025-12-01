@@ -686,8 +686,8 @@ router.post("/:groupId/messages", auth, sendGroupMessage);
 
 /**
  * @openapi
- * /api/groups/{groupId}/read:
- *   post:
+ * /api/groups/{groupId}:
+ *   patch:
  *     tags: [Groups]
  *     summary: Mark group as read
  *     description: Clears unread message status for the current user in the specified group
@@ -700,6 +700,16 @@ router.post("/:groupId/messages", auth, sendGroupMessage);
  *         schema:
  *           type: string
  *         description: ID of the group to mark as read
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               read:
+ *                 type: boolean
+ *                 example: true
  *     responses:
  *       200:
  *         description: Group marked as read successfully
@@ -716,6 +726,6 @@ router.post("/:groupId/messages", auth, sendGroupMessage);
  *       500:
  *         description: Server error
  */
-router.post("/:groupId/read", auth, markGroupAsRead);
+router.patch("/:groupId", auth, markGroupAsRead);
 
 export default router;

@@ -63,7 +63,7 @@ describe("Group Chat Integration Tests", () => {
       const newMember = await UserDac.DAO.findByUsername("newmember");
 
       await agent
-        .post("/api/authentications/login")
+        .post("/api/authentications/sessions")
         .send({ username: "owner7", password: "password123" })
         .expect(200);
 
@@ -115,7 +115,7 @@ describe("Group Chat Integration Tests", () => {
       const member = await UserDac.DAO.findByUsername("member4");
 
       await agent
-        .post("/api/authentications/login")
+        .post("/api/authentications/sessions")
         .send({ username: "owner8", password: "password123" })
         .expect(200);
 
@@ -131,7 +131,7 @@ describe("Group Chat Integration Tests", () => {
 
       // Login as member
       await agent
-        .post("/api/authentications/login")
+        .post("/api/authentications/sessions")
         .send({ username: "member4", password: "password123" })
         .expect(200);
 
@@ -170,7 +170,7 @@ describe("Group Chat Integration Tests", () => {
       const member6 = await UserDac.DAO.findByUsername("member6");
 
       await agent
-        .post("/api/authentications/login")
+        .post("/api/authentications/sessions")
         .send({ username: "owner9", password: "password123" })
         .expect(200);
 
@@ -221,7 +221,7 @@ describe("Group Chat Integration Tests", () => {
       const member7b = await UserDac.DAO.findByUsername("member7b");
 
       await agent
-        .post("/api/authentications/login")
+        .post("/api/authentications/sessions")
         .send({ username: "owner10", password: "password123" })
         .expect(200);
 
@@ -237,7 +237,7 @@ describe("Group Chat Integration Tests", () => {
 
       // Login as member
       await agent
-        .post("/api/authentications/login")
+        .post("/api/authentications/sessions")
         .send({ username: "member7", password: "password123" })
         .expect(200);
 
@@ -273,7 +273,7 @@ describe("Group Chat Integration Tests", () => {
       const lastMember = await UserDac.DAO.findByUsername("lastmember");
 
       await agent
-        .post("/api/authentications/login")
+        .post("/api/authentications/sessions")
         .send({ username: "owner11", password: "password123" })
         .expect(200);
 
@@ -289,7 +289,7 @@ describe("Group Chat Integration Tests", () => {
 
       // Login as last member
       await agent
-        .post("/api/authentications/login")
+        .post("/api/authentications/sessions")
         .send({ username: "lastmember", password: "password123" })
         .expect(200);
 

@@ -14,7 +14,7 @@ const router = Router();
 
 /**
  * @openapi
- * /speed-test/start:
+ * /speed-test/tests:
  *   post:
  *     tags: [Speed Test]
  *     summary: Start a new speed test session
@@ -35,7 +35,7 @@ const router = Router();
  *       500:
  *         description: Server error
  */
-router.post("/start", auth, requireAdmin, startSpeedTest);
+router.post("/tests", auth, requireAdmin, startSpeedTest);
 
 /**
  * @openapi
@@ -111,8 +111,8 @@ router.get("/messages", auth, requireAdmin, getFromSpeedTest);
 
 /**
  * @openapi
- * /speed-test/next-phase:
- *   post:
+ * /speed-test/tests:
+ *   patch:
  *     tags: [Speed Test]
  *     summary: Switch to next test phase
  *     description: Advances the speed test to the next phase
@@ -126,12 +126,12 @@ router.get("/messages", auth, requireAdmin, getFromSpeedTest);
  *       500:
  *         description: Server error
  */
-router.post("/next-phase", auth, requireAdmin, switchTestPhase);
+router.patch("/tests", auth, requireAdmin, switchTestPhase);
 
 /**
  * @openapi
- * /speed-test/stop:
- *   post:
+ * /speed-test/tests:
+ *   delete:
  *     tags: [Speed Test]
  *     summary: Stop the current speed test
  *     description: Ends the active speed test session and re-enables normal messaging
@@ -151,7 +151,7 @@ router.post("/next-phase", auth, requireAdmin, switchTestPhase);
  *       500:
  *         description: Server error
  */
-router.post("/stop", auth, requireAdmin, stopSpeedTest);
+router.delete("/tests", auth, requireAdmin, stopSpeedTest);
 
 /**
  * @openapi

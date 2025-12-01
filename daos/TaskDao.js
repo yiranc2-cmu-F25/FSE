@@ -418,4 +418,28 @@ export default class TaskDao extends iTaskDao {
     }).lean();
     return !!participant;
   }
+
+  /**
+   * Remove user from all tasks they are participating in
+   * This is called when a user's account becomes inactive
+   * @param {String} userId - User ID to remove from all tasks
+   * @returns {Promise<Number>} Number of tasks the user was removed from
+   */
+  async removeUserFromAllTasks(userId) {
+    if (!userId) return 0;
+
+    // Find all tasks where user is a participant
+    const participants = await this.TaskParticipantModel.find({ user: userId }).lean();
+    
+    if (participants.length === 0) {
+      return 0;
+    }
+
+    // Remove all participant records for this user
+    const result = await this.TaskParticipantModel.deleteMany({ user: userId });
+    
+    console.log(`[Inactive User Privacy] Removed user ${userId} from ${result.deletedCount} task(s)`);
+    
+    return result.deletedCount || 0;
+  }
 }
