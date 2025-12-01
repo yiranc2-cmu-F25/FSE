@@ -5,6 +5,8 @@ import Group from "../entities/Group.js";
 import GroupMessage from "../entities/GroupMessage.js";
 import User from "../entities/User.js";
 import { isUsernameValid } from "../utils/validators.js";
+import { getActiveUserIds, filterInactiveUsers, isUserActive } from "../utils/filterInactiveUsers.js";
+import { USER_STATUS } from "../constants/userStatus.js";
 
 const normId = (idLike) => {
   if (idLike == null) return "";
@@ -58,6 +60,15 @@ export async function createGroup(req, res) {
       return res.status(400).json({
         status: "error",
         message: `Invalid group name`
+      });
+    }
+
+    // Validate that all members are active users
+    const activeUserIds = await getActiveUserIds(members);
+    if (activeUserIds.size !== members.length) {
+      return res.status(400).json({
+        status: "error",
+        message: "One or more members are inactive or do not exist"
       });
     }
 
@@ -124,6 +135,15 @@ export async function addGroupMembers(req, res) {
       return res.status(400).json({
         status: "error",
         message: `Cannot add members. Group would exceed maximum of ${MAX_MEMBERS} members (excluding owner)`
+      });
+    }
+
+    // Validate that all members to add are active users
+    const activeUserIds = await getActiveUserIds(userIds);
+    if (activeUserIds.size !== userIds.length) {
+      return res.status(400).json({
+        status: "error",
+        message: "One or more members are inactive or do not exist"
       });
     }
 
@@ -233,6 +253,15 @@ export async function removeGroupMembers(req, res) {
       });
     }
 
+    // Validate that all users to remove are active
+    const activeUserIds = await getActiveUserIds(userIds);
+    if (activeUserIds.size !== userIds.length) {
+      return res.status(400).json({
+        status: "error",
+        message: "One or more members are inactive or do not exist"
+      });
+    }
+
     await Group.removeMembers(groupId, userIds);
 
     return res.status(200).json({
@@ -311,13 +340,13 @@ async function getOwnerInfo(group) {
 }
 
 /**
- * Helper: Get all member details
+ * Helper: Get all member details (only active members)
  */
 async function getAllMemberDetails(group) {
   const memberDetails = [];
   for (const memberId of group.members) {
     const member = await User.findById(normId(memberId));
-    if (member) {
+    if (member && isUserActive(member)) {
       memberDetails.push(formatUserInfo(member));
     }
   }
@@ -355,11 +384,19 @@ export async function getGroupDetails(req, res) {
     // Get owner details
     const ownerInfo = await getOwnerInfo(group);
 
-    // Get all member details
+    // If owner is inactive, group should not be accessible
+    if (!ownerInfo || (ownerInfo.status && ownerInfo.status === USER_STATUS.INACTIVE)) {
+      return res.status(404).json({
+        status: "error",
+        message: "Group not found"
+      });
+    }
+
+    // Get all member details (only active members)
     const memberDetails = await getAllMemberDetails(group);
 
-    // Calculate total number (owner + members)
-    const totalCount = 1 + group.members.length;
+    // Calculate total number (owner + active members)
+    const totalCount = 1 + memberDetails.length;
 
     return res.status(200).json({
       groupId: String(group._id),
@@ -433,8 +470,18 @@ export async function getGroupsList(req, res) {
     const groups = await Group.findGroupsByUserId(userId);
 
     const groupsList = await Promise.all(groups.map(async (group) => {
-      const ownerUsername = group.owner?.username || "Unknown";
-      const memberUsernames = group.members.map(member => member.username);
+      // Skip groups with inactive owners
+      if (!group.owner || !isUserActive(group.owner)) {
+        return null;
+      }
+
+      const ownerUsername = group.owner.username || "Unknown";
+
+      // Only include active members
+      const memberUsernames = group.members
+        .filter(member => isUserActive(member))
+        .map(member => member.username);
+
       const allUsernames = [ownerUsername, ...memberUsernames];
 
       // Check if current user has unread messages in this group
@@ -449,7 +496,10 @@ export async function getGroupsList(req, res) {
       };
     }));
 
-    return res.status(200).json(groupsList);
+    // Filter out null entries (groups with inactive owners)
+    const filteredGroupsList = groupsList.filter(group => group !== null);
+
+    return res.status(200).json(filteredGroupsList);
   } catch (err) {
     console.error("Error getting groups list:", err);
     return res.status(500).json({
@@ -514,7 +564,7 @@ export async function getGroupMessages(req, res) {
 }
 
 /**
- * Helper: Get all usernames for group members
+ * Helper: Get all usernames for group members (only active members)
  */
 async function getGroupMemberUsernames(group) {
   const owner = await User.findById(normId(group.owner));
@@ -523,7 +573,7 @@ async function getGroupMemberUsernames(group) {
   const memberUsernames = [];
   for (const memberId of group.members) {
     const member = await User.findById(normId(memberId));
-    if (member) {
+    if (member && isUserActive(member)) {
       memberUsernames.push(member.username);
     }
   }
@@ -586,6 +636,15 @@ export async function sendGroupMessage(req, res) {
 
     const group = await Group.findById(groupId);
     if (!group) {
+      return res.status(404).json({
+        status: "error",
+        message: "Group not found"
+      });
+    }
+
+    // Verify group owner is active
+    const owner = await User.findById(normId(group.owner));
+    if (!owner || owner.status === USER_STATUS.INACTIVE) {
       return res.status(404).json({
         status: "error",
         message: "Group not found"
