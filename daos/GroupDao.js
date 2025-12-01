@@ -15,8 +15,8 @@ export class GroupDao {
 
     async findById(groupId) {
         const doc = await this.GroupModel.findById(groupId)
-            .populate("owner", "username")
-            .populate("members", "username")
+            .populate("owner", "username status")
+            .populate("members", "username status")
             .lean();
         return doc;
     }
@@ -33,8 +33,8 @@ export class GroupDao {
                 { members: userId }
             ]
         })
-            .populate("owner", "username")
-            .populate("members", "username")
+            .populate("owner", "username status")
+            .populate("members", "username status")
             .sort({ timestamp: -1 })
             .lean();
         return docs;

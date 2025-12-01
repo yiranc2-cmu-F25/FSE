@@ -1,9 +1,66 @@
 // Voice Call Controller
 // Handles group voice call operations
 
+import User from "../entities/User.js";
+import { isUserActive } from "../utils/filterInactiveUsers.js";
+import { USER_STATUS } from "../constants/userStatus.js";
+
 // In-memory storage for active voice call rooms
 // Structure: Map<groupId, Map<userId, { username, socketId }>>
 const voiceCallRooms = new Map();
+
+/**
+ * Helper function to filter out inactive participants
+ * @param {Map} callRoom - Map of userId -> {username, socketId}
+ * @returns {Array} - Array of active participant usernames
+ */
+async function getActiveParticipantUsernames(callRoom) {
+  if (!callRoom || callRoom.size === 0) {
+    return [];
+  }
+
+  const participantUsernames = [];
+
+  for (const [userId, userInfo] of callRoom.entries()) {
+    const user = await User.findById(userId);
+    if (user && isUserActive(user)) {
+      participantUsernames.push(userInfo.username);
+    }
+  }
+
+  return participantUsernames;
+}
+
+/**
+ * Helper function to filter out inactive participants and return full participant objects
+ * @param {Map} callRoom - Map of userId -> {username, socketId}
+ * @param {string} excludeUserId - Optional userId to exclude from results
+ * @returns {Array} - Array of active participant objects {userId, username, socketId}
+ */
+async function getActiveParticipants(callRoom, excludeUserId = null) {
+  if (!callRoom || callRoom.size === 0) {
+    return [];
+  }
+
+  const activeParticipants = [];
+
+  for (const [userId, userInfo] of callRoom.entries()) {
+    if (excludeUserId && userId === excludeUserId) {
+      continue;
+    }
+
+    const user = await User.findById(userId);
+    if (user && isUserActive(user)) {
+      activeParticipants.push({
+        userId: userId,
+        username: userInfo.username,
+        socketId: userInfo.socketId
+      });
+    }
+  }
+
+  return activeParticipants;
+}
 
 /**
  * Get voice call status for a group
@@ -21,15 +78,18 @@ export async function getVoiceCallStatus(req, res) {
     }
 
     const callRoom = voiceCallRooms.get(groupId);
-    const isActive = callRoom && callRoom.size > 0;
-    const participantUsernames = isActive
-      ? Array.from(callRoom.values()).map(p => p.username)
+
+    // Filter to only include active participants
+    const participantUsernames = callRoom
+      ? await getActiveParticipantUsernames(callRoom)
       : [];
+
+    const isActive = participantUsernames.length > 0;
 
     res.status(200).json({
       groupId: groupId,
       isActive: isActive,
-      participantCount: isActive ? callRoom.size : 0,
+      participantCount: participantUsernames.length,
       participants: participantUsernames
     });
   } catch (error) {
@@ -95,14 +155,8 @@ export async function joinVoiceCall(req, res) {
     // Add user to call room
     callRoom.set(userId, { username, socketId });
 
-    // Get list of existing participants
-    const participants = Array.from(callRoom.entries())
-      .filter(([id]) => id !== userId)
-      .map(([id, user]) => ({
-        userId: id,
-        username: user.username,
-        socketId: user.socketId
-      }));
+    // Get list of existing active participants (excluding current user)
+    const participants = await getActiveParticipants(callRoom, userId);
 
     // Notify existing participants about the new user
     participants.forEach(participant => {
@@ -115,14 +169,13 @@ export async function joinVoiceCall(req, res) {
     });
 
     // Broadcast call status to ALL group members (including non-participants)
-    // This allows everyone to see "call ongoing" status
-    const callParticipantCount = callRoom.size;
-    const participantUsernames = Array.from(callRoom.values()).map(p => p.username);
+    // This allows everyone to see "call ongoing" status (only showing active participants)
+    const participantUsernames = await getActiveParticipantUsernames(callRoom);
 
     socketInstance.io.emit('voice-call-status-update', {
       groupId: groupId,
       isActive: true,
-      participantCount: callParticipantCount,
+      participantCount: participantUsernames.length,
       participants: participantUsernames
     });
 
@@ -201,14 +254,14 @@ export async function leaveVoiceCall(req, res) {
       });
     });
 
-    // Broadcast call status update to ALL group members
-    const isCallActive = callRoom.size > 0;
-    const participantUsernames = Array.from(callRoom.values()).map(p => p.username);
+    // Broadcast call status update to ALL group members (only showing active participants)
+    const participantUsernames = await getActiveParticipantUsernames(callRoom);
+    const isCallActive = participantUsernames.length > 0;
 
     socketInstance.io.emit('voice-call-status-update', {
       groupId: groupId,
       isActive: isCallActive,
-      participantCount: callRoom.size,
+      participantCount: participantUsernames.length,
       participants: participantUsernames
     });
 
@@ -220,7 +273,7 @@ export async function leaveVoiceCall(req, res) {
     res.status(200).json({
       message: "Successfully left voice call",
       roomId: groupId,
-      remainingParticipants: callRoom.size
+      remainingParticipants: participantUsernames.length
     });
   } catch (error) {
     console.error("Error leaving voice call:", error);
