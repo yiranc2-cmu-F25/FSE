@@ -56,7 +56,7 @@ function attachClickHandlers() {
 
 async function fetchPathStatus(userId, newStatus) {
   const pathStatus = await fetch('/api/authentications/statuses', {
-    method: 'PATCH',
+    method: 'POST',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ 
