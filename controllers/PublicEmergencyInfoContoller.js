@@ -2,6 +2,7 @@ import EmergencyProfile from "../entities/EmergencyProfile.js";
 import User from "../entities/User.js";
 import ProfilePhoto from "../entities/ProfilePhoto.js";
 import { SHARED_STATUS } from "../constants/sharedStatus.js";
+import { USER_STATUS } from "../constants/userStatus.js";
 
 
 export async function getAllEmergencyProfiles(req, res) {
@@ -25,6 +26,11 @@ export async function getAllEmergencyProfiles(req, res) {
                     }
                     
                     const user = await User.findById(profile.userId);
+                    
+                    // Filter out inactive users
+                    if (!user || user.status !== USER_STATUS.ACTIVE) {
+                        return null; // Skip this profile
+                    }
                     
                     // Don't include photo data in response to avoid large payload
                     // Photo will be fetched separately via /api/public/emergency-profiles/:profileId/photo
@@ -53,9 +59,9 @@ export async function getAllEmergencyProfiles(req, res) {
             })
         );
         
-        // Extract successful results, filter out rejected promises
+        // Extract successful results, filter out rejected promises and null values (inactive users)
         const successfulProfiles = profilesWithUserStatus
-            .filter(result => result.status === 'fulfilled')
+            .filter(result => result.status === 'fulfilled' && result.value !== null)
             .map(result => result.value);
         
         // Log any rejected promises for debugging
@@ -115,6 +121,11 @@ export async function getBookmarkedEmergencyProfiles(req, res) {
                     
                     const user = await User.findById(profile.userId);
                     
+                    // Filter out inactive users
+                    if (!user || user.status !== USER_STATUS.ACTIVE) {
+                        return null; // Skip this profile
+                    }
+                    
                     // Don't include photo data in response to avoid large payload
                     // Photo will be fetched separately via /api/public/emergency-profiles/:profileId/photo
                     
@@ -134,9 +145,9 @@ export async function getBookmarkedEmergencyProfiles(req, res) {
             })
         );
         
-        // Extract successful results, filter out rejected promises
+        // Extract successful results, filter out rejected promises and null values (inactive users)
         const successfulProfiles = profilesWithPhotos
-            .filter(result => result.status === 'fulfilled')
+            .filter(result => result.status === 'fulfilled' && result.value !== null)
             .map(result => result.value);
         
         // Log any rejected promises for debugging

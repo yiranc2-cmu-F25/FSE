@@ -2,6 +2,8 @@ import { iEmergencyProfileDao } from "./iEmergencyProfileDao.js";
 import mongoose from "mongoose";
 import { PROFILE_VISIBILITY } from "../constants/profileVisibility.js";
 import { BLOOD_TYPE } from "../constants/bloodType.js";
+import { USER_STATUS } from "../constants/userStatus.js";
+import { getActiveUserIds } from "../utils/filterInactiveUsers.js";
 
 export class EmergencyProfileDao extends iEmergencyProfileDao {
     constructor({ EmergencyProfileModel, ProfilePhotoModel, UserModel, BookmarkModel }) {
@@ -13,7 +15,15 @@ export class EmergencyProfileDao extends iEmergencyProfileDao {
     }
 
     async getAllEmergencyProfiles() {
-        return await this.EmergencyProfileModel.find().populate("facePhotoId").lean();
+        const profiles = await this.EmergencyProfileModel.find().populate("facePhotoId").lean();
+        
+        // Filter out profiles where user is inactive
+        if (!profiles || profiles.length === 0) return [];
+        
+        const userIds = profiles.map(p => p.userId).filter(Boolean);
+        const activeUserIds = await getActiveUserIds(userIds);
+        
+        return profiles.filter(p => p.userId && activeUserIds.has(String(p.userId)));
     }
 
     async getBookmarkedEmergencyProfiles(userId) {
@@ -25,7 +35,15 @@ export class EmergencyProfileDao extends iEmergencyProfileDao {
         const profileIds = bookmarks.map(b => b.profileId);
         
         // Get the actual emergency profiles
-        return await this.EmergencyProfileModel.find({ _id: { $in: profileIds } }).populate("facePhotoId").lean();
+        const profiles = await this.EmergencyProfileModel.find({ _id: { $in: profileIds } }).populate("facePhotoId").lean();
+        
+        // Filter out profiles where user is inactive
+        if (!profiles || profiles.length === 0) return [];
+        
+        const profileUserIds = profiles.map(p => p.userId).filter(Boolean);
+        const activeUserIds = await getActiveUserIds(profileUserIds);
+        
+        return profiles.filter(p => p.userId && activeUserIds.has(String(p.userId)));
     }
 
     async bookmarkEmergencyProfile(userId, profileId) {
@@ -42,7 +60,17 @@ export class EmergencyProfileDao extends iEmergencyProfileDao {
     }
 
     async getPersonalEmergencyProfile(userId) {
-        return await this.EmergencyProfileModel.findOne({ userId }).populate("facePhotoId").lean();
+        const profile = await this.EmergencyProfileModel.findOne({ userId }).populate("facePhotoId").lean();
+        
+        // Check if user is active - only return profile if user is active
+        if (!profile) return null;
+        
+        const user = await this.UserModel.findById(userId).select("status").lean();
+        if (!user || user.status !== USER_STATUS.ACTIVE) {
+            return null;
+        }
+        
+        return profile;
     }
 
     async updatePersonalEmergencyProfile(userId, profileData) {

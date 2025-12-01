@@ -4,6 +4,7 @@
 
 import { transformTaskDocSimple } from "./taskTransformers.js";
 import { buildParticipantCountMap } from "./filterBuilders.js";
+import { USER_STATUS } from "../../constants/userStatus.js";
 
 /**
  * Common pattern for querying tasks with participant counts in TaskDao
@@ -26,23 +27,42 @@ export async function queryTasksWithParticipantCounts({
 }) {
   const query = TaskModel.find(filter)
     .sort(sort)
-    .populate("creator", "username");
+    .populate({
+      path: "creator",
+      select: "username status",
+      match: { status: USER_STATUS.ACTIVE }
+    });
 
   if (skip !== undefined) query.skip(skip);
   if (limit !== undefined) query.limit(limit);
 
   const docs = await query.lean();
 
-  // Get participant counts for all tasks
-  const taskIds = docs.map((doc) => doc._id);
+  // Filter out tasks where creator is inactive (populate returns null)
+  const activeTasks = docs.filter(doc => doc.creator !== null);
+
+  // Get participant counts for all active tasks - only count active users
+  const taskIds = activeTasks.map((doc) => doc._id);
+  
+  // Use aggregation with $lookup to join User and filter inactive users
   const participantCounts = await TaskParticipantModel.aggregate([
     { $match: { task: { $in: taskIds } } },
+    {
+      $lookup: {
+        from: "users",
+        localField: "user",
+        foreignField: "_id",
+        as: "userInfo"
+      }
+    },
+    { $unwind: "$userInfo" },
+    { $match: { "userInfo.status": USER_STATUS.ACTIVE } },
     { $group: { _id: "$task", count: { $sum: 1 } } },
   ]);
 
   const countMap = buildParticipantCountMap(participantCounts);
 
-  return docs.map((doc) => ({
+  return activeTasks.map((doc) => ({
     ...transformTaskDocSimple(doc),
     helpersJoined: countMap[doc._id.toString()] || 0,
   }));
@@ -71,25 +91,53 @@ export async function queryTasksWithParticipantStatus({
 }) {
   const query = TaskModel.find(filter)
     .sort(sort)
-    .populate("creator", "username");
+    .populate({
+      path: "creator",
+      select: "username status",
+      match: { status: USER_STATUS.ACTIVE }
+    });
 
   if (skip !== undefined) query.skip(skip);
   if (limit !== undefined) query.limit(limit);
 
   const docs = await query.lean();
 
-  // Get participant counts for all tasks
-  const taskIds = docs.map((doc) => doc._id);
+  // Filter out tasks where creator is inactive (populate returns null)
+  const activeTasks = docs.filter(doc => doc.creator !== null);
+
+  // Get participant counts for all active tasks - only count active users
+  const taskIds = activeTasks.map((doc) => doc._id);
+  
+  // Use aggregation with $lookup to join User and filter inactive users
   const participantCounts = await TaskParticipantModel.aggregate([
     { $match: { task: { $in: taskIds } } },
+    {
+      $lookup: {
+        from: "users",
+        localField: "user",
+        foreignField: "_id",
+        as: "userInfo"
+      }
+    },
+    { $unwind: "$userInfo" },
+    { $match: { "userInfo.status": USER_STATUS.ACTIVE } },
     { $group: { _id: "$task", count: { $sum: 1 } } },
   ]);
 
-  // Get user's participation status for each task
-  const userParticipations = await TaskParticipantModel.find({
-    task: { $in: taskIds },
-    user: userId,
-  }).lean();
+  // Get user's participation status for each task - only if user is active
+  const userParticipations = await TaskParticipantModel.aggregate([
+    { $match: { task: { $in: taskIds }, user: userId } },
+    {
+      $lookup: {
+        from: "users",
+        localField: "user",
+        foreignField: "_id",
+        as: "userInfo"
+      }
+    },
+    { $unwind: "$userInfo" },
+    { $match: { "userInfo.status": USER_STATUS.ACTIVE } },
+  ]);
 
   const participationSet = new Set(
     userParticipations.map((p) => p.task.toString())
@@ -97,7 +145,7 @@ export async function queryTasksWithParticipantStatus({
 
   const countMap = buildParticipantCountMap(participantCounts);
 
-  return docs.map((doc) => ({
+  return activeTasks.map((doc) => ({
     ...transformTaskDocSimple(doc),
     helpersJoined: countMap[doc._id.toString()] || 0,
     isParticipant: participationSet.has(doc._id.toString()),

@@ -63,9 +63,6 @@ export async function getAllUsers(req, res) {
 
 /**
  * Update user profile
- * Supports updating: status, role, username, password
- * Can update one or multiple fields at once
- * PUT /api/admin/profiles/:userId
  */
 export async function updateUserProfile(req, res) {
     try {
@@ -139,16 +136,12 @@ export async function updateUserProfile(req, res) {
         }
         
         // Fetch user document once and update all fields together to avoid race conditions
-        // This is critical for password updates - parallel updates can cause password hashing to fail
-        // When multiple fields are updated in parallel, each update fetches the document separately,
-        // which can cause Mongoose's change detection to fail, especially for password hashing
         const userDoc = await User.findById(userId);
         if (!userDoc) {
             return res.status(404).json({ error: "User not found" });
         }
         
         // Update all fields on the same document instance
-        // This ensures Mongoose properly tracks changes and the pre-save hook runs correctly
         if (status !== undefined) {
             userDoc.status = status;
         }
@@ -159,24 +152,10 @@ export async function updateUserProfile(req, res) {
             userDoc.username = username.toLowerCase();
         }
         if (password !== undefined) {
-            // Explicitly set password - pre-save hook will hash it
-            // Setting the password directly on the document ensures Mongoose detects the change
             userDoc.password = password;
         }
         
-        // Save once with all updates - this ensures password hashing works correctly
-        // The pre-save hook will detect password modification via isModified("password") and hash it
         await userDoc.save();
-        
-        // Disconnect socket with old username if username changed
-        // This forces the user to reconnect with the new username
-        if (oldUsername && oldUsername !== username.toLowerCase()) {
-            const socketInstance = req.app.get("socketInstance");
-            if (socketInstance) {
-                socketInstance.disconnectUser(oldUsername);
-                console.log(`Disconnected socket for username change: ${oldUsername} -> ${username.toLowerCase()}`);
-            }
-        }
         
         // Get updated user
         const updatedUser = await User.findById(userId);
@@ -186,6 +165,26 @@ export async function updateUserProfile(req, res) {
         
         // Handle both Mongoose document and plain object
         const userObj = updatedUser.toObject ? updatedUser.toObject() : updatedUser;
+        const finalStatus = userObj.status;
+        const finalUsername = userObj.username;
+        
+        const socketInstance = req.app.get("socketInstance");
+        
+        // If user was set to inactive, force disconnect immediately
+        if (status !== undefined && finalStatus === USER_STATUS.INACTIVE) {
+            if (socketInstance && finalUsername) {
+                socketInstance.disconnectUser(finalUsername);
+                console.log(`[Force Logout] Disconnected user ${finalUsername} due to account being set to inactive`);
+            }
+        }
+        
+        // Disconnect socket with old username if username changed
+        if (oldUsername && oldUsername !== finalUsername) {
+            if (socketInstance) {
+                socketInstance.disconnectUser(oldUsername);
+                console.log(`Disconnected socket for username change: ${oldUsername} -> ${finalUsername}`);
+            }
+        }
         const finalUserId = String(userObj._id || userObj.id);
         
         res.json({ 

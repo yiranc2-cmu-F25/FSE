@@ -31,6 +31,8 @@ export class HelpCenterDao extends iHelpCenterDao {
     }
 
     async getClosestHelpCenters({ coordinates, limit = 10 }) {
+        const queryLimit = limit * 2;
+        
         const centers = await this.HelpCenterModel.find({
             coordinates: {
                 $near: {
@@ -40,12 +42,15 @@ export class HelpCenterDao extends iHelpCenterDao {
                     }
                 }
             }
-        }).limit(limit).lean();
+        }).limit(queryLimit).lean();
         
         // Filter out help centers where owner is inactive
         const ownerIds = centers.map(c => String(c.owner));
         const activeOwnerIds = await getActiveUserIds(ownerIds);
-        return centers.filter(c => activeOwnerIds.has(String(c.owner)));
+        const activeCenters = centers.filter(c => activeOwnerIds.has(String(c.owner)));
+        
+        // Return only the requested limit of active centers
+        return activeCenters.slice(0, limit);
     }
 
     async updateHelpCenter({ id, name, type, location, description, coordinates }) {

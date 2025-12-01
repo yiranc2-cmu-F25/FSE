@@ -1,4 +1,6 @@
 import { iEmergencyProfileDao } from "./iEmergencyProfileDao.js";
+import { USER_STATUS } from "../constants/userStatus.js";
+import { getActiveUserIds } from "../utils/filterInactiveUsers.js";
 
 export class inMemoryEmergencyProfileDao extends iEmergencyProfileDao {
     constructor() {
@@ -9,14 +11,22 @@ export class inMemoryEmergencyProfileDao extends iEmergencyProfileDao {
     }
 
     async getAllEmergencyProfiles() {
-        // Return all profiles with facePhotoId populated
-        return this.profiles.map(profile => {
+        // Return all profiles with facePhotoId populated, filtered by active users
+        const profilesWithPhotos = this.profiles.map(profile => {
             const photo = this.photos?.find(p => p.profileId === String(profile._id || profile.id));
             return {
                 ...profile,
                 facePhotoId: photo ? { _id: photo._id, profileId: photo.profileId } : null,
             };
         });
+        
+        // Filter out profiles where user is inactive
+        if (profilesWithPhotos.length === 0) return [];
+        
+        const userIds = profilesWithPhotos.map(p => p.userId).filter(Boolean);
+        const activeUserIds = await getActiveUserIds(userIds);
+        
+        return profilesWithPhotos.filter(p => p.userId && activeUserIds.has(String(p.userId)));
     }
 
     async getBookmarkedEmergencyProfiles(userId) {
@@ -29,13 +39,21 @@ export class inMemoryEmergencyProfileDao extends iEmergencyProfileDao {
             return profileIds.includes(profileId);
         });
         
-        return profiles.map(profile => {
+        const profilesWithPhotos = profiles.map(profile => {
             const photo = this.photos?.find(p => p.profileId === String(profile._id || profile.id));
             return {
                 ...profile,
                 facePhotoId: photo ? { _id: photo._id, profileId: photo.profileId } : null,
             };
         });
+        
+        // Filter out profiles where user is inactive
+        if (profilesWithPhotos.length === 0) return [];
+        
+        const profileUserIds = profilesWithPhotos.map(p => p.userId).filter(Boolean);
+        const activeUserIds = await getActiveUserIds(profileUserIds);
+        
+        return profilesWithPhotos.filter(p => p.userId && activeUserIds.has(String(p.userId)));
     }
 
     async bookmarkEmergencyProfile(userId, profileId) {
@@ -60,6 +78,13 @@ export class inMemoryEmergencyProfileDao extends iEmergencyProfileDao {
     async getPersonalEmergencyProfile(userId) {
         const profile = this.profiles.find(p => String(p.userId) === String(userId));
         if (!profile) return null;
+        
+        // Check if user is active
+        const UserDac = (await import("../dacs/userDac.js")).default;
+        const user = await UserDac.DAO?.findById?.(userId);
+        if (!user || user.status !== USER_STATUS.ACTIVE) {
+            return null;
+        }
         
         const photo = this.photos?.find(p => p.profileId === String(profile._id || profile.id));
         return {
