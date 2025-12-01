@@ -1,17 +1,8 @@
 import { jest } from "@jest/globals";
 import { CoachingBoardDao } from "../daos/CoachingBoardDao.js";
-import User from "../entities/User.js";
 import { USER_STATUS } from "../constants/userStatus.js";
-import * as filterInactiveUsersModule from "../utils/filterInactiveUsers.js";
 import UserDac from "../dacs/userDac.js";
 import { UserDao } from "../daos/UserDao.js";
-
-// Module-level tracking
-let mockGetActiveUserIds;
-let mockUserFindById;
-let originalGetActiveUserIds;
-let originalUserFindById;
-let isMocked = false;
 
 describe("CoachingBoardDao", () => {
   let dao;
@@ -19,53 +10,6 @@ describe("CoachingBoardDao", () => {
   let mockUserModel;
   let userDao;
 
-  beforeAll(() => {
-    // Save original functions only once
-    if (!isMocked) {
-      originalGetActiveUserIds = filterInactiveUsersModule.getActiveUserIds;
-      originalUserFindById = User.findById;
-
-      // Create mock functions
-      mockGetActiveUserIds = jest.fn().mockResolvedValue(new Set());
-      mockUserFindById = jest.fn().mockResolvedValue(null);
-
-      // Try to replace using Object.defineProperty
-      try {
-        // Delete first if possible (won't work if not configurable)
-        delete filterInactiveUsersModule.getActiveUserIds;
-        delete User.findById;
-      } catch (e) {
-        // Ignore
-      }
-
-      try {
-        Object.defineProperty(filterInactiveUsersModule, "getActiveUserIds", {
-          value: mockGetActiveUserIds,
-          writable: true,
-          configurable: true,
-          enumerable: true,
-        });
-
-        Object.defineProperty(User, "findById", {
-          value: mockUserFindById,
-          writable: true,
-          configurable: true,
-          enumerable: true,
-        });
-        isMocked = true;
-      } catch (e) {
-        // If defineProperty fails, try direct assignment (may not work)
-        try {
-          filterInactiveUsersModule.getActiveUserIds = mockGetActiveUserIds;
-          User.findById = mockUserFindById;
-          isMocked = true;
-        } catch (e2) {
-          // If all fails, we'll need to use a different approach
-          console.warn("Could not mock ES module exports, tests may fail");
-        }
-      }
-    }
-  });
 
   beforeEach(() => {
     // Set up mock UserModel and UserDao
@@ -90,33 +34,6 @@ describe("CoachingBoardDao", () => {
     };
 
     dao = new CoachingBoardDao({ CoachingBoardModel: mockModel });
-
-    // Reset mock behavior
-    mockGetActiveUserIds.mockResolvedValue(new Set());
-    mockUserFindById.mockResolvedValue(null);
-    mockGetActiveUserIds.mockClear();
-    mockUserFindById.mockClear();
-  });
-
-  afterAll(() => {
-    // Restore original functions
-    if (isMocked) {
-      try {
-        Object.defineProperty(filterInactiveUsersModule, "getActiveUserIds", {
-          value: originalGetActiveUserIds,
-          writable: true,
-          configurable: true,
-        });
-
-        Object.defineProperty(User, "findById", {
-          value: originalUserFindById,
-          writable: true,
-          configurable: true,
-        });
-      } catch (e) {
-        // Ignore errors during cleanup
-      }
-    }
   });
 
   describe("constructor", () => {
@@ -219,7 +136,6 @@ describe("CoachingBoardDao", () => {
       };
       mockModel.findById.mockReturnValue(mockQuery);
 
-      mockUserFindById.mockResolvedValue(null);
 
       const result = await dao.getById({ id: "board123" });
 

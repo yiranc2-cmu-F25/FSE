@@ -2,7 +2,6 @@ import { jest } from "@jest/globals";
 import { EmergencyProfileDao } from "../daos/EmergencyProfileDao.js";
 import { USER_STATUS } from "../constants/userStatus.js";
 import { PROFILE_VISIBILITY } from "../constants/profileVisibility.js";
-import { BLOOD_TYPE } from "../constants/bloodType.js";
 
 describe("EmergencyProfileDao", () => {
   let dao;
