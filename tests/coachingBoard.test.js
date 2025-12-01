@@ -512,6 +512,61 @@ describe("Coaching Board REST API Integration Tests", () => {
 	});
 
 	describe("POST /api/coaching-boards/:bid/comments/:cid/replies - Add reply to comment", () => {
+		test("should reject reply when missing required fields (negative test)", async () => {
+			const agentClient = request.agent();
+			const author = await registerUser(agentClient, `reply_validation_author_${Date.now()}`, "password", ["CPR"]);
+
+			// Create board
+			const createData = {
+				title: "Board for Reply Validation",
+				category: "First Aid",
+				description: "Description",
+				objective: "Objective",
+				steps: ["Step 1"],
+				relatedSkills: ["CPR"],
+			};
+
+			const createResponse = await agentClient
+				.post(BOARD_BASE)
+				.set("Accept", "application/json")
+				.send(createData)
+				.ok((res) => true);
+
+			const boardId = createResponse.body.boardId;
+
+			// Add comment
+			await agentClient
+				.post(`${BOARD_BASE}/${boardId}/comments`)
+				.set("Accept", "application/json")
+				.send({
+					comment: "Comment",
+					uid: author.id,
+					ts: Date.now(),
+				})
+				.ok((res) => true);
+
+			// Get commentId
+			const getBoardResponse = await agentClient
+				.get(`${BOARD_BASE}/${boardId}`)
+				.set("Accept", "application/json")
+				.ok((res) => true);
+
+			const commentId = getBoardResponse.body.comments[0].id;
+
+			// Try to add reply with missing reply field
+			const replyResponse = await agentClient
+				.post(`${BOARD_BASE}/${boardId}/comments/${commentId}/replies`)
+				.set("Accept", "application/json")
+				.send({
+					// Missing reply field
+				})
+				.ok((res) => true);
+
+			expect(replyResponse.status).toBe(400);
+			expect(replyResponse.body.status).toBe("error");
+			expect(replyResponse.body.message).toBe("Missing required fields");
+		});
+
 		test("should successfully add reply and verify it appears in comment replies (positive test)", async () => {
 			const authorAgent = request.agent();
 			const author = await registerUser(authorAgent, `author_${Date.now()}`, "password", ["CPR"]);
@@ -746,6 +801,967 @@ describe("Coaching Board REST API Integration Tests", () => {
 			expect(board2.objective).toBe(board2Data.objective);
 			expect(board2.relatedSkills).toEqual(board2Data.relatedSkills);
 			expect(board2.publicationState).toBe("published");
+		});
+	});
+
+	describe("GET /api/coaching-boards/duplications - Check duplicate title", () => {
+		test("should return false for non-duplicate title (positive test)", async () => {
+			const agentClient = request.agent();
+			const author = await registerUser(agentClient, `dup_check_author_${Date.now()}`, "password", ["CPR"]);
+
+			const response = await agentClient
+				.get(`${BOARD_BASE}/duplications?title=Unique Title&category=First Aid`)
+				.set("Accept", "application/json")
+				.ok((res) => true);
+
+			expect(response.status).toBe(200);
+			expect(response.body.isDuplicate).toBe(false);
+			expect(response.body.titleValid).toBe(true);
+		});
+
+		test("should return true for duplicate title (positive test)", async () => {
+			const agentClient = request.agent();
+			const author = await registerUser(agentClient, `dup_check2_author_${Date.now()}`, "password", ["CPR"]);
+
+			// Create board first
+			const createData = {
+				title: "Duplicate Check Title",
+				category: "First Aid",
+				description: "Description",
+				objective: "Objective",
+				steps: ["Step 1"],
+				relatedSkills: ["CPR"],
+			};
+
+			await agentClient
+				.post(BOARD_BASE)
+				.set("Accept", "application/json")
+				.send(createData)
+				.ok((res) => true);
+
+			// Check for duplicate
+			const response = await agentClient
+				.get(`${BOARD_BASE}/duplications?title=Duplicate Check Title&category=First Aid`)
+				.set("Accept", "application/json")
+				.ok((res) => true);
+
+			expect(response.status).toBe(200);
+			expect(response.body.isDuplicate).toBe(true);
+		});
+
+		test("should return 400 when title parameter is missing (negative test)", async () => {
+			const agentClient = request.agent();
+			await registerUser(agentClient, `dup_check3_author_${Date.now()}`, "password", ["CPR"]);
+
+			const response = await agentClient
+				.get(`${BOARD_BASE}/duplications?category=First Aid`)
+				.set("Accept", "application/json")
+				.ok((res) => true);
+
+			expect(response.status).toBe(400);
+			expect(response.body.status).toBe("error");
+		});
+	});
+
+	describe("GET /api/coaching-boards/:bid - Get board by ID", () => {
+		test("should successfully get board by ID (positive test)", async () => {
+			const agentClient = request.agent();
+			const author = await registerUser(agentClient, `get_board_author_${Date.now()}`, "password", ["CPR"]);
+
+			// Create board
+			const createData = {
+				title: "Board to Get",
+				category: "First Aid",
+				description: "Description",
+				objective: "Objective",
+				steps: ["Step 1"],
+				relatedSkills: ["CPR"],
+			};
+
+			const createResponse = await agentClient
+				.post(BOARD_BASE)
+				.set("Accept", "application/json")
+				.send(createData)
+				.ok((res) => true);
+
+			const boardId = createResponse.body.boardId;
+
+			// Get board
+			const getResponse = await agentClient
+				.get(`${BOARD_BASE}/${boardId}`)
+				.set("Accept", "application/json")
+				.ok((res) => true);
+
+			expect(getResponse.status).toBe(200);
+			expect(getResponse.body.id).toBe(boardId);
+			expect(getResponse.body.title).toBe(createData.title);
+			expect(getResponse.body.category).toBe(createData.category);
+		});
+
+		test("should return 404 when board not found (negative test)", async () => {
+			const agentClient = request.agent();
+			await registerUser(agentClient, `get_board2_author_${Date.now()}`, "password", ["CPR"]);
+
+			const fakeBoardId = "507f1f77bcf86cd799439011";
+			const getResponse = await agentClient
+				.get(`${BOARD_BASE}/${fakeBoardId}`)
+				.set("Accept", "application/json")
+				.ok((res) => true);
+
+			expect(getResponse.status).toBe(404);
+			expect(getResponse.body.status).toBe("error");
+		});
+	});
+
+	describe("GET /api/coaching-boards/:bid/comments - Get more comments", () => {
+		test("should successfully get paginated comments (positive test)", async () => {
+			const agentClient = request.agent();
+			const author = await registerUser(agentClient, `more_comments_author_${Date.now()}`, "password", ["CPR"]);
+
+			// Create board
+			const createData = {
+				title: "Board with Comments",
+				category: "First Aid",
+				description: "Description",
+				objective: "Objective",
+				steps: ["Step 1"],
+				relatedSkills: ["CPR"],
+			};
+
+			const createResponse = await agentClient
+				.post(BOARD_BASE)
+				.set("Accept", "application/json")
+				.send(createData)
+				.ok((res) => true);
+
+			const boardId = createResponse.body.boardId;
+
+			// Add multiple comments
+			for (let i = 0; i < 3; i++) {
+				await agentClient
+					.post(`${BOARD_BASE}/${boardId}/comments`)
+					.set("Accept", "application/json")
+					.send({
+						comment: `Comment ${i}`,
+						uid: author.id,
+						ts: Date.now(),
+					})
+					.ok((res) => true);
+			}
+
+			// Get more comments
+			const getResponse = await agentClient
+				.get(`${BOARD_BASE}/${boardId}/comments?skip=0&limit=2`)
+				.set("Accept", "application/json")
+				.ok((res) => true);
+
+			expect(getResponse.status).toBe(200);
+			expect(getResponse.body.comments).toBeDefined();
+			expect(Array.isArray(getResponse.body.comments)).toBe(true);
+			expect(getResponse.body.hasMore).toBeDefined();
+			expect(getResponse.body.total).toBeDefined();
+		});
+	});
+
+	describe("GET /api/coaching-boards/:bid/comments/:cid/replies - Get more replies", () => {
+		test("should successfully get paginated replies (positive test)", async () => {
+			const agentClient = request.agent();
+			const author = await registerUser(agentClient, `more_replies_author_${Date.now()}`, "password", ["CPR"]);
+
+			// Create board
+			const createData = {
+				title: "Board with Replies",
+				category: "First Aid",
+				description: "Description",
+				objective: "Objective",
+				steps: ["Step 1"],
+				relatedSkills: ["CPR"],
+			};
+
+			const createResponse = await agentClient
+				.post(BOARD_BASE)
+				.set("Accept", "application/json")
+				.send(createData)
+				.ok((res) => true);
+
+			const boardId = createResponse.body.boardId;
+
+			// Add comment
+			const commentResponse = await agentClient
+				.post(`${BOARD_BASE}/${boardId}/comments`)
+				.set("Accept", "application/json")
+				.send({
+					comment: "Original comment",
+					uid: author.id,
+					ts: Date.now(),
+				})
+				.ok((res) => true);
+
+			// Get commentId
+			const getBoardResponse = await agentClient
+				.get(`${BOARD_BASE}/${boardId}`)
+				.set("Accept", "application/json")
+				.ok((res) => true);
+
+			const commentId = getBoardResponse.body.comments[0].id;
+
+			// Add multiple replies
+			for (let i = 0; i < 3; i++) {
+				await agentClient
+					.post(`${BOARD_BASE}/${boardId}/comments/${commentId}/replies`)
+					.set("Accept", "application/json")
+					.send({
+						reply: `Reply ${i}`,
+						uid: author.id,
+						ts: Date.now(),
+					})
+					.ok((res) => true);
+			}
+
+			// Get more replies
+			const getResponse = await agentClient
+				.get(`${BOARD_BASE}/${boardId}/comments/${commentId}/replies?skip=0&limit=2`)
+				.set("Accept", "application/json")
+				.ok((res) => true);
+
+			expect(getResponse.status).toBe(200);
+			expect(getResponse.body.replies).toBeDefined();
+			expect(Array.isArray(getResponse.body.replies)).toBe(true);
+			expect(getResponse.body.hasMore).toBeDefined();
+			expect(getResponse.body.total).toBeDefined();
+		});
+	});
+
+	describe("POST /api/coaching-boards/:bid/comments/:cid/replies/:rid/likes - Toggle reply like", () => {
+		test("should successfully like reply and verify like count increases (positive test)", async () => {
+			const agentClient = request.agent();
+			const author = await registerUser(agentClient, `like_reply_author_${Date.now()}`, "password", ["CPR"]);
+
+			// Create board
+			const createData = {
+				title: "Board with Reply Likes",
+				category: "First Aid",
+				description: "Description",
+				objective: "Objective",
+				steps: ["Step 1"],
+				relatedSkills: ["CPR"],
+			};
+
+			const createResponse = await agentClient
+				.post(BOARD_BASE)
+				.set("Accept", "application/json")
+				.send(createData)
+				.ok((res) => true);
+
+			const boardId = createResponse.body.boardId;
+
+			// Add comment
+			await agentClient
+				.post(`${BOARD_BASE}/${boardId}/comments`)
+				.set("Accept", "application/json")
+				.send({
+					comment: "Comment",
+					uid: author.id,
+					ts: Date.now(),
+				})
+				.ok((res) => true);
+
+			// Get commentId
+			const getBoardForCommentId = await agentClient
+				.get(`${BOARD_BASE}/${boardId}`)
+				.set("Accept", "application/json")
+				.ok((res) => true);
+
+			const commentId = getBoardForCommentId.body.comments[0].id;
+
+			// Add reply
+			await agentClient
+				.post(`${BOARD_BASE}/${boardId}/comments/${commentId}/replies`)
+				.set("Accept", "application/json")
+				.send({
+					reply: "Reply to like",
+					uid: author.id,
+					ts: Date.now(),
+				})
+				.ok((res) => true);
+
+			// Get replyId
+			const getBoardForReplyId = await agentClient
+				.get(`${BOARD_BASE}/${boardId}`)
+				.set("Accept", "application/json")
+				.ok((res) => true);
+
+			const replyId = getBoardForReplyId.body.comments[0].replies[0].id;
+
+			// Like reply
+			const likeResponse = await agentClient
+				.post(`${BOARD_BASE}/${boardId}/comments/${commentId}/replies/${replyId}/likes`)
+				.set("Accept", "application/json")
+				.ok((res) => true);
+
+			expect(likeResponse.status).toBe(200);
+			expect(likeResponse.body.message).toBe("Like toggled successfully");
+		});
+	});
+
+	describe("DELETE /api/coaching-boards/:bid/comments/:cid - Delete comment", () => {
+		test("should successfully delete comment (positive test)", async () => {
+			const agentClient = request.agent();
+			const author = await registerUser(agentClient, `delete_comment_author_${Date.now()}`, "password", ["CPR"]);
+
+			// Create board
+			const createData = {
+				title: "Board with Comment to Delete",
+				category: "First Aid",
+				description: "Description",
+				objective: "Objective",
+				steps: ["Step 1"],
+				relatedSkills: ["CPR"],
+			};
+
+			const createResponse = await agentClient
+				.post(BOARD_BASE)
+				.set("Accept", "application/json")
+				.send(createData)
+				.ok((res) => true);
+
+			const boardId = createResponse.body.boardId;
+
+			// Add comment
+			await agentClient
+				.post(`${BOARD_BASE}/${boardId}/comments`)
+				.set("Accept", "application/json")
+				.send({
+					comment: "Comment to delete",
+					uid: author.id,
+					ts: Date.now(),
+				})
+				.ok((res) => true);
+
+			// Get commentId
+			const getBoardResponse = await agentClient
+				.get(`${BOARD_BASE}/${boardId}`)
+				.set("Accept", "application/json")
+				.ok((res) => true);
+
+			const commentId = getBoardResponse.body.comments[0].id;
+
+			// Delete comment
+			const deleteResponse = await agentClient
+				.delete(`${BOARD_BASE}/${boardId}/comments/${commentId}`)
+				.set("Accept", "application/json")
+				.ok((res) => true);
+
+			expect(deleteResponse.status).toBe(200);
+			expect(deleteResponse.body.message).toBe("Comment deleted successfully");
+
+			// Verify comment is deleted
+			const getAfterResponse = await agentClient
+				.get(`${BOARD_BASE}/${boardId}`)
+				.set("Accept", "application/json")
+				.ok((res) => true);
+
+			expect(getAfterResponse.body.comments.length).toBe(0);
+		});
+
+		test("should reject deletion when user is not the author (negative test)", async () => {
+			const authorAgent = request.agent();
+			const author = await registerUser(authorAgent, `comment_author_${Date.now()}`, "password", ["CPR"]);
+
+			// Create board
+			const createData = {
+				title: "Board with Protected Comment",
+				category: "First Aid",
+				description: "Description",
+				objective: "Objective",
+				steps: ["Step 1"],
+				relatedSkills: ["CPR"],
+			};
+
+			const createResponse = await authorAgent
+				.post(BOARD_BASE)
+				.set("Accept", "application/json")
+				.send(createData)
+				.ok((res) => true);
+
+			const boardId = createResponse.body.boardId;
+
+			// Add comment
+			await authorAgent
+				.post(`${BOARD_BASE}/${boardId}/comments`)
+				.set("Accept", "application/json")
+				.send({
+					comment: "Protected comment",
+					uid: author.id,
+					ts: Date.now(),
+				})
+				.ok((res) => true);
+
+			// Get commentId
+			const getBoardResponse = await authorAgent
+				.get(`${BOARD_BASE}/${boardId}`)
+				.set("Accept", "application/json")
+				.ok((res) => true);
+
+			const commentId = getBoardResponse.body.comments[0].id;
+
+			// Try to delete as different user
+			const otherAgent = request.agent();
+			await registerUser(otherAgent, `other_user_${Date.now()}`, "password", ["CPR"]);
+
+			const deleteResponse = await otherAgent
+				.delete(`${BOARD_BASE}/${boardId}/comments/${commentId}`)
+				.set("Accept", "application/json")
+				.ok((res) => true);
+
+			expect(deleteResponse.status).toBe(403);
+			expect(deleteResponse.body.status).toBe("error");
+		});
+	});
+
+	describe("DELETE /api/coaching-boards/:bid/comments/:cid/replies/:rid - Delete reply", () => {
+		test("should successfully delete reply (positive test)", async () => {
+			const agentClient = request.agent();
+			const author = await registerUser(agentClient, `delete_reply_author_${Date.now()}`, "password", ["CPR"]);
+
+			// Create board
+			const createData = {
+				title: "Board with Reply to Delete",
+				category: "First Aid",
+				description: "Description",
+				objective: "Objective",
+				steps: ["Step 1"],
+				relatedSkills: ["CPR"],
+			};
+
+			const createResponse = await agentClient
+				.post(BOARD_BASE)
+				.set("Accept", "application/json")
+				.send(createData)
+				.ok((res) => true);
+
+			const boardId = createResponse.body.boardId;
+
+			// Add comment
+			await agentClient
+				.post(`${BOARD_BASE}/${boardId}/comments`)
+				.set("Accept", "application/json")
+				.send({
+					comment: "Comment",
+					uid: author.id,
+					ts: Date.now(),
+				})
+				.ok((res) => true);
+
+			// Get commentId
+			const getBoardForCommentId = await agentClient
+				.get(`${BOARD_BASE}/${boardId}`)
+				.set("Accept", "application/json")
+				.ok((res) => true);
+
+			const commentId = getBoardForCommentId.body.comments[0].id;
+
+			// Add reply
+			await agentClient
+				.post(`${BOARD_BASE}/${boardId}/comments/${commentId}/replies`)
+				.set("Accept", "application/json")
+				.send({
+					reply: "Reply to delete",
+					uid: author.id,
+					ts: Date.now(),
+				})
+				.ok((res) => true);
+
+			// Get replyId
+			const getBoardForReplyId = await agentClient
+				.get(`${BOARD_BASE}/${boardId}`)
+				.set("Accept", "application/json")
+				.ok((res) => true);
+
+			const replyId = getBoardForReplyId.body.comments[0].replies[0].id;
+
+			// Delete reply
+			const deleteResponse = await agentClient
+				.delete(`${BOARD_BASE}/${boardId}/comments/${commentId}/replies/${replyId}`)
+				.set("Accept", "application/json")
+				.ok((res) => true);
+
+			expect(deleteResponse.status).toBe(200);
+			expect(deleteResponse.body.message).toBe("Reply deleted successfully");
+		});
+
+		test("should reject deletion when user is not the author (negative test)", async () => {
+			const authorAgent = request.agent();
+			const author = await registerUser(authorAgent, `reply_author2_${Date.now()}`, "password", ["CPR"]);
+
+			// Create board
+			const createData = {
+				title: "Board with Protected Reply",
+				category: "First Aid",
+				description: "Description",
+				objective: "Objective",
+				steps: ["Step 1"],
+				relatedSkills: ["CPR"],
+			};
+
+			const createResponse = await authorAgent
+				.post(BOARD_BASE)
+				.set("Accept", "application/json")
+				.send(createData)
+				.ok((res) => true);
+
+			const boardId = createResponse.body.boardId;
+
+			// Add comment
+			await authorAgent
+				.post(`${BOARD_BASE}/${boardId}/comments`)
+				.set("Accept", "application/json")
+				.send({
+					comment: "Comment",
+					uid: author.id,
+					ts: Date.now(),
+				})
+				.ok((res) => true);
+
+			// Get commentId
+			const getBoardForCommentId = await authorAgent
+				.get(`${BOARD_BASE}/${boardId}`)
+				.set("Accept", "application/json")
+				.ok((res) => true);
+
+			const commentId = getBoardForCommentId.body.comments[0].id;
+
+			// Add reply
+			await authorAgent
+				.post(`${BOARD_BASE}/${boardId}/comments/${commentId}/replies`)
+				.set("Accept", "application/json")
+				.send({
+					reply: "Protected reply",
+					uid: author.id,
+					ts: Date.now(),
+				})
+				.ok((res) => true);
+
+			// Get replyId
+			const getBoardForReplyId = await authorAgent
+				.get(`${BOARD_BASE}/${boardId}`)
+				.set("Accept", "application/json")
+				.ok((res) => true);
+
+			const replyId = getBoardForReplyId.body.comments[0].replies[0].id;
+
+			// Try to delete as different user
+			const otherAgent = request.agent();
+			await registerUser(otherAgent, `other_user2_${Date.now()}`, "password", ["CPR"]);
+
+			const deleteResponse = await otherAgent
+				.delete(`${BOARD_BASE}/${boardId}/comments/${commentId}/replies/${replyId}`)
+				.set("Accept", "application/json")
+				.ok((res) => true);
+
+			expect(deleteResponse.status).toBe(403);
+			expect(deleteResponse.body.status).toBe("error");
+		});
+	});
+
+	describe("POST /api/coaching-boards/drafts - Save draft", () => {
+		test("should successfully save draft (positive test)", async () => {
+			const agentClient = request.agent();
+			const author = await registerUser(agentClient, `draft_author_${Date.now()}`, "password", ["CPR"]);
+
+			const draftData = {
+				title: "Draft Title",
+				category: "First Aid",
+				description: "Draft description",
+				objective: "Draft objective",
+				steps: ["Step 1"],
+				relatedSkills: ["CPR"],
+			};
+
+			const response = await agentClient
+				.post(`${BOARD_BASE}/drafts`)
+				.set("Accept", "application/json")
+				.send(draftData)
+				.ok((res) => true);
+
+			expect(response.status).toBe(200);
+			expect(response.body.message).toBe("Your draft has been saved.");
+			expect(response.body.draftId).toBeTruthy();
+		});
+
+		test("should reject draft with title too long (negative test)", async () => {
+			const agentClient = request.agent();
+			await registerUser(agentClient, `draft_author2_${Date.now()}`, "password", ["CPR"]);
+
+			const draftData = {
+				title: "A".repeat(51), // Title longer than 50 characters
+				category: "First Aid",
+				description: "Description",
+				objective: "Objective",
+				steps: ["Step 1"],
+				relatedSkills: ["CPR"],
+			};
+
+			const response = await agentClient
+				.post(`${BOARD_BASE}/drafts`)
+				.set("Accept", "application/json")
+				.send(draftData)
+				.ok((res) => true);
+
+			expect(response.status).toBe(400);
+			expect(response.body.status).toBe("error");
+			expect(response.body.message).toContain("Title must be < 50 characters");
+		});
+	});
+
+	describe("GET /api/coaching-boards/drafts/me - Get my draft", () => {
+		test("should successfully get user's draft (positive test)", async () => {
+			const agentClient = request.agent();
+			const author = await registerUser(agentClient, `get_draft_author_${Date.now()}`, "password", ["CPR"]);
+
+			// Save draft first
+			const draftData = {
+				title: "My Draft",
+				category: "First Aid",
+				description: "Description",
+				objective: "Objective",
+				steps: ["Step 1"],
+				relatedSkills: ["CPR"],
+			};
+
+			await agentClient
+				.post(`${BOARD_BASE}/drafts`)
+				.set("Accept", "application/json")
+				.send(draftData)
+				.ok((res) => true);
+
+			// Get draft
+			const getResponse = await agentClient
+				.get(`${BOARD_BASE}/drafts/me`)
+				.set("Accept", "application/json")
+				.ok((res) => true);
+
+			expect(getResponse.status).toBe(200);
+			expect(getResponse.body.title).toBe(draftData.title);
+			expect(getResponse.body.publicationState).toBe("draft");
+		});
+
+		test("should return 204 when no draft exists (positive test)", async () => {
+			const agentClient = request.agent();
+			await registerUser(agentClient, `no_draft_author_${Date.now()}`, "password", ["CPR"]);
+
+			const getResponse = await agentClient
+				.get(`${BOARD_BASE}/drafts/me`)
+				.set("Accept", "application/json")
+				.ok((res) => true);
+
+			expect(getResponse.status).toBe(204);
+		});
+	});
+
+	describe("POST /api/coaching-boards/:bid/subscriptions - Subscribe to board", () => {
+		test("should successfully subscribe to board (positive test)", async () => {
+			const authorAgent = request.agent();
+			const author = await registerUser(authorAgent, `board_author_${Date.now()}`, "password", ["CPR"]);
+
+			// Create board
+			const createData = {
+				title: "Board to Subscribe",
+				category: "First Aid",
+				description: "Description",
+				objective: "Objective",
+				steps: ["Step 1"],
+				relatedSkills: ["CPR"],
+			};
+
+			const createResponse = await authorAgent
+				.post(BOARD_BASE)
+				.set("Accept", "application/json")
+				.send(createData)
+				.ok((res) => true);
+
+			const boardId = createResponse.body.boardId;
+
+			// Subscribe as different user
+			const subscriberAgent = request.agent();
+			await registerUser(subscriberAgent, `subscriber_${Date.now()}`, "password", ["CPR"]);
+
+			const subscribeResponse = await subscriberAgent
+				.post(`${BOARD_BASE}/${boardId}/subscriptions`)
+				.set("Accept", "application/json")
+				.ok((res) => true);
+
+			expect(subscribeResponse.status).toBe(204);
+		});
+	});
+
+	describe("DELETE /api/coaching-boards/:bid/subscriptions - Unsubscribe from board", () => {
+		test("should successfully unsubscribe from board (positive test)", async () => {
+			const authorAgent = request.agent();
+			const author = await registerUser(authorAgent, `board_author2_${Date.now()}`, "password", ["CPR"]);
+
+			// Create board
+			const createData = {
+				title: "Board to Unsubscribe",
+				category: "First Aid",
+				description: "Description",
+				objective: "Objective",
+				steps: ["Step 1"],
+				relatedSkills: ["CPR"],
+			};
+
+			const createResponse = await authorAgent
+				.post(BOARD_BASE)
+				.set("Accept", "application/json")
+				.send(createData)
+				.ok((res) => true);
+
+			const boardId = createResponse.body.boardId;
+
+			// Subscribe first
+			const subscriberAgent = request.agent();
+			await registerUser(subscriberAgent, `subscriber2_${Date.now()}`, "password", ["CPR"]);
+
+			await subscriberAgent
+				.post(`${BOARD_BASE}/${boardId}/subscriptions`)
+				.set("Accept", "application/json")
+				.ok((res) => true);
+
+			// Unsubscribe
+			const unsubscribeResponse = await subscriberAgent
+				.delete(`${BOARD_BASE}/${boardId}/subscriptions`)
+				.set("Accept", "application/json")
+				.ok((res) => true);
+
+			expect(unsubscribeResponse.status).toBe(204);
+		});
+	});
+
+	describe("GET /api/coaching-boards/notifications - Get pending notifications", () => {
+		test("should successfully get pending notifications (positive test)", async () => {
+			const authorAgent = request.agent();
+			const author = await registerUser(authorAgent, `notif_author_${Date.now()}`, "password", ["CPR"]);
+
+			// Create board
+			const createData = {
+				title: "Board for Notifications",
+				category: "First Aid",
+				description: "Description",
+				objective: "Objective",
+				steps: ["Step 1"],
+				relatedSkills: ["CPR"],
+			};
+
+			const createResponse = await authorAgent
+				.post(BOARD_BASE)
+				.set("Accept", "application/json")
+				.send(createData)
+				.ok((res) => true);
+
+			const boardId = createResponse.body.boardId;
+
+			// Subscribe as different user
+			const subscriberAgent = request.agent();
+			const subscriber = await registerUser(subscriberAgent, `subscriber3_${Date.now()}`, "password", ["CPR"]);
+
+			await subscriberAgent
+				.post(`${BOARD_BASE}/${boardId}/subscriptions`)
+				.set("Accept", "application/json")
+				.ok((res) => true);
+
+			// Add comment to trigger notification
+			await authorAgent
+				.post(`${BOARD_BASE}/${boardId}/comments`)
+				.set("Accept", "application/json")
+				.send({
+					comment: "New comment",
+					uid: author.id,
+					ts: Date.now(),
+				})
+				.ok((res) => true);
+
+			// Get notifications
+			const getResponse = await subscriberAgent
+				.get(`${BOARD_BASE}/notifications`)
+				.set("Accept", "application/json")
+				.ok((res) => true);
+
+			expect(getResponse.status).toBe(200);
+			expect(getResponse.body.notifications).toBeDefined();
+			expect(Array.isArray(getResponse.body.notifications)).toBe(true);
+		});
+
+		test("should get new_reply notification with authorName (positive test)", async () => {
+			const authorAgent = request.agent();
+			const author = await registerUser(authorAgent, `notif_reply_author_${Date.now()}`, "password", ["CPR"]);
+
+			// Create board
+			const createData = {
+				title: "Board for Reply Notifications",
+				category: "First Aid",
+				description: "Description",
+				objective: "Objective",
+				steps: ["Step 1"],
+				relatedSkills: ["CPR"],
+			};
+
+			const createResponse = await authorAgent
+				.post(BOARD_BASE)
+				.set("Accept", "application/json")
+				.send(createData)
+				.ok((res) => true);
+
+			const boardId = createResponse.body.boardId;
+
+			// Add comment as author
+			await authorAgent
+				.post(`${BOARD_BASE}/${boardId}/comments`)
+				.set("Accept", "application/json")
+				.send({
+					comment: "Comment from author",
+					uid: author.id,
+					ts: Date.now(),
+				})
+				.ok((res) => true);
+
+			// Get commentId
+			const getBoardResponse = await authorAgent
+				.get(`${BOARD_BASE}/${boardId}`)
+				.set("Accept", "application/json")
+				.ok((res) => true);
+
+			const commentId = getBoardResponse.body.comments[0].id;
+
+			// Add reply as different user (this will trigger new_reply notification)
+			const replierAgent = request.agent();
+			const replier = await registerUser(replierAgent, `replier_${Date.now()}`, "password", ["CPR"]);
+
+			await replierAgent
+				.post(`${BOARD_BASE}/${boardId}/comments/${commentId}/replies`)
+				.set("Accept", "application/json")
+				.send({
+					reply: "Reply to author's comment",
+					uid: replier.id,
+					ts: Date.now(),
+				})
+				.ok((res) => true);
+
+			// Get notifications as author (should have new_reply notification)
+			const getResponse = await authorAgent
+				.get(`${BOARD_BASE}/notifications`)
+				.set("Accept", "application/json")
+				.ok((res) => true);
+
+			expect(getResponse.status).toBe(200);
+			expect(getResponse.body.notifications).toBeDefined();
+			expect(Array.isArray(getResponse.body.notifications)).toBe(true);
+
+			// Check for new_reply notification
+			const replyNotifications = getResponse.body.notifications.filter(n => n.type === "new_reply");
+			if (replyNotifications.length > 0) {
+				expect(replyNotifications[0].authorName).toBeDefined();
+			}
+		});
+	});
+
+	describe("PATCH /api/coaching-boards/:bid/notifications/seen - Mark notification as seen", () => {
+		test("should successfully mark notification as seen (positive test)", async () => {
+			const authorAgent = request.agent();
+			const author = await registerUser(authorAgent, `notif_seen_author_${Date.now()}`, "password", ["CPR"]);
+
+			// Create board
+			const createData = {
+				title: "Board for Notification Seen",
+				category: "First Aid",
+				description: "Description",
+				objective: "Objective",
+				steps: ["Step 1"],
+				relatedSkills: ["CPR"],
+			};
+
+			const createResponse = await authorAgent
+				.post(BOARD_BASE)
+				.set("Accept", "application/json")
+				.send(createData)
+				.ok((res) => true);
+
+			const boardId = createResponse.body.boardId;
+
+			// Subscribe as different user
+			const subscriberAgent = request.agent();
+			await registerUser(subscriberAgent, `subscriber4_${Date.now()}`, "password", ["CPR"]);
+
+			await subscriberAgent
+				.post(`${BOARD_BASE}/${boardId}/subscriptions`)
+				.set("Accept", "application/json")
+				.ok((res) => true);
+
+			// Mark as seen
+			const markSeenResponse = await subscriberAgent
+				.patch(`${BOARD_BASE}/${boardId}/notifications`)
+				.set("Accept", "application/json")
+				.ok((res) => true);
+
+			expect(markSeenResponse.status).toBe(200);
+			expect(markSeenResponse.body.message).toBe("Notification marked as seen");
+		});
+	});
+
+	describe("POST /api/coaching-boards/:bid/comments - Add comment with @username format (reply)", () => {
+		test("should successfully add reply using @username format (positive test)", async () => {
+			const authorAgent = request.agent();
+			const author = await registerUser(authorAgent, `reply_author_${Date.now()}`, "password", ["CPR"]);
+
+			// Create board
+			const createData = {
+				title: "Board for Reply Format",
+				category: "First Aid",
+				description: "Description",
+				objective: "Objective",
+				steps: ["Step 1"],
+				relatedSkills: ["CPR"],
+			};
+
+			const createResponse = await authorAgent
+				.post(BOARD_BASE)
+				.set("Accept", "application/json")
+				.send(createData)
+				.ok((res) => true);
+
+			const boardId = createResponse.body.boardId;
+
+			// Add comment
+			await authorAgent
+				.post(`${BOARD_BASE}/${boardId}/comments`)
+				.set("Accept", "application/json")
+				.send({
+					comment: "Original comment",
+					uid: author.id,
+					ts: Date.now(),
+				})
+				.ok((res) => true);
+
+			// Get commentId
+			const getBoardResponse = await authorAgent
+				.get(`${BOARD_BASE}/${boardId}`)
+				.set("Accept", "application/json")
+				.ok((res) => true);
+
+			const commentId = getBoardResponse.body.comments[0].id;
+
+			// Add reply using @username format
+			const replyResponse = await authorAgent
+				.post(`${BOARD_BASE}/${boardId}/comments`)
+				.set("Accept", "application/json")
+				.send({
+					comment: `@${author.username}: This is a reply`,
+					uid: author.id,
+					ts: Date.now(),
+				})
+				.ok((res) => true);
+
+			expect(replyResponse.status).toBe(201);
+			expect(replyResponse.body.message).toBe("Reply added successfully");
 		});
 	});
 });
