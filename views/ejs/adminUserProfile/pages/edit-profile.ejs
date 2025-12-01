@@ -134,6 +134,9 @@
 <script>
     // Set current user for websocket authentication
     window.__CURRENT_USER__ = "<%= username || '' %>";
+    // Set current username and ID of the user being edited for validation
+    window.__EDITING_USER_USERNAME__ = "<%= user.username || '' %>";
+    window.__EDITING_USER_ID__ = "<%= user.id || '' %>";
 </script>
 <script type="module">
     // Initialize header avatar
