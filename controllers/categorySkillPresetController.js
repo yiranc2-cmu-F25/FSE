@@ -1,4 +1,4 @@
-import CategorySkillPresetDac from "../dacs/categorySkillPresetDac.js";
+import CategorySkillPreset from "../entities/CategorySkillPreset.js";
 
 function validateNonEmptyString(value, fieldName) {
 	if (!value || typeof value !== "string" || !value.trim()) {
@@ -15,7 +15,7 @@ function formatPresetsResponse(presets) {
 }
 
 async function getPresetsWithArrays() {
-	const presets = await CategorySkillPresetDac.getPresets();
+	const presets = await CategorySkillPreset.getPresets();
 	return {
 		presets,
 		categories: presets.categories || [],
@@ -41,13 +41,13 @@ async function validateAndGetPresets(req, res, fieldName, bodyField) {
 }
 
 async function updateAndReturnPresets(res, categories, skills) {
-	const updated = await CategorySkillPresetDac.updatePresets({ categories, skills });
+	const updated = await CategorySkillPreset.updatePresets({ categories, skills });
 	return res.status(200).json(formatPresetsResponse(updated));
 }
 
 export async function getPresets(req, res) {
 	try {
-		const presets = await CategorySkillPresetDac.getPresets();
+		const presets = await CategorySkillPreset.getPresets();
 		return res.status(200).json(formatPresetsResponse(presets));
 	} catch (err) {
 		console.error("getPresets error", err);
