@@ -170,6 +170,27 @@ function closeCreateGroupModal() {
   createGroupSearchInput.value = "";
 }
 
+/**
+ * Helper: Filter out current user from user list
+ */
+function filterOutCurrentUser(users, currentUserName) {
+  return (users || []).filter(user => {
+    const userName = user.name || user.username || "";
+    return userName !== currentUserName;
+  });
+}
+
+/**
+ * Helper: Merge and sort users alphabetically by name
+ */
+function mergeAndSortUsers(onlineUsers, offlineUsers) {
+  return [...onlineUsers, ...offlineUsers].sort((a, b) => {
+    const nameA = (a.name || a.username || "").toLowerCase();
+    const nameB = (b.name || b.username || "").toLowerCase();
+    return nameA.localeCompare(nameB);
+  });
+}
+
 async function loadAllCitizens() {
   try {
     const res = await fetch("/api/authentications/lists", {
@@ -185,21 +206,11 @@ async function loadAllCitizens() {
     const currentUserName = window.__CURRENT_USER__;
 
     // Filter out current user from the list
-    const onlineUsers = (data.onlineUsers || []).filter(user => {
-      const userName = user.name || user.username || "";
-      return userName !== currentUserName;
-    });
-    const offlineUsers = (data.offlineUsers || []).filter(user => {
-      const userName = user.name || user.username || "";
-      return userName !== currentUserName;
-    });
+    const onlineUsers = filterOutCurrentUser(data.onlineUsers, currentUserName);
+    const offlineUsers = filterOutCurrentUser(data.offlineUsers, currentUserName);
 
     // Merge and sort alphabetically by name
-    allCitizens = [...onlineUsers, ...offlineUsers].sort((a, b) => {
-      const nameA = (a.name || a.username || "").toLowerCase();
-      const nameB = (b.name || b.username || "").toLowerCase();
-      return nameA.localeCompare(nameB);
-    });
+    allCitizens = mergeAndSortUsers(onlineUsers, offlineUsers);
 
     renderCitizensList(allCitizens);
   } catch (err) {

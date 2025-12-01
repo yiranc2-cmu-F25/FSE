@@ -142,6 +142,33 @@ export async function addGroupMembers(req, res) {
 }
 
 /**
+ * Helper: Validate that users to remove are actually in the group
+ */
+function validateUsersInGroup(group, userIds) {
+  const memberIdsSet = new Set(group.members.map(id => normId(id)));
+  const invalidUsers = userIds.filter(id => !memberIdsSet.has(normId(id)));
+  return invalidUsers;
+}
+
+/**
+ * Helper: Handle the special case where the last member is leaving
+ */
+async function handleLastMemberLeaving(groupId) {
+  // Delete all group messages first
+  await GroupMessage.deleteByGroupId(groupId);
+  // Delete the group
+  await Group.deleteGroup(groupId);
+}
+
+/**
+ * Helper: Check if removing members would violate minimum member requirement
+ */
+function validateMinimumMembers(currentMemberCount, userIdsLength) {
+  const newMemberCount = currentMemberCount - userIdsLength;
+  return newMemberCount < MIN_MEMBERS;
+}
+
+/**
  * Remove members from an existing group
  * @route DELETE /api/groups/:groupId/members
  */
@@ -178,8 +205,7 @@ export async function removeGroupMembers(req, res) {
     }
 
     // Check if users to remove are actually in the group
-    const memberIdsSet = new Set(group.members.map(id => normId(id)));
-    const invalidUsers = userIds.filter(id => !memberIdsSet.has(normId(id)));
+    const invalidUsers = validateUsersInGroup(group, userIds);
 
     if (invalidUsers.length > 0) {
       return res.status(400).json({
@@ -190,21 +216,17 @@ export async function removeGroupMembers(req, res) {
 
     // Check if removing members would go below minimum
     const currentMemberCount = group.members.length;
-    const newMemberCount = currentMemberCount - userIds.length;
 
     // Special case: if the last member is leaving (and they're the only member), delete the group
     if (isLeavingThemselves && currentMemberCount === 1) {
-      // Delete all group messages first
-      await GroupMessage.deleteByGroupId(groupId);
-      // Delete the group
-      await Group.deleteGroup(groupId);
+      await handleLastMemberLeaving(groupId);
 
       return res.status(200).json({
         message: "Left group successfully (group deleted as last member)"
       });
     }
 
-    if (newMemberCount < MIN_MEMBERS) {
+    if (validateMinimumMembers(currentMemberCount, userIds.length)) {
       return res.status(400).json({
         status: "error",
         message: `Cannot remove members. Group must have at least ${MIN_MEMBERS} members (excluding owner)`
@@ -267,6 +289,42 @@ export async function markGroupAsRead(req, res) {
 }
 
 /**
+ * Helper: Format user info for response
+ */
+function formatUserInfo(user) {
+  if (!user) {
+    return null;
+  }
+  return {
+    id: String(user._id),
+    name: user.username || "Unknown",
+    status: user.status || "UNDEFINED"
+  };
+}
+
+/**
+ * Helper: Get owner details
+ */
+async function getOwnerInfo(group) {
+  const owner = await User.findById(normId(group.owner));
+  return formatUserInfo(owner);
+}
+
+/**
+ * Helper: Get all member details
+ */
+async function getAllMemberDetails(group) {
+  const memberDetails = [];
+  for (const memberId of group.members) {
+    const member = await User.findById(normId(memberId));
+    if (member) {
+      memberDetails.push(formatUserInfo(member));
+    }
+  }
+  return memberDetails;
+}
+
+/**
  * Get group details
  * @route GET /api/groups/:groupId
  */
@@ -295,25 +353,10 @@ export async function getGroupDetails(req, res) {
     }
 
     // Get owner details
-    const owner = await User.findById(normId(group.owner));
-    const ownerInfo = owner ? {
-      id: String(owner._id),
-      name: owner.username || "Unknown",
-      status: owner.status || "UNDEFINED"
-    } : null;
+    const ownerInfo = await getOwnerInfo(group);
 
     // Get all member details
-    const memberDetails = [];
-    for (const memberId of group.members) {
-      const member = await User.findById(normId(memberId));
-      if (member) {
-        memberDetails.push({
-          id: String(member._id),
-          name: member.username || "Unknown",
-          status: member.status || "UNDEFINED"
-        });
-      }
-    }
+    const memberDetails = await getAllMemberDetails(group);
 
     // Calculate total number (owner + members)
     const totalCount = 1 + group.members.length;
@@ -471,6 +514,60 @@ export async function getGroupMessages(req, res) {
 }
 
 /**
+ * Helper: Get all usernames for group members
+ */
+async function getGroupMemberUsernames(group) {
+  const owner = await User.findById(normId(group.owner));
+  const ownerUsername = owner?.username;
+
+  const memberUsernames = [];
+  for (const memberId of group.members) {
+    const member = await User.findById(normId(memberId));
+    if (member) {
+      memberUsernames.push(member.username);
+    }
+  }
+
+  return ownerUsername ? [ownerUsername, ...memberUsernames] : memberUsernames;
+}
+
+/**
+ * Helper: Emit socket event for group message
+ */
+async function emitGroupMessageSocket(socketInstance, senderId, group, groupId, messageText, status, msgTimestamp) {
+  if (!socketInstance) {
+    return;
+  }
+
+  // Get sender info
+  const sender = await User.findById(senderId);
+  const senderUsername = sender?.username || "Unknown";
+
+  // Get all group member usernames (owner + members)
+  const allGroupUsernames = await getGroupMemberUsernames(group);
+
+  socketInstance.emitGroupMessage(senderUsername, allGroupUsernames, {
+    groupId: String(groupId),
+    sender: senderUsername,
+    content: messageText.trim(),
+    status: status,
+    timestamp: msgTimestamp,
+  });
+}
+
+/**
+ * Helper: Update group state after message is sent
+ */
+async function updateGroupStateAfterMessage(groupId, group, msgTimestamp) {
+  // Update group's timestamp to latest message timestamp
+  await Group.updateTimestamp(groupId, msgTimestamp);
+
+  // Mark all group members as having unread messages
+  const allMemberIds = [normId(group.owner), ...group.members.map(m => normId(m))];
+  await Group.markUnreadForAll(groupId, allMemberIds);
+}
+
+/**
  * Send a message to a group
  * @route POST /api/groups/:groupId/messages
  */
@@ -516,42 +613,11 @@ export async function sendGroupMessage(req, res) {
 
     const createdMessage = await message.create();
 
-    // Update group's timestamp to latest message timestamp
-    await Group.updateTimestamp(groupId, msgTimestamp);
-
-    // Mark all group members as having unread messages
-    const allMemberIds = [normId(group.owner), ...group.members.map(m => normId(m))];
-    await Group.markUnreadForAll(groupId, allMemberIds);
+    await updateGroupStateAfterMessage(groupId, group, msgTimestamp);
 
     // Emit socket event to all group members
     const socketInstance = req.app?.get("socketInstance");
-    if (socketInstance) {
-      // Get sender info
-      const sender = await User.findById(senderId);
-      const senderUsername = sender?.username || "Unknown";
-
-      // Get all group member usernames (owner + members)
-      const owner = await User.findById(normId(group.owner));
-      const ownerUsername = owner?.username;
-
-      const memberUsernames = [];
-      for (const memberId of group.members) {
-        const member = await User.findById(normId(memberId));
-        if (member) {
-          memberUsernames.push(member.username);
-        }
-      }
-
-      const allGroupUsernames = ownerUsername ? [ownerUsername, ...memberUsernames] : memberUsernames;
-
-      socketInstance.emitGroupMessage(senderUsername, allGroupUsernames, {
-        groupId: String(groupId),
-        sender: senderUsername,
-        content: messageText.trim(),
-        status: status,
-        timestamp: msgTimestamp,
-      });
-    }
+    await emitGroupMessageSocket(socketInstance, senderId, group, groupId, messageText, status, msgTimestamp);
 
     return res.status(201).json({
       message: "Message sent successfully",

@@ -707,6 +707,43 @@ function closeAddMemberModal() {
 
 let allAvailableCitizens = [];
 
+/**
+ * Helper: Get current group member IDs
+ */
+function getGroupMemberIds() {
+  const groupMemberIds = new Set();
+  if (groupDetails.owner) {
+    groupMemberIds.add(groupDetails.owner.id);
+  }
+  if (groupDetails.members) {
+    groupDetails.members.forEach(m => groupMemberIds.add(m.id));
+  }
+  return groupMemberIds;
+}
+
+/**
+ * Helper: Filter and sort available citizens
+ */
+function filterAndSortCitizens(onlineUsers, offlineUsers, groupMemberIds) {
+  return [...onlineUsers, ...offlineUsers]
+    .filter(user => !groupMemberIds.has(user.id))
+    .sort((a, b) => {
+      const nameA = (a.name || a.username || "").toLowerCase();
+      const nameB = (b.name || b.username || "").toLowerCase();
+      return nameA.localeCompare(nameB);
+    });
+}
+
+/**
+ * Helper: Display error when loading citizens fails
+ */
+function showLoadCitizensError(err) {
+  console.error("Failed to load citizens:", err);
+  const errorDiv = $("#add-member-error");
+  errorDiv.textContent = "Failed to load users";
+  errorDiv.classList.remove("hidden");
+}
+
 async function loadAvailableCitizens() {
   try {
     const res = await fetch("/api/authentications/lists", {
@@ -723,30 +760,15 @@ async function loadAvailableCitizens() {
     const offlineUsers = data.offlineUsers || [];
 
     // Get current group member IDs
-    const groupMemberIds = new Set();
-    if (groupDetails.owner) {
-      groupMemberIds.add(groupDetails.owner.id);
-    }
-    if (groupDetails.members) {
-      groupDetails.members.forEach(m => groupMemberIds.add(m.id));
-    }
+    const groupMemberIds = getGroupMemberIds();
 
     // Filter out current members and sort alphabetically
-    const available = [...onlineUsers, ...offlineUsers]
-      .filter(user => !groupMemberIds.has(user.id))
-      .sort((a, b) => {
-        const nameA = (a.name || a.username || "").toLowerCase();
-        const nameB = (b.name || b.username || "").toLowerCase();
-        return nameA.localeCompare(nameB);
-      });
+    const available = filterAndSortCitizens(onlineUsers, offlineUsers, groupMemberIds);
 
     allAvailableCitizens = available;
     renderAvailableCitizens(available);
   } catch (err) {
-    console.error("Failed to load citizens:", err);
-    const errorDiv = $("#add-member-error");
-    errorDiv.textContent = "Failed to load users";
-    errorDiv.classList.remove("hidden");
+    showLoadCitizensError(err);
   }
 }
 
