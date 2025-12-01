@@ -2,11 +2,36 @@ import TaskController from "../controllers/taskController.js";
 import Task from "../entities/Task.js";
 import TaskDac from "../dacs/taskDac.js";
 import { inMemoryTaskDao } from "../daos/inMemoryTaskDao.js";
+import userDac from "../dacs/userDac.js";
+import { inMemoryUserDao } from "../daos/inMemoryUserDao.js";
+import User from "../entities/User.js";
+import { USER_STATUS } from "../constants/userStatus.js";
+import { USER_ROLE } from "../constants/userRole.js";
+import { SHARED_STATUS } from "../constants/sharedStatus.js";
 
 describe("TaskController Unit Tests", () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     // Inject fresh in-memory DAO for test isolation
     TaskDac.DAO = new inMemoryTaskDao();
+    
+    // Set up in-memory User DAO and create an active test user
+    userDac.DAO = new inMemoryUserDao();
+    const testUser = new User({
+      username: "testuser",
+      password: "testpass",
+      status: USER_STATUS.ACTIVE,
+      role: USER_ROLE.CITIZEN,
+      sharedstatus: SHARED_STATUS.OK,
+      skills: [],
+    });
+    await testUser.create();
+    
+    // Manually set the user ID to match the test user ID "user123"
+    const userIndex = userDac.DAO.users.findIndex(u => u.username === "testuser");
+    if (userIndex !== -1) {
+      userDac.DAO.users[userIndex].id = "user123";
+      userDac.DAO.users[userIndex]._id = "user123";
+    }
   });
 
   // Helper function to create mock request/response objects

@@ -4,6 +4,8 @@
 
 import { transformTaskDocSimple } from "./taskTransformers.js";
 import { filterTasks, sortTasks, paginateArray, buildParticipantCountMapInMemory } from "./inMemoryHelpers.js";
+import { getActiveUserIds } from "../../utils/filterInactiveUsers.js";
+import { USER_STATUS } from "../../constants/userStatus.js";
 
 /**
  * Common pattern for querying tasks with participant counts in inMemoryTaskDao
@@ -15,9 +17,9 @@ import { filterTasks, sortTasks, paginateArray, buildParticipantCountMapInMemory
  * @param {string} params.sortOrder - Sort order
  * @param {number} params.skip - Skip count
  * @param {number} params.limit - Limit count
- * @returns {Array} Array of transformed task documents with participant counts
+ * @returns {Promise<Array>} Array of transformed task documents with participant counts
  */
-export function queryInMemoryTasksWithCounts({
+export async function queryInMemoryTasksWithCounts({
   tasks,
   participants,
   filters = {},
@@ -27,10 +29,33 @@ export function queryInMemoryTasksWithCounts({
   limit,
 }) {
   let filtered = filterTasks(tasks, filters);
+  
+  // Filter out tasks where creator is inactive
+  if (filtered.length > 0) {
+    const creatorIds = filtered.map(t => t.creator).filter(Boolean);
+    const activeCreatorIds = await getActiveUserIds(creatorIds);
+    filtered = filtered.filter(t => t.creator && activeCreatorIds.has(String(t.creator)));
+  }
+  
   sortTasks(filtered, sortBy, sortOrder);
   filtered = paginateArray(filtered, skip, limit);
 
-  const countMap = buildParticipantCountMapInMemory(filtered, participants);
+  // Filter participants to only count active users
+  const UserDac = (await import("../../dacs/userDac.js")).default;
+  const activeParticipantIds = new Set();
+  for (const participant of participants) {
+    try {
+      const user = await UserDac.DAO?.findById?.(participant.user);
+      if (user && user.status === USER_STATUS.ACTIVE) {
+        activeParticipantIds.add(String(participant.user));
+      }
+    } catch (err) {
+      // User not found or error, skip this participant
+    }
+  }
+  const activeParticipants = participants.filter(p => activeParticipantIds.has(String(p.user)));
+  
+  const countMap = buildParticipantCountMapInMemory(filtered, activeParticipants);
 
   return filtered.map((task) => ({
     ...transformTaskDocSimple(task),
@@ -49,9 +74,9 @@ export function queryInMemoryTasksWithCounts({
  * @param {string} params.sortOrder - Sort order
  * @param {number} params.skip - Skip count
  * @param {number} params.limit - Limit count
- * @returns {Array} Array of transformed task documents with participant counts and participation status
+ * @returns {Promise<Array>} Array of transformed task documents with participant counts and participation status
  */
-export function queryInMemoryTasksWithStatus({
+export async function queryInMemoryTasksWithStatus({
   tasks,
   participants,
   userId,
@@ -62,14 +87,37 @@ export function queryInMemoryTasksWithStatus({
   limit,
 }) {
   let filtered = filterTasks(tasks, filters);
+  
+  // Filter out tasks where creator is inactive
+  if (filtered.length > 0) {
+    const creatorIds = filtered.map(t => t.creator).filter(Boolean);
+    const activeCreatorIds = await getActiveUserIds(creatorIds);
+    filtered = filtered.filter(t => t.creator && activeCreatorIds.has(String(t.creator)));
+  }
+  
   sortTasks(filtered, sortBy, sortOrder);
   filtered = paginateArray(filtered, skip, limit);
 
+  // Filter participants to only count active users
+  const UserDac = (await import("../../dacs/userDac.js")).default;
+  const activeParticipantIds = new Set();
+  for (const participant of participants) {
+    try {
+      const user = await UserDac.DAO?.findById?.(participant.user);
+      if (user && user.status === USER_STATUS.ACTIVE) {
+        activeParticipantIds.add(String(participant.user));
+      }
+    } catch (err) {
+      // User not found or error, skip this participant
+    }
+  }
+  const activeParticipants = participants.filter(p => activeParticipantIds.has(String(p.user)));
+
   const taskIds = filtered.map((t) => t._id);
-  const countMap = buildParticipantCountMapInMemory(filtered, participants);
+  const countMap = buildParticipantCountMapInMemory(filtered, activeParticipants);
 
   const participationSet = new Set(
-    participants
+    activeParticipants
       .filter(
         (p) =>
           String(p.user) === String(userId) &&

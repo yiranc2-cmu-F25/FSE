@@ -54,14 +54,36 @@ export default class TaskDao extends iTaskDao {
 
     if (!doc || !doc.creator) return null; // Return null if creator is inactive
 
-    // Get participant count and check if user is participant
-    const participantCount = await this.TaskParticipantModel.countDocuments({ task: id });
+    // Get participants with user info for avatars and names
+    const participants = await this.TaskParticipantModel.find({ task: id })
+      .populate({
+        path: "user",
+        select: "username status",
+        match: { status: USER_STATUS.ACTIVE }
+      })
+      .sort({ joinedAt: 1 })
+      .limit(10)
+      .lean();
+    // Filter out participants where populate returned null (inactive user)
+    const filteredParticipants = participants.filter(p => p.user !== null);
+    
+    // Get participant count - only count active users
+    // We need to count all active participants, not just the first 10
+    const allParticipants = await this.TaskParticipantModel.find({ task: id })
+      .populate({
+        path: "user",
+        select: "status",
+        match: { status: USER_STATUS.ACTIVE }
+      })
+      .lean();
+    const participantCount = allParticipants.filter(p => p.user !== null).length;
+    
     let isParticipant = false;
     if (userId) {
-      const participant = await this.TaskParticipantModel.findOne({
-        task: id,
-        user: userId,
-      }).lean();
+      // Check if user is participant and is active
+      const participant = allParticipants.find(
+        p => p.user && String(p.user._id || p.user.id) === String(userId)
+      );
       isParticipant = !!participant;
     }
 
@@ -76,19 +98,6 @@ export default class TaskDao extends iTaskDao {
       .lean();
     // Filter out logs where populate returned null (inactive user)
     const filteredLogs = logs.filter(log => log.user !== null);
-
-    // Get participants with user info for avatars and names
-    const participants = await this.TaskParticipantModel.find({ task: id })
-      .populate({
-        path: "user",
-        select: "username status",
-        match: { status: USER_STATUS.ACTIVE }
-      })
-      .sort({ joinedAt: 1 })
-      .limit(10)
-      .lean();
-    // Filter out participants where populate returned null (inactive user)
-    const filteredParticipants = participants.filter(p => p.user !== null);
 
     // Format helper avatars and participant names
     const helperAvatars = generateHelperAvatars(filteredParticipants);

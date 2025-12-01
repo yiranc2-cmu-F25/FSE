@@ -4,6 +4,7 @@ import { filterTasks } from "../utils/task/inMemoryHelpers.js";
 import { buildBaseTaskData } from "../utils/task/taskCreators.js";
 import { queryInMemoryTasksWithCounts, queryInMemoryTasksWithStatus } from "../utils/task/inMemoryQueryHelpers.js";
 import { validateTaskUpdateData } from "../utils/task/taskValidators.js";
+import { USER_STATUS } from "../constants/userStatus.js";
 
 export class inMemoryTaskDao extends iTaskDao {
   constructor() {
@@ -57,14 +58,33 @@ export class inMemoryTaskDao extends iTaskDao {
     const task = this.tasks.find((t) => t._id === id || t.id === id);
     if (!task) return null;
 
-    const participantCount = this.participants.filter(
+    // Get all participants for this task
+    const allTaskParticipants = this.participants.filter(
       (p) => p.task === id || p.task === task._id
-    ).length;
+    );
+
+    // Filter out inactive users - need to check user status
+    const UserDac = (await import("../dacs/userDac.js")).default;
+    const activeParticipants = [];
+    for (const participant of allTaskParticipants) {
+      try {
+        const user = await UserDac.DAO?.findById?.(participant.user);
+        if (user && user.status === USER_STATUS.ACTIVE) {
+          activeParticipants.push(participant);
+        }
+      } catch (err) {
+        // User not found or error, skip this participant
+        console.warn(`[inMemoryTaskDao.getTask] Error checking user ${participant.user}:`, err);
+      }
+    }
+
+    // Count only active participants
+    const participantCount = activeParticipants.length;
 
     let isParticipant = false;
     if (userId) {
-      isParticipant = this.participants.some(
-        (p) => (p.task === id || p.task === task._id) && p.user === userId
+      isParticipant = activeParticipants.some(
+        (p) => String(p.user) === String(userId)
       );
     }
 
@@ -72,8 +92,8 @@ export class inMemoryTaskDao extends iTaskDao {
       .filter((l) => l.task === id || l.task === task._id)
       .sort((a, b) => b.timestamp - a.timestamp);
 
-    const taskParticipants = this.participants
-      .filter((p) => p.task === id || p.task === task._id)
+    // Get first 10 active participants for display
+    const taskParticipants = activeParticipants
       .sort((a, b) => a.joinedAt - b.joinedAt)
       .slice(0, 10);
 
