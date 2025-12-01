@@ -14,7 +14,7 @@ const router = Router();
 
 /**
  * @openapi
- * /speed-test/start:
+ * /speed-test/tests:
  *   post:
  *     tags: [Speed Test]
  *     summary: Start a new speed test session
@@ -111,8 +111,8 @@ router.get("/messages", auth, requireAdmin, getFromSpeedTest);
 
 /**
  * @openapi
- * /speed-test/next-phase:
- *   post:
+ * /speed-test/tests:
+ *   patch:
  *     tags: [Speed Test]
  *     summary: Switch to next test phase
  *     description: Advances the speed test to the next phase
@@ -130,8 +130,8 @@ router.patch("/tests", auth, requireAdmin, switchTestPhase);
 
 /**
  * @openapi
- * /speed-test/stop:
- *   post:
+ * /speed-test/tests:
+ *   delete:
  *     tags: [Speed Test]
  *     summary: Stop the current speed test
  *     description: Ends the active speed test session and re-enables normal messaging

@@ -10,7 +10,7 @@ const router = Router();
 
 /**
  * @openapi
- * /api/calls/join-room:
+ * /api/calls/participants:
  *   post:
  *     tags: [Voice Calls]
  *     summary: Join a group voice call room

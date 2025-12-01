@@ -225,7 +225,7 @@ router.get("/", auth, getPersonalEmergencyProfile);
  *               properties:
  *                 message: { type: string, example: "Error updating emergency profile" }
  */
-router.put("/", auth , updatePersonalEmergencyProfile);
+router.put("/", auth, updatePersonalEmergencyProfile);
 
 /**
  * @openapi
@@ -262,7 +262,7 @@ router.put("/", auth , updatePersonalEmergencyProfile);
  *               properties:
  *                 message: { type: string, example: "Error deleting emergency profile" }
  */
-router.delete("/", auth , deletePersonalEmergencyProfile);
+router.delete("/", auth, deletePersonalEmergencyProfile);
 
 // Configure multer for memory storage
 const storage = multer.memoryStorage();
@@ -275,17 +275,20 @@ const upload = multer({
     // Accept all image files except SVG (for security reasons)
     // SVG files can contain scripts and pose security risks
     const mimetype = file.mimetype.toLowerCase();
-    
+
     // Check if it's an image type
-    if (!mimetype.startsWith('image/')) {
-      return cb(new Error('Only image files are allowed'), false);
+    if (!mimetype.startsWith("image/")) {
+      return cb(new Error("Only image files are allowed"), false);
     }
-    
+
     // Explicitly reject SVG files (image/svg+xml, image/svg, etc.)
-    if (mimetype.includes('svg')) {
-      return cb(new Error('SVG files are not allowed for security reasons'), false);
+    if (mimetype.includes("svg")) {
+      return cb(
+        new Error("SVG files are not allowed for security reasons"),
+        false,
+      );
     }
-    
+
     // Accept all other image formats (jpeg, png, gif, webp, bmp, etc.)
     cb(null, true);
   },
@@ -293,7 +296,7 @@ const upload = multer({
 
 /**
  * @openapi
- * /api/emergency-profiles/photo:
+ * /api/emergency-profiles/photos:
  *   post:
  *     tags: [Emergency Profiles]
  *     summary: Upload personal emergency profile photo
@@ -332,6 +335,11 @@ const upload = multer({
  *       500:
  *         description: Server error
  */
-router.post("/photos", auth, upload.single("photo"), updatePersonalEmergencyProfilePhoto);
+router.post(
+  "/photos",
+  auth,
+  upload.single("photo"),
+  updatePersonalEmergencyProfilePhoto,
+);
 
 export default router;

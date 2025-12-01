@@ -120,6 +120,7 @@ router.post("/sessions", login);
  *   post:
  *     tags: [Auth]
  *     summary: Check username reservation/availability status
+ *     description: Checks if a username is reserved, already exists, or is available. Optionally excludes a specific user ID from the existence check (useful when editing a user's profile).
  *     requestBody:
  *       required: true
  *       content:
@@ -130,6 +131,12 @@ router.post("/sessions", login);
  *             properties:
  *               username:
  *                 type: string
+ *                 description: The username to check
+ *                 example: "testuser"
+ *               excludeUserId:
+ *                 type: string
+ *                 description: Optional user ID to exclude from the existence check. If provided, the check will ignore this user when determining if the username exists.
+ *                 example: "507f1f77bcf86cd799439011"
  *     responses:
  *       200:
  *         description: Status of the username
@@ -391,6 +398,5 @@ router.get("/lists", auth, listMembers);
  *                 message: { type: string, example: "Server error" }
  */
 router.post("/statuses", auth, updateStatusById);
-
 
 export default router;
