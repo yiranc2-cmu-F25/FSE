@@ -118,7 +118,7 @@ describe("Administrator Profile REST API Integration Tests", () => {
   // Helper: login existing user
   const loginUser = async (agentClient, username, password = "adminpass") => {
     const loginResp = await agentClient
-      .post(`${AUTH_BASE}/login`)
+      .post(`${AUTH_BASE}/sessions`)
       .set("Accept", "application/json")
       .send({ username, password })
       .ok((res) => true);
