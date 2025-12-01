@@ -70,4 +70,8 @@ export class iUserDao {
     async getRoleById(id) {
         throw new Error("To be implemented!");
     }
+
+    async checkInitialAdministratorExists() {
+        throw new Error("To be implemented!");
+    }
 }

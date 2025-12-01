@@ -36,6 +36,12 @@ export async function login(req, res) {
       return res.status(403).json({ error: "Account inactive", reason: "Your account has been deactivated" });
     }
     
+    // Check if initial administrator exists (only when it returns true)
+    const initialAdminExists = await User.checkInitialAdministratorExists();
+    if (initialAdminExists) {
+      console.log("[login] Initial administrator verified");
+    }
+    
     setAuthCookie(res, userId, username, role, EXPIRATION_TIME);
     return res.json({ username: username, ok: true });
   } catch (err) {

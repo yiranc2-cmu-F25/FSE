@@ -2,7 +2,11 @@ import CoachingBoard from "../entities/CoachingBoard.js";
 import User from "../entities/User.js";
 import Announcement from "../entities/Announcement.js";
 import { SHARED_STATUS } from "../constants/sharedStatus.js";
-import CategorySkillPresetDac from "../dacs/categorySkillPresetDac.js";
+import { validateTitle, validateRequiredPublishFields, validateBoardData, verifyAtLeastOneUserSkill } from "../utils/coachingBoard/validationHelpers.js";
+import { sortCommentsByLikesAndTime, sortRepliesByLikesAndTime, organizeCommentsWithHighlight, limitCommentsForDisplay } from "../utils/coachingBoard/commentHelpers.js";
+import { collectUserIdsFromComments, createUsernameMap, enrichCommentsWithAuthorNames } from "../utils/coachingBoard/usernameHelpers.js";
+import { emitCoachingBoardComment, emitCoachingBoardReply, emitCoachingBoardNotification, emitCommentDeleted, emitReplyDeleted, findNewComment, findNewReply } from "../utils/coachingBoard/socketHelpers.js";
+import { parseReplyFormat, findTargetReplyById, findTargetCommentById, findTargetByUsername, findCascadedReplyIds } from "../utils/coachingBoard/replyHelpers.js";
 
 function getRequesterUserId(req) {
 	return String(req?.auth?.id ?? req?.user?.id ?? req?.userId ?? "");
@@ -17,83 +21,7 @@ function requireAuth(req, res) {
 	return requesterId;
 }
 
-function validateTitle(title) {
-	return typeof title === "string" && title.trim().length > 0 && title.trim().length < 50;
-}
-
-async function validateRequiredPublishFields(body) {
-	const { title, category, description, objective, steps, relatedSkills } = body ?? {};
-	if (!validateTitle(title)) return { ok: false, message: "Title must be non-empty and < 50 characters." };
-	
-	const presets = await CategorySkillPresetDac.getPresets();
-	const categories = presets.categories || [];
-	const skills = presets.skills || [];
-	
-	if (!categories.includes(category)) return { ok: false, message: "Category must be chosen from system preset." };
-	if (typeof description !== "string" || !description.trim()) return { ok: false, message: "Description is required." };
-	if (typeof objective !== "string" || !objective.trim()) return { ok: false, message: "Objective is required." };
-	if (!Array.isArray(steps) || steps.length === 0) return { ok: false, message: "At least one step is required." };
-	if (!Array.isArray(relatedSkills) || relatedSkills.length === 0) return { ok: false, message: "At least one related skill is required." };
-	if (!relatedSkills.every(s => skills.includes(s))) return { ok: false, message: "Related Skills must be from system preset." };
-	return { ok: true };
-}
-
-async function verifyAtLeastOneUserSkill(req, relatedSkills) {
-	const requesterId = getRequesterUserId(req);
-	if (!requesterId) return false;
-	
-	try {
-		const userSkills = await User.getSkillsById(requesterId);
-		return relatedSkills.some(s => userSkills.includes(s));
-	} catch (err) {return false;
-	}
-}
-
-async function createUsernameMap(userIds) {
-	const usernamePromises = Array.from(userIds).map(async (userId) => {
-		try {
-			const username = await User.getUsernameById(userId);
-			return { userId, username: username || "Unknown" };
-		} catch {
-			return { userId, username: "Unknown" };
-		}
-	});
-	
-	const usernameResults = await Promise.all(usernamePromises);
-	const usernameMap = new Map();
-	usernameResults.forEach(({ userId, username }) => {
-		usernameMap.set(userId, username);
-	});
-	
-	return usernameMap;
-}
-
-function sortRepliesByLikesAndTime(replies) {
-	if (!Array.isArray(replies)) return;
-	replies.sort((a, b) => {
-		const aLikes = (a.likes || []).length;
-		const bLikes = (b.likes || []).length;
-		if (aLikes !== bLikes) {
-			return bLikes - aLikes;
-		}
-		const aTime = new Date(a.timestamp || 0).getTime();
-		const bTime = new Date(b.timestamp || 0).getTime();
-		return bTime - aTime;
-	});
-}
-
-function collectUserIdsFromComments(comments) {
-	const userIds = new Set();
-	for (const comment of comments) {
-		userIds.add(String(comment.author));
-		if (comment.replies && Array.isArray(comment.replies)) {
-			for (const reply of comment.replies) {
-				userIds.add(String(reply.author));
-			}
-		}
-	}
-	return userIds;
-}
+// Helper functions are now imported from utils/coachingBoard modules
 
 function parsePaginationParams(req) {
 	const skip = parseInt(req.query?.skip || "0", 10);
@@ -142,122 +70,17 @@ export async function getBoard(req, res) {
 	try {
 		const id = String(req.params?.bid ?? "");
 		if (!id) return res.status(400).json({ status: "error", message: "Missing board id" });
+		
 		const board = await CoachingBoard.getById({ id });
 		if (!board) return res.status(404).json({ status: "error", message: "Board not found" });
-		const authorName = await User.getUsernameById(board.author) || "";
-
-		const highlightCommentId = req.query?.highlightComment ? String(req.query.highlightComment) : null;
 		
-		if (board.comments && Array.isArray(board.comments)) {
-			let highlightedComment = null;
-			let otherComments = [];
-			
-			if (highlightCommentId) {
-				const normalizedHighlightId = String(highlightCommentId).trim();
-				
-				for (const comment of board.comments) {
-					const commentId = String(comment.id || comment._id || "").trim();
-					
-					if (commentId === normalizedHighlightId) {
-						highlightedComment = comment;
-					} else {
-						otherComments.push(comment);
-					}
-				}
-				
-				otherComments.sort((a, b) => {
-					const aLikes = (a.likes || []).length;
-					const bLikes = (b.likes || []).length;
-					if (aLikes !== bLikes) {
-						return bLikes - aLikes;
-					}
-					const aTime = new Date(a.timestamp || 0).getTime();
-					const bTime = new Date(b.timestamp || 0).getTime();
-					return bTime - aTime;
-				});
-				
-				if (highlightedComment) {
-					board.comments = [highlightedComment, ...otherComments];
-				} else {
-					board.comments.sort((a, b) => {
-						const aLikes = (a.likes || []).length;
-						const bLikes = (b.likes || []).length;
-						if (aLikes !== bLikes) {
-							return bLikes - aLikes;
-						}
-						const aTime = new Date(a.timestamp || 0).getTime();
-						const bTime = new Date(b.timestamp || 0).getTime();
-						return bTime - aTime;
-					});
-				}
-			} else {
-				board.comments.sort((a, b) => {
-					const aLikes = (a.likes || []).length;
-					const bLikes = (b.likes || []).length;
-					if (aLikes !== bLikes) {
-						return bLikes - aLikes;
-					}
-					const aTime = new Date(a.timestamp || 0).getTime();
-					const bTime = new Date(b.timestamp || 0).getTime();
-					return bTime - aTime;
-				});
-			}
-			
-			for (const comment of board.comments) {
-				if (comment.replies && Array.isArray(comment.replies)) {
-					comment.replies.sort((a, b) => {
-						const aLikes = (a.likes || []).length;
-						const bLikes = (b.likes || []).length;
-						if (aLikes !== bLikes) {
-							return bLikes - aLikes;
-						}
-						const aTime = new Date(a.timestamp || 0).getTime();
-						const bTime = new Date(b.timestamp || 0).getTime();
-						return bTime - aTime;
-					});
-				}
-			}
-		}
-
-		if (board.comments && Array.isArray(board.comments)) {
-			const userIds = new Set();
-			userIds.add(String(board.author));
-			for (const comment of board.comments) {
-				userIds.add(String(comment.author));
-				if (comment.replies && Array.isArray(comment.replies)) {
-					for (const reply of comment.replies) {
-						userIds.add(String(reply.author));
-					}
-				}
-			}
-			
-			const usernamePromises = Array.from(userIds).map(async (userId) => {
-				try {
-					const username = await User.getUsernameById(userId);
-					return { userId, username: username || "Unknown" };
-				} catch {
-					return { userId, username: "Unknown" };
-				}
-			});
-			
-			const usernameResults = await Promise.all(usernamePromises);
-			const usernameMap = new Map();
-			usernameResults.forEach(({ userId, username }) => {
-				usernameMap.set(userId, username);
-			});
-			
-			for (const comment of board.comments) {
-				comment.authorName = usernameMap.get(String(comment.author)) || "Unknown";
-				if (comment.replies && Array.isArray(comment.replies)) {
-					for (const reply of comment.replies) {
-						reply.authorName = usernameMap.get(String(reply.author)) || "Unknown";
-					}
-				}
-			}
-		}
-
+		const authorName = await User.getUsernameById(board.author) || "";
+		const highlightCommentId = req.query?.highlightComment ? String(req.query.highlightComment) : null;
+		const highlightReplyId = req.query?.highlightReply ? String(req.query.highlightReply) : null;
 		const cid = req.query?.cid ? String(req.query.cid) : null;
 		const rid = req.query?.rid ? String(req.query.rid) : null;
+
+		// Handle single comment/reply view
 		if (cid) {
 			const comment = (board.comments ?? []).find(c => c.id === cid);
 			if (!comment) return res.status(404).json({ status: "error", message: "Comment not found" });
@@ -268,33 +91,38 @@ export async function getBoard(req, res) {
 			}
 			return res.status(200).json({ ...board, authorName, comments: [comment] });
 		}
-		
-		const highlightReplyId = req.query?.highlightReply ? String(req.query.highlightReply) : null;
-		
-		const limitedComments = (board.comments || []).slice(0, 10).map(c => {
-			const allReplies = c.replies || [];
-			let repliesToShow = [];
+
+		// Organize and sort comments
+		if (board.comments && Array.isArray(board.comments)) {
+			board.comments = organizeCommentsWithHighlight(board.comments, highlightCommentId);
+		}
+
+		// Enrich with usernames
+		if (board.comments && Array.isArray(board.comments)) {
+			const userIds = new Set([String(board.author)]);
+			const commentUserIds = collectUserIdsFromComments(board.comments);
+			commentUserIds.forEach(id => userIds.add(id));
 			
-			if (highlightReplyId && highlightCommentId && String(c.id || c._id) === highlightCommentId) {
-				const highlightedReply = allReplies.find(r => String(r.id || r._id) === highlightReplyId);
-				if (highlightedReply) {
-					repliesToShow = [highlightedReply];
-				} else {
-					repliesToShow = allReplies.slice(0, 1);
-				}
-			} else {
-				repliesToShow = allReplies.slice(0, 1);
-			}
-			
-			return {
-				...c,
-				replies: repliesToShow,
-				totalReplies: allReplies.length
-			};
+			const usernameMap = await createUsernameMap(userIds);
+			enrichCommentsWithAuthorNames(board.comments, usernameMap);
+		}
+
+		// Limit comments for display
+		const limitedComments = limitCommentsForDisplay(
+			board.comments || [],
+			10,
+			highlightCommentId,
+			highlightReplyId
+		);
+		
+		return res.status(200).json({ 
+			...board, 
+			authorName, 
+			comments: limitedComments, 
+			hasMoreComments: (board.comments || []).length > 10 
 		});
-		
-		return res.status(200).json({ ...board, authorName, comments: limitedComments, hasMoreComments: (board.comments || []).length > 10 });
-	} catch (err) {return res.status(500).json({ status: "error", message: "Server error" });
+	} catch (err) {
+		return res.status(500).json({ status: "error", message: "Server error" });
 	}
 }
 
@@ -308,24 +136,12 @@ export async function getMoreComments(req, res) {
 		const board = await CoachingBoard.getById({ id });
 		if (!board) return res.status(404).json({ status: "error", message: "Board not found" });
 		
-		if (board.comments && Array.isArray(board.comments)) {
-			board.comments.sort((a, b) => {
-				const aLikes = (a.likes || []).length;
-				const bLikes = (b.likes || []).length;
-				if (aLikes !== bLikes) {
-					return bLikes - aLikes;
-				}
-				const aTime = new Date(a.timestamp || 0).getTime();
-				const bTime = new Date(b.timestamp || 0).getTime();
-				return bTime - aTime;
-			});
-		}
-		
 		const allComments = board.comments || [];
+		sortCommentsByLikesAndTime(allComments);
+		
 		const paginatedComments = allComments.slice(skip, skip + limit);
 		
 		const userIds = collectUserIdsFromComments(paginatedComments);
-		
 		const usernameMap = await createUsernameMap(userIds);
 		
 		for (const comment of paginatedComments) {
@@ -347,7 +163,8 @@ export async function getMoreComments(req, res) {
 			hasMore,
 			total: allComments.length
 		});
-	} catch (err) {return res.status(500).json({ status: "error", message: "Server error" });
+	} catch (err) {
+		return res.status(500).json({ status: "error", message: "Server error" });
 	}
 }
 
@@ -400,7 +217,9 @@ export async function publishBoard(req, res) {
 		if (!requesterId) return res.status(401).json({ error: "Unauthorized" });
 
 		const validation = await validateRequiredPublishFields(req.body);
-		if (!validation.ok) return res.status(400).json({ status: "error", message: validation.message });
+		if (!validation.ok) {
+			return res.status(400).json({ status: "error", message: validation.message });
+		}
 
 		const isDup = await CoachingBoard.checkDuplicateTitle({ title: req.body.title, category: req.body.category });
 		if (isDup) {
@@ -410,7 +229,7 @@ export async function publishBoard(req, res) {
 			});
 		}
 
-		const okSkill = await verifyAtLeastOneUserSkill(req, req.body.relatedSkills);
+		const okSkill = await verifyAtLeastOneUserSkill(requesterId, req.body.relatedSkills);
 		if (!okSkill) {
 			return res.status(400).json({ status: "error", message: "At least one related skill must be a verified skill that belongs to you." });
 		}
@@ -430,12 +249,14 @@ export async function publishBoard(req, res) {
 
 		const created = await boardEntity.publishNew();
 
+		// Delete draft (ignore errors)
 		try {
 			await CoachingBoard.deleteDraft({ author: requesterId });
 		} catch (e) {
 			// Ignore error if draft deletion fails
 		}
 
+		// Create announcement (ignore errors)
 		try {
 			const announcement = new Announcement({
 				sender: requesterId,
@@ -448,7 +269,8 @@ export async function publishBoard(req, res) {
 		}
 
 		return res.status(201).json({ message: "Board published successfully", boardId: created.id });
-	} catch (err) {if (err?.code === 11000) {
+	} catch (err) {
+		if (err?.code === 11000) {
 			return res.status(409).json({
 				errorStatus: "DUPLICATE_TITLE",
 				message: "A board with this title already exists under this category."
@@ -462,16 +284,21 @@ export async function updateBoard(req, res) {
 	try {
 		const requesterId = getRequesterUserId(req);
 		if (!requesterId) return res.status(401).json({ error: "Unauthorized" });
+		
 		const id = String(req.params?.bid ?? "");
 		if (!id) return res.status(400).json({ status: "error", message: "Missing board id" });
+		
 		const currentBoard = await CoachingBoard.getById({ id });
 		if (!currentBoard) return res.status(404).json({ status: "error", message: "Board not found" });
 
+		// Build update object from allowed fields
 		const update = {};
 		const allowed = ["title", "category", "description", "objective", "steps", "relatedSkills", "tools", "notes"];
 		for (const key of allowed) {
 			if (key in req.body) update[key] = req.body[key];
 		}
+		
+		// Merge with existing data
 		const mergedData = {
 			title: update.title ?? currentBoard.title,
 			category: update.category ?? currentBoard.category,
@@ -482,38 +309,15 @@ export async function updateBoard(req, res) {
 			tools: update.tools ?? currentBoard.tools ?? [],
 			notes: update.notes ?? currentBoard.notes ?? ""
 		};
-		if (!validateTitle(mergedData.title)) {
-			return res.status(400).json({ status: "error", message: "Title must be non-empty and < 50 characters." });
+		
+		// Validate merged data
+		const validation = await validateBoardData(mergedData);
+		if (!validation.ok) {
+			return res.status(400).json({ status: "error", message: validation.message });
 		}
 		
-		const presets = await CategorySkillPresetDac.getPresets();
-		const categories = presets.categories || [];
-		const skills = presets.skills || [];
-		
-		if (!categories.includes(mergedData.category)) {
-			return res.status(400).json({ status: "error", message: "Category must be chosen from system preset." });
-		}
-		
-		if (typeof mergedData.description !== "string" || !mergedData.description.trim()) {
-			return res.status(400).json({ status: "error", message: "Description is required." });
-		}
-		
-		if (typeof mergedData.objective !== "string" || !mergedData.objective.trim()) {
-			return res.status(400).json({ status: "error", message: "Objective is required." });
-		}
-		
-		if (!Array.isArray(mergedData.steps) || mergedData.steps.length === 0) {
-			return res.status(400).json({ status: "error", message: "At least one step is required." });
-		}
-		
-		if (!Array.isArray(mergedData.relatedSkills) || mergedData.relatedSkills.length === 0) {
-			return res.status(400).json({ status: "error", message: "At least one related skill is required." });
-		}
-		
-		if (!mergedData.relatedSkills.every(s => skills.includes(s))) {
-			return res.status(400).json({ status: "error", message: "Related Skills must be from system preset." });
-		}
-		const okSkill = await verifyAtLeastOneUserSkill(req, mergedData.relatedSkills);
+		// Verify user has at least one related skill
+		const okSkill = await verifyAtLeastOneUserSkill(requesterId, mergedData.relatedSkills);
 		if (!okSkill) {
 			return res.status(400).json({ status: "error", message: "At least one related skill must be a verified skill that belongs to you." });
 		}
@@ -521,29 +325,24 @@ export async function updateBoard(req, res) {
 		const updated = await CoachingBoard.updateBoard({ id, author: requesterId, update });
 		if (!updated) return res.status(403).json({ status: "error", message: "You do not have permission to edit this board" });
 
-		try {
-			const socketInstance = req.app.get("socketInstance");
-			if (socketInstance && updated.subscribers) {
-				if (String(updated.author) === String(requesterId)) {
-					const authorName = await User.getUsernameById(requesterId).catch(() => "Unknown");
-					const subscribers = (updated.subscribers || []).filter(subId => String(subId) !== String(requesterId));
-					if (subscribers.length > 0) {
-						socketInstance.emitCoachingBoardNotification(subscribers, {
-							type: "board_updated",
-							boardId: updated.id,
-							boardTitle: updated.title,
-							authorName: authorName || "Unknown",
-							timestamp: new Date()
-						});
-					}
-				}
+		// Emit notification to subscribers
+		if (String(updated.author) === String(requesterId) && updated.subscribers) {
+			const authorName = await User.getUsernameById(requesterId).catch(() => "Unknown");
+			const subscribers = (updated.subscribers || []).filter(subId => String(subId) !== String(requesterId));
+			if (subscribers.length > 0) {
+				await emitCoachingBoardNotification(req, subscribers, {
+					type: "board_updated",
+					boardId: updated.id,
+					boardTitle: updated.title,
+					authorName: authorName || "Unknown",
+					timestamp: new Date()
+				});
 			}
-		} catch (e) {
-			// Ignore error if socket emission fails
 		}
 
 		return res.status(200).json({ message: "Board updated successfully", boardId: updated.id });
-	} catch (err) {if (err?.code === 11000) {
+	} catch (err) {
+		if (err?.code === 11000) {
 			return res.status(409).json({
 				errorStatus: "DUPLICATE_TITLE",
 				message: "A board with this title already exists under this category."
@@ -570,10 +369,123 @@ export async function deleteBoard(req, res) {
 	}
 }
 
+async function handleReplyComment(req, res, id, parsedReply) {
+	const { username, targetId, replyText } = parsedReply;
+	const requesterId = getRequesterUserId(req);
+	
+	if (!replyText || !replyText.trim()) {
+		return res.status(400).json({ status: "error", message: "Reply text cannot be empty" });
+	}
+	
+	const board = await CoachingBoard.getById({ id });
+	if (!board) return res.status(404).json({ status: "error", message: "Board not found" });
+	
+	let targetReply = null;
+	let targetComment = null;
+	
+	// Find target by ID or username
+	if (targetId) {
+		if (targetId.startsWith("reply:")) {
+			const replyId = targetId.replace("reply:", "");
+			const result = findTargetReplyById(board, replyId);
+			targetReply = result.targetReply;
+			targetComment = result.targetComment;
+		} else {
+			targetComment = findTargetCommentById(board, targetId);
+		}
+	} else {
+		const result = await findTargetByUsername(board, username);
+		targetReply = result.targetReply;
+		targetComment = result.targetComment;
+	}
+	
+	if (!targetComment) {
+		return res.status(404).json({ status: "error", message: "Comment or reply not found" });
+	}
+	
+	const fullReplyText = `@${username}: ${replyText.trim()}`;
+	
+	const updated = await CoachingBoard.addReply({
+		id,
+		commentId: targetComment.id,
+		author: requesterId,
+		reply: fullReplyText,
+		timestamp: new Date(),
+		replyTo: targetReply ? targetReply.id : null
+	});
+	if (!updated) return res.status(404).json({ status: "error", message: "Board not found" });
+	
+	// Emit socket notifications
+	const updatedBoard = await CoachingBoard.getById({ id });
+	const newReply = findNewReply(updatedBoard, targetComment.id, requesterId, fullReplyText);
+	if (newReply) {
+		await emitCoachingBoardReply(req, id, targetComment.id, newReply);
+	}
+	
+	// Notify the target user
+	const notifyUserId = targetReply ? String(targetReply.author) : String(targetComment.author);
+	if (String(notifyUserId) !== String(requesterId)) {
+		const authorName = await User.getUsernameById(requesterId).catch(() => "Unknown");
+		const commentIdStr = String(targetComment.id || targetComment._id || "");
+		const replyIdStr = newReply ? String(newReply.id || newReply._id || "") : null;
+		
+		await emitCoachingBoardNotification(req, [notifyUserId], {
+			type: "new_reply",
+			boardId: id,
+			boardTitle: updatedBoard.title,
+			authorName: authorName || "Unknown",
+			commentId: commentIdStr,
+			replyId: replyIdStr,
+			timestamp: new Date()
+		});
+	}
+	
+	return res.status(201).json({ message: "Reply added successfully" });
+}
+
+async function handleRegularComment(req, res, id, comment) {
+	const requesterId = getRequesterUserId(req);
+	
+	const updated = await CoachingBoard.addComment({
+		id,
+		author: requesterId,
+		comment: comment,
+		timestamp: new Date()
+	});
+	if (!updated) return res.status(404).json({ status: "error", message: "Board not found" });
+	
+	const updatedBoard = await CoachingBoard.getById({ id });
+	
+	// Emit socket notifications
+	const newComment = findNewComment(updatedBoard, requesterId, comment);
+	if (newComment) {
+		await emitCoachingBoardComment(req, id, newComment);
+	}
+	
+	// Notify subscribers
+	if (updatedBoard.subscribers) {
+		const authorName = await User.getUsernameById(requesterId).catch(() => "Unknown");
+		const subscribers = (updatedBoard.subscribers || []).filter(subId => String(subId) !== String(requesterId));
+		if (subscribers.length > 0) {
+			await emitCoachingBoardNotification(req, subscribers, {
+				type: "new_comment",
+				boardId: id,
+				boardTitle: updatedBoard.title,
+				authorName: authorName || "Unknown",
+				commentId: newComment ? (newComment.id || newComment._id) : null,
+				timestamp: new Date()
+			});
+		}
+	}
+	
+	return res.status(201).json({ message: "Comment added successfully" });
+}
+
 export async function addComment(req, res) {
 	try {
 		const requesterId = getRequesterUserId(req);
 		if (!requesterId) return res.status(401).json({ error: "Unauthorized" });
+		
 		const id = String(req.params?.bid ?? "");
 		let { comment } = req.body ?? {};
 		if (!id || typeof comment !== "string" || !comment.trim()) {
@@ -582,191 +494,16 @@ export async function addComment(req, res) {
 		
 		comment = comment.trim();
 		
-		const replyMatch = comment.match(/^@([^#:]+)(?:#(reply:[^:]+|[^:]+))?:\s*(.+)$/);
-		if (replyMatch) {
-			const [, username, targetId, replyText] = replyMatch;
-			if (!replyText || !replyText.trim()) {
-				return res.status(400).json({ status: "error", message: "Reply text cannot be empty" });
-			}
-			
-			const board = await CoachingBoard.getById({ id });
-			if (!board) return res.status(404).json({ status: "error", message: "Board not found" });
-			
-			let targetReply = null;
-			let targetComment = null;
-			
-			if (targetId) {if (targetId.startsWith("reply:")) {
-					const replyId = targetId.replace("reply:", "");for (const c of (board.comments || [])) {
-						const reply = (c.replies || []).find(r => {
-							const rId = String(r.id || r._id);return rId === replyId;
-						});
-						if (reply) {
-							targetReply = reply;
-							targetComment = c;
-							break;
-						}
-					}
-				} else {for (const c of (board.comments || [])) {
-						const cId = String(c.id || c._id);if (cId === targetId) {
-							targetComment = c;break;
-						}
-					}
-				}
-			} else {
-				for (const c of (board.comments || [])) {
-					for (const r of (c.replies || [])) {
-						const replyAuthorName = await User.getUsernameById(r.author);
-						if (replyAuthorName === username) {
-							targetReply = r;
-							targetComment = c;
-							break;
-						}
-					}
-					if (targetReply) break;
-					
-					if (!targetReply) {
-						const commentAuthorName = await User.getUsernameById(c.author);
-						if (commentAuthorName === username) {
-							targetComment = c;
-							break;
-						}
-					}
-				}
-			}
-			
-			if (!targetComment) {
-				return res.status(404).json({ status: "error", message: "Comment or reply not found" });
-			}
-			
-			const fullReplyText = `@${username}: ${replyText.trim()}`;
-			
-			const updated = await CoachingBoard.addReply({
-				id,
-				commentId: targetComment.id,
-				author: requesterId,
-				reply: fullReplyText,
-				timestamp: new Date(),
-				replyTo: targetReply ? targetReply.id : null
-			});
-			if (!updated) return res.status(404).json({ status: "error", message: "Board not found" });
-			
-			try {
-				const socketInstance = req.app.get("socketInstance");
-				if (socketInstance) {
-					const updatedBoard = await CoachingBoard.getById({ id });
-					const comment = (updatedBoard.comments || []).find(c => c.id === targetComment.id);
-					if (comment) {
-						const newReply = (comment.replies || []).find(r => 
-							String(r.author) === requesterId && 
-							r.reply === fullReplyText &&
-							Math.abs(new Date(r.timestamp).getTime() - Date.now()) < 5000
-						);
-						if (newReply) {
-							const authorName = await User.getUsernameById(requesterId);
-							newReply.authorName = authorName || "Unknown";
-							socketInstance.emitCoachingBoardReply(id, targetComment.id, newReply);
-						}
-					}
-				}
-			} catch (err) {
-				// Ignore error if socket emission fails
-			}
-			
-			try {
-				const socketInstance = req.app.get("socketInstance");
-				if (socketInstance) {
-					const notifyUserId = targetReply ? String(targetReply.author) : String(targetComment.author);
-					
-					if (String(notifyUserId) !== String(requesterId)) {
-						const authorName = await User.getUsernameById(requesterId).catch(() => "Unknown");
-						const updatedBoard = await CoachingBoard.getById({ id });
-						
-						const comment = (updatedBoard.comments || []).find(c => {
-							const cId = c.id || c._id;
-							return String(cId) === String(targetComment.id);
-						});
-						const newReply = comment ? (comment.replies || []).find(r => 
-							String(r.author) === requesterId && 
-							r.reply === fullReplyText &&
-							Math.abs(new Date(r.timestamp).getTime() - Date.now()) < 5000
-						) : null;
-						
-						const commentIdStr = String(targetComment.id || targetComment._id || "");
-						const replyIdStr = newReply ? String(newReply.id || newReply._id || "") : null;
-						
-						socketInstance.emitCoachingBoardNotification([notifyUserId], {
-							type: "new_reply",
-							boardId: id,
-							boardTitle: updatedBoard.title,
-							authorName: authorName || "Unknown",
-							commentId: commentIdStr,
-							replyId: replyIdStr,
-							timestamp: new Date()
-						});
-					}
-				}
-			} catch (err) {
-				// Ignore error if socket emission fails
-			}
-			
-			return res.status(201).json({ message: "Reply added successfully" });
+		// Check if it's a reply format
+		const parsedReply = parseReplyFormat(comment);
+		if (parsedReply) {
+			return await handleReplyComment(req, res, id, parsedReply);
 		}
 		
-		const updated = await CoachingBoard.addComment({
-			id,
-			author: requesterId,
-			comment: comment,
-			timestamp: new Date()
-		});
-		if (!updated) return res.status(404).json({ status: "error", message: "Board not found" });
-		
-		const updatedBoard = await CoachingBoard.getById({ id });
-		
-		try {
-			const socketInstance = req.app.get("socketInstance");
-			if (socketInstance) {
-				const newComment = (updatedBoard.comments || []).find(c => 
-					String(c.author) === requesterId && 
-					c.comment === comment &&
-					Math.abs(new Date(c.timestamp).getTime() - Date.now()) < 5000
-				);
-				if (newComment) {
-					const authorName = await User.getUsernameById(requesterId);
-					newComment.authorName = authorName || "Unknown";
-					socketInstance.emitCoachingBoardComment(id, newComment);
-				}
-			}
-		} catch (err) {
-			// Ignore error if socket emission fails
-		}
-		
-		try {
-			const socketInstance = req.app.get("socketInstance");
-			if (socketInstance && updatedBoard.subscribers) {
-				const authorName = await User.getUsernameById(requesterId).catch(() => "Unknown");
-				const newComment = (updatedBoard.comments || []).find(c => 
-					String(c.author) === requesterId && 
-					c.comment === comment &&
-					Math.abs(new Date(c.timestamp).getTime() - Date.now()) < 5000
-				);
-				const subscribers = (updatedBoard.subscribers || []).filter(subId => String(subId) !== String(requesterId));
-				if (subscribers.length > 0) {
-					socketInstance.emitCoachingBoardNotification(subscribers, {
-						type: "new_comment",
-						boardId: id,
-						boardTitle: updatedBoard.title,
-						authorName: authorName || "Unknown",
-						commentId: newComment ? (newComment.id || newComment._id) : null,
-						timestamp: new Date()
-					});
-				}
-			}
-		} catch (err) {
-			// Ignore error if socket emission fails
-		}
-		
-		return res.status(201).json({ message: "Comment added successfully" });
-	} catch (err) {return res.status(500).json({ status: "error", message: "Server error" });
+		// Handle regular comment
+		return await handleRegularComment(req, res, id, comment);
+	} catch (err) {
+		return res.status(500).json({ status: "error", message: "Server error" });
 	}
 }
 
@@ -813,27 +550,23 @@ export async function deleteComment(req, res) {
 	try {
 		const requesterId = getRequesterUserId(req);
 		if (!requesterId) return res.status(401).json({ error: "Unauthorized" });
+		
 		const id = String(req.params?.bid ?? "");
 		const commentId = String(req.params?.cid ?? "");
 		if (!id || !commentId) {
 			return res.status(400).json({ status: "error", message: "Missing required fields" });
 		}
+		
 		const deleted = await CoachingBoard.deleteComment({ id, commentId, author: requesterId });
 		if (!deleted) {
 			return res.status(403).json({ status: "error", message: "You do not have permission to delete this comment or the comment does not exist" });
 		}
 		
-		try {
-			const socketInstance = req.app.get("socketInstance");
-			if (socketInstance) {
-				socketInstance.emitCoachingBoardCommentDeleted(id, commentId);
-			}
-		} catch (e) {
-			// Ignore error if socket emission fails
-		}
+		emitCommentDeleted(req, id, commentId);
 		
 		return res.status(200).json({ message: "Comment deleted successfully" });
-	} catch (err) {return res.status(500).json({ status: "error", message: "Server error" });
+	} catch (err) {
+		return res.status(500).json({ status: "error", message: "Server error" });
 	}
 }
 
@@ -841,6 +574,7 @@ export async function deleteReply(req, res) {
 	try {
 		const requesterId = getRequesterUserId(req);
 		if (!requesterId) return res.status(401).json({ error: "Unauthorized" });
+		
 		const id = String(req.params?.bid ?? "");
 		const commentId = String(req.params?.cid ?? "");
 		const replyId = String(req.params?.rid ?? "");
@@ -863,41 +597,21 @@ export async function deleteReply(req, res) {
 		}
 
 		// Find all replies that will be deleted (including cascaded children)
-		const repliesToDelete = new Set([String(replyId)]);
-		let foundNew = true;
-		while (foundNew) {
-			foundNew = false;
-			for (const r of (comment.replies || [])) {
-				const rId = String(r.id || r._id);
-				if (repliesToDelete.has(rId)) continue;
-				
-				const rReplyTo = r.replyTo ? String(r.replyTo) : null;
-				if (rReplyTo && repliesToDelete.has(rReplyTo)) {
-					repliesToDelete.add(rId);
-					foundNew = true;
-				}
-			}
-		}
+		const repliesToDelete = findCascadedReplyIds(comment, replyId);
 
 		const deleted = await CoachingBoard.deleteReply({ id, commentId, replyId, author: requesterId });
 		if (!deleted) {
 			return res.status(403).json({ status: "error", message: "You do not have permission to delete this reply or the reply does not exist" });
 		}
 		
-		try {
-			const socketInstance = req.app.get("socketInstance");
-			if (socketInstance) {
-				// Emit socket notification for all deleted replies (including cascaded children)
-				for (const deletedReplyId of repliesToDelete) {
-					socketInstance.emitCoachingBoardReplyDeleted(id, commentId, deletedReplyId);
-				}
-			}
-		} catch (e) {
-			// Ignore error if socket emission fails
+		// Emit socket notification for all deleted replies (including cascaded children)
+		for (const deletedReplyId of repliesToDelete) {
+			emitReplyDeleted(req, id, commentId, deletedReplyId);
 		}
 		
 		return res.status(200).json({ message: "Reply deleted successfully" });
-	} catch (err) {return res.status(500).json({ status: "error", message: "Server error" });
+	} catch (err) {
+		return res.status(500).json({ status: "error", message: "Server error" });
 	}
 }
 
