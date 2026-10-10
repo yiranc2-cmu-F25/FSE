@@ -177,6 +177,35 @@ export class UserDao extends iUserDao {
         }
     }
 
+    /**
+     * Applies several profile changes to one user document in a single save so
+     * that schema validation and the password-hashing pre-save hook both run.
+     * @returns the updated plain user object, or null if the user does not exist
+     * @throws Error("Username already exists") on a duplicate username
+     */
+    async updateProfileById(id, { status, role, username, password }) {
+        try {
+            const doc = await this.UserModel.findById(id);
+            if (!doc) return null;
+            if (status !== undefined) doc.status = status;
+            if (role !== undefined) doc.role = role;
+            if (username !== undefined) doc.username = username.toLowerCase();
+            if (password !== undefined) {
+                doc.password = password;
+                doc.markModified("password");
+            }
+            await doc.save();
+            const obj = doc.toObject();
+            return { ...obj, id: obj._id };
+        } catch (err) {
+            console.error("Error updating profile for user ID:", id, err);
+            if (err.code === 11000 || err.name === "MongoServerError") {
+                throw new Error("Username already exists");
+            }
+            throw err;
+        }
+    }
+
     async usernameExists(username, excludeUserId = null) {
         try {
             const query = { username: username.toLowerCase() };

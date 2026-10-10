@@ -1,48 +1,10 @@
-import app from "./app.js";
 import http from "http";
-import { Server } from "socket.io";
 import mongoose from "mongoose";
+import { Server } from "socket.io";
+import app from "./app.js";
 import Socket from "./middleware/Socket.js";
+import { registerDaos } from "./config/daoRegistry.js";
 
-import { makeUserModel } from "./db/UserSchema.js";
-import { makeMsgModel } from "./db/MsgSchema.js";
-import { makeStatusModel } from "./db/StatusSchema.js";
-import makeTaskModel from "./db/TaskSchema.js";
-import makeTaskParticipantModel from "./db/TaskParticipantSchema.js";
-import makeTaskLogModel from "./db/TaskLogSchema.js";
-import { makeGroupModel } from "./db/GroupSchema.js";
-import { makeGroupMessageModel } from "./db/GroupMessageSchema.js";
-import { UserDao } from "./daos/UserDao.js";
-import { MsgDao } from "./daos/MsgDao.js";
-import { StatusDao } from "./daos/StatusDao.js";
-import { GroupDao } from "./daos/GroupDao.js";
-import { GroupMessageDao } from "./daos/GroupMessageDao.js";
-import UserDac from "./dacs/userDac.js";
-import MsgDac from "./dacs/msgDac.js";
-import StatusDac from "./dacs/statusDac.js";
-import groupDac from "./dacs/groupDac.js";
-import groupMessageDac from "./dacs/groupMessageDac.js";
-import { makeAnnouncementModel } from "./db/AnnouncementSchema.js";
-import { AnnouncementDao } from "./daos/AnnouncementDao.js";
-import AnnouncementDac from "./dacs/announcementDac.js";
-import { makeHelpCenterModel } from "./db/HelpCenterSchema.js";
-import { HelpCenterDao } from "./daos/HelpCenterDao.js";
-import HelpCenterDac from "./dacs/helpCenterDac.js";
-import TaskDao from "./daos/TaskDao.js";
-import TaskDac from "./dacs/taskDac.js";
-import { makeCoachingBoardModel } from "./db/CoachingBoardSchema.js";
-import { CoachingBoardDao } from "./daos/CoachingBoardDao.js";
-import CoachingBoardDac from "./dacs/coachingBoardDac.js";
-import { makeCategorySkillPresetModel } from "./db/CategorySkillPresetSchema.js";
-import { CategorySkillPresetDao } from "./daos/CategorySkillPresetDao.js";
-import CategorySkillPresetDac from "./dacs/categorySkillPresetDac.js";
-import { makeEmergencyProfileModel } from "./db/EmergencyProfileSchema.js";
-import { makeProfilePhotoModel } from "./db/ProfilePhotoSchema.js";
-import { makeBookmarkModel } from "./db/BookmarksSchema.js";
-import { EmergencyProfileDao } from "./daos/EmergencyProfileDao.js";
-import ProfilePhotoDao from "./daos/ProfilePhotoDao.js";
-import EmergencyProfileDac from "./dacs/emergencyprofileDac.js";
-import ProfilePhotoDac from "./dacs/profilephotoDac.js";
 /**
  * Connect to MongoDB
  */
@@ -50,55 +12,31 @@ async function connectToMongo() {
   const mongoUri = process.env.MONGO_URI;
   if (!mongoUri) {
     throw new Error(
-      "MONGO_URI environment variable is not set. Please create a .env file with MONGO_URI=mongodb://localhost:27017 (or your MongoDB connection string)"
+      "MONGO_URI environment variable is not set. Please create a .env file with MONGO_URI=mongodb://localhost:27017 (or your MongoDB connection string)",
     );
   }
 
-  const useTls = mongoUri.startsWith("mongodb://");
-
   await mongoose.connect(mongoUri, {
-    // dbName: process.env.MONGO_DB || "myDatabase",
-    ...(useTls ? { tls: true } : {}),
+    ...(shouldUseTls(mongoUri) ? { tls: true } : {}),
   });
 }
 
-function setupModels() {
-  const UserModel = makeUserModel(mongoose.connection);
-  const MessageModel = makeMsgModel(mongoose.connection);
-  const AnnouncementModel = makeAnnouncementModel(mongoose.connection);
-  const StatusModel = makeStatusModel(mongoose.connection);
-  const HelpCenterModel = makeHelpCenterModel(mongoose.connection);
-  const CoachingBoardModel = makeCoachingBoardModel(mongoose.connection);
-  const CategorySkillPresetModel = makeCategorySkillPresetModel(mongoose.connection);
-  const TaskModel = makeTaskModel(mongoose.connection);
-  const TaskParticipantModel = makeTaskParticipantModel(mongoose.connection);
-  const TaskLogModel = makeTaskLogModel(mongoose.connection);
-  const GroupModel = makeGroupModel(mongoose.connection);
-  const GroupMessageModel = makeGroupMessageModel(mongoose.connection);
-  const EmergencyProfileModel = makeEmergencyProfileModel(mongoose.connection);
-  const ProfilePhotoModel = makeProfilePhotoModel(mongoose.connection);
-  const BookmarkModel = makeBookmarkModel(mongoose.connection);
-
-  UserDac.DAO = new UserDao({ UserModel });
-  MsgDac.DAO = new MsgDao({ MessageModel });
-  AnnouncementDac.DAO = new AnnouncementDao({ AnnouncementModel });
-  EmergencyProfileDac.DAO = new EmergencyProfileDao({ EmergencyProfileModel, ProfilePhotoModel, UserModel, BookmarkModel });
-  ProfilePhotoDac.DAO = new ProfilePhotoDao({ ProfilePhotoModel });
-  HelpCenterDac.DAO = new HelpCenterDao({ HelpCenterModel });
-  StatusDac.DAO = new StatusDao({ StatusModel, UserModel });
-  CoachingBoardDac.DAO = new CoachingBoardDao({ CoachingBoardModel });
-  CategorySkillPresetDac.DAO = new CategorySkillPresetDao({ CategorySkillPresetModel });
-  TaskDac.DAO = new TaskDao({ 
-    TaskModel,
-    TaskParticipantModel,
-    TaskLogModel,
-  });
-  groupDac.DAO = new GroupDao({ GroupModel });
-  groupMessageDac.DAO = new GroupMessageDao({ GroupMessageModel });
+/**
+ * Non-SRV Atlas URIs (mongodb://...) need TLS, which the driver only turns on
+ * by itself for mongodb+srv://. MONGO_TLS=true|false overrides the guess,
+ * e.g. MONGO_TLS=false for a local MongoDB without TLS.
+ */
+function shouldUseTls(mongoUri) {
+  const override = process.env.MONGO_TLS;
+  if (override === "true" || override === "false") return override === "true";
+  return mongoUri.startsWith("mongodb://");
 }
 
+/**
+ * Create the HTTP server, bind Socket.IO to it and expose the socket
+ * instance to routes/middleware through the Express app.
+ */
 function setupSocket() {
-  // 3. Create HTTP server and bind Socket.IO
   const server = http.createServer(app);
   const io = new Server(server, {
     cors: {
@@ -108,8 +46,6 @@ function setupSocket() {
   });
   const socketInstance = new Socket(io);
 
-  // 4. Expose Socket.IO to routes/middleware
-  // set up socket.io instance in app
   app.set("io", io);
   app.set("socketInstance", socketInstance);
 
@@ -122,16 +58,12 @@ function getAppPort() {
 
 function startServer(server) {
   server.listen(getAppPort(), () => {
-    console.log(
-      `Server running at http://localhost:${getAppPort()}/`,
-    );
-    console.log(
-      `Swagger docs at http://localhost:${getAppPort()}/api-docs`,
-    );
+    console.log(`Server running at http://localhost:${getAppPort()}/`);
+    console.log(`Swagger docs at http://localhost:${getAppPort()}/api-docs`);
   });
 }
 
 await connectToMongo();
-setupModels();
+registerDaos(mongoose.connection);
 const server = setupSocket();
 startServer(server);

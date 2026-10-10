@@ -161,6 +161,22 @@ export class inMemoryUserDao extends iUserDao {
     user.password = newPassword;
   }
 
+  async updateProfileById(id, { status, role, username, password }) {
+    const user = this.users.find((u) => id == u.id);
+    if (!user) return null;
+    if (username !== undefined) {
+      const taken = this.users.find(
+        (u) => u.username.toLowerCase() === username.toLowerCase() && u.id != id
+      );
+      if (taken) throw new Error("Username already exists");
+      user.username = username.toLowerCase();
+    }
+    if (status !== undefined) user.status = status;
+    if (role !== undefined) user.role = role;
+    if (password !== undefined) user.password = password;
+    return { ...user };
+  }
+
   async usernameExists(username, excludeUserId = null) {
     const normalizedUsername = username.toLowerCase();
     const user = this.users.find(

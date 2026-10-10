@@ -1,220 +1,151 @@
-import jwt from 'jsonwebtoken';
+import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import User from "../entities/User.js";
 import { USER_STATUS } from "../constants/userStatus.js";
+import { toPlainObject } from "../utils/toPlainObject.js";
 dotenv.config();
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const isProd = process.env.NODE_ENV === "production";
 const requireAuth = process.env.REQUIRE_AUTH !== "false";
 
-// jwt middleware
-// example useage: app.get('/protected', auth, (req, res) => { ... });
+const COOKIE_NAME = "jwt_token";
+const INACTIVE_REDIRECT = "/?inactive=true";
 
-/**
- * Helper: Clear JWT cookie
- */
+function cookieOptions() {
+  return { httpOnly: true, secure: isProd, sameSite: "lax", path: "/" };
+}
+
 function clearJwtCookie(res) {
-    res.clearCookie("jwt_token", {
-        httpOnly: true,
-        secure: isProd,
-        sameSite: "lax",
-        path: "/"
-    });
+  res.clearCookie(COOKIE_NAME, cookieOptions());
 }
 
 /**
- * Helper: Handle user not found
+ * Verifies the token and loads the user it refers to from the database.
+ * The database is the source of truth for status/username because an admin
+ * can change them while the JWT is still valid.
+ * @throws on an invalid or expired token
  */
-function handleUserNotFound(res) {
-    clearJwtCookie(res);
-    return res.status(401).json({ error: "Unauthorized", reason: "User not found" });
+async function resolveTokenUser(token) {
+  const payload = jwt.verify(token, JWT_SECRET);
+  const userId = String(payload.userId ?? payload.sub ?? "");
+  const user = toPlainObject(await User.findById(userId));
+  return { payload, userId, user };
+}
+
+function attachUser(req, { userId, user, role }) {
+  req.username = user.username; // database username, not the one in the JWT
+  req.userId = userId;
+  req.role = role;
+  req.user = { id: userId, username: user.username, role };
+}
+
+/** Clears the auth cookie and drops the user's sockets (account deactivated). */
+function evictInactiveUser(req, res, user) {
+  clearJwtCookie(res);
+  const socketInstance = req.app.get("socketInstance");
+  if (socketInstance && user.username) {
+    socketInstance.disconnectUser(user.username);
+  }
 }
 
 /**
- * Helper: Handle inactive user
+ * API auth: requires a valid cookie for an active user, else responds with JSON.
+ * Usage: app.get("/protected", auth, handler)
  */
-function handleInactiveUser(res, req, userObj) {
-    clearJwtCookie(res);
-
-    // Disconnect socket if available
-    const socketInstance = req.app.get("socketInstance");
-    if (socketInstance && userObj.username) {
-        socketInstance.disconnectUser(userObj.username);
-    }
-
-    return res.status(403).json({ error: "Account inactive", reason: "Your account has been deactivated" });
-}
-
-/**
- * Helper: Set user info on request
- */
-function setUserInfo(req, userId, userObj, payload) {
-    req.username = userObj.username; // Use database username (not JWT)
-    req.userId = userId;
-    req.role = payload.role; // Use JWT role
-    req.user = { id: userId, username: userObj.username, role: payload.role };
-}
-
 export async function auth(req, res, next) {
-    if (!requireAuth) {
-        next();
-        return;
+  if (!requireAuth) return next();
+
+  const token = req.cookies?.[COOKIE_NAME];
+  if (!token) return res.status(401).json({ error: "Unauthorized" });
+
+  try {
+    const { payload, userId, user } = await resolveTokenUser(token);
+    if (!user) {
+      clearJwtCookie(res);
+      return res
+        .status(401)
+        .json({ error: "Unauthorized", reason: "User not found" });
     }
-
-    const token = req.cookies.jwt_token;
-    if (!token) return res.status(401).json({ error: "Unauthorized" })
-    try {
-        const payload = jwt.verify(token, JWT_SECRET);
-        const userId = String(payload.userId ?? payload.sub ?? "");
-
-        // Check user status from database (not JWT) - status can change anytime
-        const user = await User.findById(userId);
-        if (!user) {
-            return handleUserNotFound(res);
-        }
-
-        const userObj = user.toObject ? user.toObject() : user;
-
-        // If user is inactive, logout and return error
-        if (userObj.status === USER_STATUS.INACTIVE) {
-            return handleInactiveUser(res, req, userObj);
-        }
-
-        setUserInfo(req, userId, userObj, payload);
-        next();
-    } catch (err){
-        return res.status(403).json({ error: "Forbidden", reason: err.name });
+    if (user.status === USER_STATUS.INACTIVE) {
+      evictInactiveUser(req, res, user);
+      return res
+        .status(403)
+        .json({
+          error: "Account inactive",
+          reason: "Your account has been deactivated",
+        });
     }
+    attachUser(req, { userId, user, role: payload.role });
+    next();
+  } catch (err) {
+    return res.status(403).json({ error: "Forbidden", reason: err.name });
+  }
 }
 
-
+/** Page auth: like `auth`, but redirects to the splash page instead of returning JSON. */
 export async function authView(req, res, next) {
-  const token = req.cookies.jwt_token;
+  const token = req.cookies?.[COOKIE_NAME];
   if (!token) return res.redirect("/");
 
   try {
-    const payload = jwt.verify(token, JWT_SECRET);
-    const userId = String(payload.userId ?? payload.sub ?? "");
-    
-    // Check user status from database (not JWT) - status can change anytime
-    const user = await User.findById(userId);
+    const { payload, userId, user } = await resolveTokenUser(token);
     if (!user) {
-      // User not found, clear cookie and redirect
-      res.clearCookie("jwt_token", { 
-        httpOnly: true, 
-        secure: isProd, 
-        sameSite: "lax",
-        path: "/" 
-      });
-      return res.redirect("/?inactive=true");
+      clearJwtCookie(res);
+      return res.redirect(INACTIVE_REDIRECT);
     }
-    
-    const userObj = user.toObject ? user.toObject() : user;
-    
-    // If user is inactive, logout and redirect to splash page with error modal
-    if (userObj.status === USER_STATUS.INACTIVE) {
-      res.clearCookie("jwt_token", { 
-        httpOnly: true, 
-        secure: isProd, 
-        sameSite: "lax",
-        path: "/" 
-      });
-      
-      // Disconnect socket if available
-      const socketInstance = req.app.get("socketInstance");
-      if (socketInstance && userObj.username) {
-        socketInstance.disconnectUser(userObj.username);
-      }
-      
-      return res.redirect("/?inactive=true");
+    if (user.status === USER_STATUS.INACTIVE) {
+      evictInactiveUser(req, res, user);
+      return res.redirect(INACTIVE_REDIRECT);
     }
-    
-    req.username = userObj.username; // Use database username (not JWT)
-    req.userId = userId;
-    req.role = payload.role; // Use JWT role
-    req.user = { id: userId, username: userObj.username, role: payload.role };
+    attachUser(req, { userId, user, role: payload.role });
     next();
-  } catch (err) {
+  } catch {
     return res.redirect("/");
   }
 }
 
-export function setAuthCookie(res, userId, username, role, expiresInHr) {
-    const expiresIn = `${expiresInHr}h`;
-    const token = jwt.sign(
-        { userId: String(userId), username, role },
-        JWT_SECRET,
-        { expiresIn }
-    );
-    res.cookie("jwt_token", token, {
-        httpOnly: true,
-        secure: isProd,
-        sameSite: isProd ? "lax" : "lax",
-        maxAge: expiresInHr * 60 * 60 * 1000,
-        path: "/",
-    });
+/**
+ * Optional auth: populates req.user when a valid cookie is present but never
+ * rejects anonymous requests. Inactive accounts are still logged out.
+ */
+export async function optionalAuth(req, res, next) {
+  const token = req.cookies?.[COOKIE_NAME];
+  if (!token) return next();
 
-    return token;
+  try {
+    const { payload, userId, user } = await resolveTokenUser(token);
+    if (!user) {
+      clearJwtCookie(res);
+      return next();
+    }
+    if (user.status === USER_STATUS.INACTIVE) {
+      evictInactiveUser(req, res, user);
+      return res.redirect(INACTIVE_REDIRECT);
+    }
+    attachUser(req, { userId, user, role: user.role || payload.role });
+  } catch {
+    // Invalid token: continue as an anonymous visitor.
+  }
+  next();
+}
+
+export function setAuthCookie(res, userId, username, role, expiresInHr) {
+  const token = jwt.sign(
+    { userId: String(userId), username, role },
+    JWT_SECRET,
+    {
+      expiresIn: `${expiresInHr}h`,
+    },
+  );
+  res.cookie(COOKIE_NAME, token, {
+    ...cookieOptions(),
+    maxAge: expiresInHr * 60 * 60 * 1000,
+  });
+  return token;
 }
 
 export function clearAuthCookie(res) {
-    res.clearCookie("jwt_token", { 
-        httpOnly: true, 
-        secure: isProd, 
-        sameSite: isProd ? "lax" : "lax",
-        path: "/" 
-    });
-    res.json({ ok: true });
-}
-
-// Optional auth middleware - sets req.userId if token exists, but doesn't require it
-// If user is authenticated but inactive, logs them out and redirects to splash page
-export async function optionalAuth(req, res, next) {
-    const token = req.cookies.jwt_token;
-    if (!token) {
-        // No token, continue without user info
-        next();
-        return;
-    }
-    
-    try {
-        const payload = jwt.verify(token, JWT_SECRET);
-        const userId = String(payload.userId ?? payload.sub ?? "");
-        
-        // Check user status from database (not JWT) - status can change anytime
-        const user = await User.findById(userId);
-        if (!user) {
-            // User not found, clear cookie and continue without user info
-            clearJwtCookie(res);
-            next();
-            return;
-        }
-        
-        const userObj = user.toObject ? user.toObject() : user;
-        
-        // If user is inactive, logout and redirect to splash page with error modal
-        if (userObj.status === USER_STATUS.INACTIVE) {
-            clearJwtCookie(res);
-            
-            // Disconnect socket if available
-            const socketInstance = req.app.get("socketInstance");
-            if (socketInstance && userObj.username) {
-                socketInstance.disconnectUser(userObj.username);
-            }
-            
-            return res.redirect("/?inactive=true");
-        }
-        
-        // User is active, set user info from database (not JWT) for consistency
-        req.username = userObj.username; // Use database username (not JWT)
-        req.userId = userId;
-        req.role = userObj.role || payload.role; // Prefer database role, fallback to JWT
-        req.user = { id: userId, username: userObj.username, role: userObj.role || payload.role };
-    } catch (err) {
-        // Invalid token, continue without user info
-        // Don't set req.userId
-    }
-    
-    next();
+  clearJwtCookie(res);
+  res.json({ ok: true });
 }

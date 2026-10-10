@@ -1,14 +1,3 @@
-let _DAO =  null;
+import iDac from "./iDac.js";
 
-export default class EmergencyProfileDac {
-    static set DAO(dao) {
-        _DAO = dao;
-    }
-
-    static get DAO() {
-        if (!_DAO) {
-            throw new Error("EmergencyProfileDac DAO not injected");
-        }
-        return _DAO;
-    }
-}
+export default class EmergencyProfileDac extends iDac {}

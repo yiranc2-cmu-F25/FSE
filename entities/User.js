@@ -80,6 +80,10 @@ class User {
         await User.DAO.updatePasswordById(id, newPassword);
     }
 
+    static async updateProfileById(id, changes) {
+        return await User.DAO.updateProfileById(id, changes);
+    }
+
     static async usernameExists(username, excludeUserId = null) {
         return await User.DAO.usernameExists(username, excludeUserId);
     }

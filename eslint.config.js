@@ -1,7 +1,20 @@
 import js from "@eslint/js";
 import globals from "globals";
+import eslintConfigPrettier from "eslint-config-prettier";
 
 export default [
+  // Global ignores (an object with only `ignores` applies to every config).
+  {
+    ignores: [
+      "node_modules/",
+      "coverage/",
+      "dist/",
+      "build/",
+      "public/css/output.css",
+      "sigridci/",
+      "sigrid-ci-output/",
+    ],
+  },
   js.configs.recommended,
   {
     languageOptions: {
@@ -14,22 +27,11 @@ export default [
       "no-console": "off",
       "no-undef": "error",
     },
-    ignores: [
-      "node_modules/",
-      "coverage/",
-      "public/css/output.css",
-      "f25-fse-sa2/coverage/**",
-      "coverage/lcov-report/**",
-      "dist/",
-      "build/",
-    ],
   },
   {
-    files: ["**/*.test.mjs"],
-    languageOptions: {
-      globals: {
-        ...globals.jest,
-      },
-    },
+    files: ["**/*.cjs"],
+    languageOptions: { sourceType: "commonjs" },
   },
+  // Must be last: disables formatting rules that would conflict with Prettier.
+  eslintConfigPrettier,
 ];

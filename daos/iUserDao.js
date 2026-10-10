@@ -51,6 +51,10 @@ export class iUserDao {
         throw new Error("To be implemented!");
     }
 
+    async updateProfileById(id, { status, role, username, password }) {
+        throw new Error("To be implemented!");
+    }
+
     async usernameExists(username, excludeUserId = null) {
         throw new Error("To be implemented!");
     }

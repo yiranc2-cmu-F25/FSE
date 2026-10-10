@@ -229,30 +229,25 @@ describe("Administrator Profile REST API Integration Tests", () => {
       // For integration test, we're testing the full flow including auth
       // So we may get 403 if JWT doesn't have admin role
       // Let's check what we get
-      if (resp.status === 200) {
-        expect(Array.isArray(resp.body)).toBe(true);
-        expect(resp.body.length).toBeGreaterThanOrEqual(2);
+      expect(resp.status).toBe(200);
+      expect(Array.isArray(resp.body)).toBe(true);
+      expect(resp.body.length).toBeGreaterThanOrEqual(2);
 
-        // Verify response format
-        resp.body.forEach((user) => {
-          expect(user).toHaveProperty("id");
-          expect(user).toHaveProperty("username");
-          expect(user).toHaveProperty("status");
-          expect(user).toHaveProperty("role");
-          expect(user).not.toHaveProperty("password");
-        });
+      // Verify response format
+      resp.body.forEach((user) => {
+        expect(user).toHaveProperty("id");
+        expect(user).toHaveProperty("username");
+        expect(user).toHaveProperty("status");
+        expect(user).toHaveProperty("role");
+        expect(user).not.toHaveProperty("password");
+      });
 
-        // Verify users are sorted by username
-        const usernames = resp.body.map((u) => u.username);
-        const sortedUsernames = [...usernames].sort((a, b) =>
-          a.localeCompare(b)
-        );
-        expect(usernames).toEqual(sortedUsernames);
-      } else {
-        // If we get 403, it means the JWT doesn't have admin role
-        // This is expected in integration test without mocking JWT
-        expect([403, 401]).toContain(resp.status);
-      }
+      // Verify users are sorted by username
+      const usernames = resp.body.map((u) => u.username);
+      const sortedUsernames = [...usernames].sort((a, b) =>
+        a.localeCompare(b)
+      );
+      expect(usernames).toEqual(sortedUsernames);
     });
   });
 
@@ -337,19 +332,13 @@ describe("Administrator Profile REST API Integration Tests", () => {
         .send({ status: USER_STATUS.INACTIVE })
         .ok((res) => true);
 
-      if (resp.status === 200) {
-        expect(resp.body.message).toBe("Profile updated successfully");
-        expect(resp.body.profile.status).toBe(USER_STATUS.INACTIVE);
+      expect(resp.status).toBe(200);
+      expect(resp.body.message).toBe("Profile updated successfully");
+      expect(resp.body.profile.status).toBe(USER_STATUS.INACTIVE);
 
-        // Verify user was actually updated
-        const updated = await User.findById(found.id);
-        expect(updated.status).toBe(USER_STATUS.INACTIVE);
-      } else {
-        // May get 403/401 if JWT doesn't have admin role (integration test limitation)
-        // Or 500 if there's an error with userDoc.save() in inMemoryUserDao context
-        // This is acceptable as unit tests cover the actual logic
-        expect([200, 403, 401, 404, 500]).toContain(resp.status);
-      }
+      // Verify user was actually updated
+      const updated = await User.findById(found.id);
+      expect(updated.status).toBe(USER_STATUS.INACTIVE);
     });
 
     test("should successfully update user role", async () => {
@@ -372,16 +361,11 @@ describe("Administrator Profile REST API Integration Tests", () => {
         .send({ role: USER_ROLE.COORDINATOR })
         .ok((res) => true);
 
-      if (resp.status === 200) {
-        expect(resp.body.profile.role).toBe(USER_ROLE.COORDINATOR);
+      expect(resp.status).toBe(200);
+      expect(resp.body.profile.role).toBe(USER_ROLE.COORDINATOR);
 
-        const updated = await User.findById(found.id);
-        expect(updated.role).toBe(USER_ROLE.COORDINATOR);
-      } else {
-        // May get 403/401 if JWT doesn't have admin role (integration test limitation)
-        // Or 500 if there's an error with userDoc.save() in inMemoryUserDao context
-        expect([200, 403, 401, 404, 500]).toContain(resp.status);
-      }
+      const updated = await User.findById(found.id);
+      expect(updated.role).toBe(USER_ROLE.COORDINATOR);
     });
 
     test("should successfully update username", async () => {
@@ -402,16 +386,11 @@ describe("Administrator Profile REST API Integration Tests", () => {
         .send({ username: newUsername })
         .ok((res) => true);
 
-      if (resp.status === 200) {
-        expect(resp.body.profile.username).toBe(newUsername.toLowerCase());
+      expect(resp.status).toBe(200);
+      expect(resp.body.profile.username).toBe(newUsername.toLowerCase());
 
-        const updated = await User.findByUsername(newUsername.toLowerCase());
-        expect(updated).toBeTruthy();
-      } else {
-        // May get 403/401 if JWT doesn't have admin role (integration test limitation)
-        // Or 500 if there's an error with userDoc.save() in inMemoryUserDao context
-        expect([200, 403, 401, 404, 500]).toContain(resp.status);
-      }
+      const updated = await User.findByUsername(newUsername.toLowerCase());
+      expect(updated).toBeTruthy();
     });
 
     test("should successfully update password", async () => {
@@ -432,16 +411,11 @@ describe("Administrator Profile REST API Integration Tests", () => {
         .send({ password: "newpass1234" })
         .ok((res) => true);
 
-      if (resp.status === 200) {
-        expect(resp.body.message).toBe("Profile updated successfully");
+      expect(resp.status).toBe(200);
+      expect(resp.body.message).toBe("Profile updated successfully");
 
-        const updated = await User.findById(found.id);
-        expect(updated.password).not.toBe(oldPassword);
-      } else {
-        // May get 403/401 if JWT doesn't have admin role (integration test limitation)
-        // Or 500 if there's an error with userDoc.save() in inMemoryUserDao context
-        expect([200, 403, 401, 404, 500]).toContain(resp.status);
-      }
+      const updated = await User.findById(found.id);
+      expect(updated.password).not.toBe(oldPassword);
     });
 
     test("should successfully update multiple fields", async () => {
@@ -470,19 +444,14 @@ describe("Administrator Profile REST API Integration Tests", () => {
         })
         .ok((res) => true);
 
-      if (resp.status === 200) {
-        expect(resp.body.profile.status).toBe(USER_STATUS.INACTIVE);
-        expect(resp.body.profile.role).toBe(USER_ROLE.COORDINATOR);
-        expect(resp.body.profile.username).toBe(newUsername.toLowerCase());
+      expect(resp.status).toBe(200);
+      expect(resp.body.profile.status).toBe(USER_STATUS.INACTIVE);
+      expect(resp.body.profile.role).toBe(USER_ROLE.COORDINATOR);
+      expect(resp.body.profile.username).toBe(newUsername.toLowerCase());
 
-        const updated = await User.findByUsername(newUsername.toLowerCase());
-        expect(updated.status).toBe(USER_STATUS.INACTIVE);
-        expect(updated.role).toBe(USER_ROLE.COORDINATOR);
-      } else {
-        // May get 403/401 if JWT doesn't have admin role (integration test limitation)
-        // Or 500 if there's an error with userDoc.save() in inMemoryUserDao context
-        expect([200, 403, 401, 404, 500]).toContain(resp.status);
-      }
+      const updated = await User.findByUsername(newUsername.toLowerCase());
+      expect(updated.status).toBe(USER_STATUS.INACTIVE);
+      expect(updated.role).toBe(USER_ROLE.COORDINATOR);
     });
 
     test("should return 400 when status is invalid", async () => {
