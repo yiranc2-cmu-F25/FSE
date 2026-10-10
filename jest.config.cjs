@@ -1,13 +1,8 @@
-// export default {
-//     clearMocks: true,
-//     testEnvironment: "node",
-//     transform: {},
-//     coverageDirectory: "coverage",
-//     testMatch: ["**/tests/**/*.js"],
-// };
-// jest.config.cjs
 module.exports = {
   testEnvironment: "node",
+  testMatch: ["<rootDir>/tests/**/*.test.js"],
+  // Runs before each test file so `npm test` works on a fresh clone without a .env file.
+  setupFiles: ["<rootDir>/tests/setup/env.cjs"],
   collectCoverage: true,
   collectCoverageFrom: [
     "constants/**/*.js",
@@ -19,10 +14,11 @@ module.exports = {
     "entities/**/*.js",
     "middleware/**/*.js",
     "routes/**/*.js",
+    "services/**/*.js",
     "utils/**/*.js",
     "!**/node_modules/**",
     "!**/*.test.js",
   ],
-  // include json-summary so the job-summary step can read coverage-summary.json
+  // json-summary is read by the CI job-summary step (see .github/workflows/ci.yml).
   coverageReporters: ["text", "text-summary", "lcov", "html", "json-summary"],
 };

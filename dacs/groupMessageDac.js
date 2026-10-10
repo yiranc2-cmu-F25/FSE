@@ -1,14 +1,3 @@
-let _DAO = null;
+import iDac from "./iDac.js";
 
-export default class GroupMessageDac {
-    static set DAO(dao) {
-        _DAO = dao;
-    }
-
-    static get DAO() {
-        if (!_DAO) {
-            throw new Error("GroupMessageDac DAO not injected");
-        }
-        return _DAO;
-    }
-}
+export default class GroupMessageDac extends iDac {}

@@ -1,59 +1,109 @@
 name: CI
+
 on:
   push:
     branches:
       - main
-
+      - I4-YiranChen
   pull_request:
   workflow_dispatch: {}
 
+permissions:
+  contents: read
+
+# Cancel superseded runs of the same branch/PR.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "22"
+
 jobs:
-  test:
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
-          cache: "npm"
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install
+        run: npm ci
+        env:
+          # The lint job never starts MongoDB; skip the binary download.
+          MONGOMS_DISABLE_POSTINSTALL: "1"
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: EJS templates
+        run: npm run lint:ejs
+
+  test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NODE_ENV: test
+      JWT_SECRET: test-secret
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      # mongodb-memory-server downloads a MongoDB binary (~100 MB) on install.
+      # Keep it outside node_modules so it survives `npm ci` and can be cached.
+      - name: Configure MongoDB binary cache
+        run: echo "MONGOMS_DOWNLOAD_DIR=$HOME/.cache/mongodb-binaries" >> "$GITHUB_ENV"
+
+      - name: Restore MongoDB binary cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/mongodb-binaries
+          key: mongodb-binaries-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            mongodb-binaries-${{ runner.os }}-
 
       - name: Install
         run: npm ci
 
-      - name: Lint
-        run: npm run lint
-
-      - name: Build
+      - name: Build CSS
         run: npm run build
 
-      - name: Test
+      - name: Test (with coverage)
         run: npm test
-        env:
-          NODE_ENV: test
-          JWT_SECRET: "test-secret"
-      - name: Upload coverage artifact
+
+      - name: Upload coverage report
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: coverage-html
           path: coverage/
-          if-no-files-found: error
+          if-no-files-found: warn
 
       - name: Add coverage to job summary
-        if: ${{ hashFiles('coverage/coverage-summary.json') != '' }}
+        if: ${{ always() && hashFiles('coverage/coverage-summary.json') != '' }}
         run: |
           node - <<'NODE'
           const s = require('./coverage/coverage-summary.json').total;
+          const row = (label, m) => `|${label}|${m.pct}|${m.covered}/${m.total}|`;
           const md = [
             '### Jest Coverage',
             '',
             '|Metric|%|Covered/Total|',
             '|---|---:|---:|',
-            `|Branches|${s.branches.pct}|${s.branches.covered}/${s.branches.total}|`,
-            `|Functions|${s.functions.pct}|${s.functions.covered}/${s.functions.total}|`,
-            `|Lines|${s.lines.pct}|${s.lines.covered}/${s.lines.total}|`,
-            `|Statements|${s.statements.pct}|${s.statements.covered}/${s.statements.total}|`,
+            row('Branches', s.branches),
+            row('Functions', s.functions),
+            row('Lines', s.lines),
+            row('Statements', s.statements),
             ''
           ].join('\n');
           require('fs').appendFileSync(process.env.GITHUB_STEP_SUMMARY, md);

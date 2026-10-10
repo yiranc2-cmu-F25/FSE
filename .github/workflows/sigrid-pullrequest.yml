@@ -7,27 +7,41 @@ jobs:
     permissions:
       pull-requests: write
       contents: read
+    env:
+      SIGRID_CI_TOKEN: ${{ secrets.SIGRID_CI_TOKEN }}
     steps:
+      # Forks / personal copies of the repo do not have the Sigrid token.
+      # Skip cleanly instead of failing every pull request.
+      - name: Check for Sigrid token
+        id: sigrid
+        run: |
+          if [ -n "$SIGRID_CI_TOKEN" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "SIGRID_CI_TOKEN is not configured; Sigrid analysis skipped." >> "$GITHUB_STEP_SUMMARY"
+          fi
       - name: Check out repository
+        if: steps.sigrid.outputs.enabled == 'true'
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Download Sigrid CI
+        if: steps.sigrid.outputs.enabled == 'true'
         run: "git clone https://github.com/Software-Improvement-Group/sigridci.git sigridci"
-      - name: "Run Sigrid CI" 
-        env:
-          SIGRID_CI_TOKEN: "${{ secrets.SIGRID_CI_TOKEN }}"
+      - name: "Run Sigrid CI"
+        if: steps.sigrid.outputs.enabled == 'true'
         run: "./sigridci/sigridci/sigridci.py --customer cmusvfse --system f25-fse-sa2 --source ."
       - name: "Save Sigrid CI results"
-        if: always()
+        if: always() && steps.sigrid.outputs.enabled == 'true'
         uses: actions/upload-artifact@v4
         with:
           path: "sigrid-ci-output/**"
           retention-days: 7
           if-no-files-found: ignore
       - name: "Sigrid pull request feedback"
+        if: always() && steps.sigrid.outputs.enabled == 'true'
         uses: mshick/add-pr-comment@v2
-        if: always()
         with:
           message-id: sigrid
           message-path: sigrid-ci-output/feedback.md

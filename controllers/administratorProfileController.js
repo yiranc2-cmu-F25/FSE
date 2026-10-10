@@ -3,235 +3,196 @@ import Task from "../entities/Task.js";
 import { isUsernameValid, isPasswordValid } from "../utils/validators.js";
 import { USER_ROLE } from "../constants/userRole.js";
 import { USER_STATUS } from "../constants/userStatus.js";
+import { toPlainObject } from "../utils/toPlainObject.js";
+
+const VALID_STATUSES = Object.values(USER_STATUS);
+const VALID_ROLES = Object.values(USER_ROLE);
 
 /**
- * Middleware to check if the current user is an administrator
- * Reads role from JWT token (req.user.role or req.role) instead of querying database
+ * Middleware: only administrators may continue.
+ * Reads the role placed on the request by the auth middleware.
  */
-async function requireAdmin(req, res, next) {
-    try {
-        // Get role from JWT token (set by auth middleware)
-        const role = req.user?.role || req.role;
-        
-        if (!role) {
-            return res.status(401).json({ error: "Unauthorized: User role not found" });
-        }
-        
-        if (role !== USER_ROLE.ADMIN) {
-            return res.status(403).json({ error: "Forbidden: Administrator privileges required" });
-        }
-        
-        next();
-    } catch (err) {
-        console.error("Error checking admin privileges:", err);
-        return res.status(500).json({ error: "Server error" });
+export async function requireAdmin(req, res, next) {
+  try {
+    const role = req.user?.role || req.role;
+    if (!role) {
+      return res
+        .status(401)
+        .json({ error: "Unauthorized: User role not found" });
     }
+    if (role !== USER_ROLE.ADMIN) {
+      return res
+        .status(403)
+        .json({ error: "Forbidden: Administrator privileges required" });
+    }
+    next();
+  } catch (err) {
+    console.error("Error checking admin privileges:", err);
+    return res.status(500).json({ error: "Server error" });
+  }
+}
+
+function toAdminListItem(user) {
+  return {
+    id: String(user._id || user.id),
+    username: user.username,
+    status: user.status,
+    role: user.role,
+    // The password hash is never returned.
+  };
 }
 
 /**
- * Get all users (both active and inactive) for administration
  * GET /api/admin/profiles
+ * All users (active and inactive) sorted by username.
  */
 export async function getAllUsers(req, res) {
-    try {
-        // Get active users
-        const activeUsers = await User.getAllUsers();
-        
-        // Get inactive users
-        const inactiveUsers = await User.DAO.getInactiveUsers();
-        
-        // Combine and format all users
-        const allUsers = [...activeUsers, ...inactiveUsers];
-        
-        // Format users for response (only include fields that can be modified)
-        const users = allUsers.map((user) => ({
-            id: String(user._id || user.id),
-            username: user.username,
-            status: user.status,
-            role: user.role,
-            // Password is not returned for security reasons
-        }));
-        
-        // Sort by username
-        users.sort((a, b) => a.username.localeCompare(b.username));
-        
-        res.json(users);
-    } catch (err) {
-        console.error("Error fetching all users:", err);
-        return res.status(500).json({ error: "Server error" });
-    }
+  try {
+    const activeUsers = await User.getAllUsers();
+    const inactiveUsers = await User.getInactiveUsers();
+    const users = [...activeUsers, ...inactiveUsers].map(toAdminListItem);
+    users.sort((a, b) => a.username.localeCompare(b.username));
+    res.json(users);
+  } catch (err) {
+    console.error("Error fetching all users:", err);
+    return res.status(500).json({ error: "Server error" });
+  }
+}
+
+async function validateUsernameChange(username, userId) {
+  if (!isUsernameValid(username)) {
+    return [
+      "Invalid username format. Username must be at least 3 characters, contain no dots, and not be a forbidden username.",
+    ];
+  }
+  if (await User.usernameExists(username.toLowerCase(), userId)) {
+    return ["Username already exists"];
+  }
+  return [];
+}
+
+/** Returns every validation message for the requested changes (empty = valid). */
+async function validateProfileChanges(
+  { status, role, username, password },
+  userId,
+) {
+  const errors = [];
+  if (status !== undefined && !VALID_STATUSES.includes(status)) {
+    errors.push("Invalid status. Must be 'active' or 'inactive'");
+  }
+  if (role !== undefined && !VALID_ROLES.includes(role)) {
+    errors.push(`Invalid role. Must be one of: ${VALID_ROLES.join(", ")}`);
+  }
+  if (username !== undefined) {
+    errors.push(...(await validateUsernameChange(username, userId)));
+  }
+  if (password !== undefined && !isPasswordValid(password)) {
+    errors.push(
+      "Invalid password format. Password must be at least 4 characters.",
+    );
+  }
+  return errors;
+}
+
+/** Deactivated users are removed from every task; a failure here is logged, not fatal. */
+async function removeInactiveUserFromTasks(userId) {
+  try {
+    const removedCount = await Task.removeUserFromAllTasks(userId);
+    console.log(
+      `[Inactive User Privacy] Removed user ${userId} from ${removedCount} task participation(s)`,
+    );
+  } catch (err) {
+    console.error(
+      `[Inactive User Privacy] Error removing user ${userId} from tasks:`,
+      err,
+    );
+  }
+}
+
+/** Drops sockets that are no longer valid: deactivated accounts and renamed users. */
+function disconnectStaleSockets(req, { statusRequested, before, after }) {
+  const socketInstance = req.app.get("socketInstance");
+  if (!socketInstance) return;
+
+  if (
+    statusRequested &&
+    after.status === USER_STATUS.INACTIVE &&
+    after.username
+  ) {
+    socketInstance.disconnectUser(after.username);
+    console.log(
+      `[Force Logout] Disconnected user ${after.username} due to account being set to inactive`,
+    );
+  }
+  if (before.username !== after.username) {
+    socketInstance.disconnectUser(before.username);
+    console.log(
+      `Disconnected socket for username change: ${before.username} -> ${after.username}`,
+    );
+  }
+}
+
+function buildUpdateResponse(user) {
+  const id = String(user._id || user.id);
+  return {
+    message: "Profile updated successfully",
+    userId: id,
+    profile: {
+      id,
+      username: user.username,
+      status: user.status,
+      role: user.role,
+    },
+  };
 }
 
 /**
- * Update user profile
+ * PUT /api/admin/profiles/:userId
+ * Updates any of status / role / username / password for a user.
  */
 export async function updateUserProfile(req, res) {
-    try {
-        const { userId } = req.params;
-        const { status, role, username, password } = req.body;
-        
-        if (!userId) {
-            return res.status(400).json({ error: "User ID is required" });
-        }
-        
-        // Check if user exists
-        const user = await User.findById(userId);
-        if (!user) {
-            return res.status(404).json({ error: "User not found" });
-        }
-        
-        const errors = [];
-        
-        // Validate and prepare status update
-        if (status !== undefined) {
-            if (status !== USER_STATUS.ACTIVE && status !== USER_STATUS.INACTIVE) {
-                errors.push("Invalid status. Must be 'active' or 'inactive'");
-            } else {
-                // Will update after validation
-            }
-        }
-        
-        // Validate and prepare role update
-        if (role !== undefined) {
-            const validRoles = Object.values(USER_ROLE);
-            if (!validRoles.includes(role)) {
-                errors.push(`Invalid role. Must be one of: ${validRoles.join(", ")}`);
-            } else {
-                // Will update after validation
-            }
-        }
-        
-        // Validate username if provided
-        if (username !== undefined) {
-            if (!isUsernameValid(username)) {
-                errors.push("Invalid username format. Username must be at least 3 characters, contain no dots, and not be a forbidden username.");
-            } else {
-                const usernameExists = await User.DAO.usernameExists(username.toLowerCase(), userId);
-                if (usernameExists) {
-                    errors.push("Username already exists");
-                }
-            }
-        }
-        
-        // Validate password if provided
-        if (password !== undefined) {
-            if (!isPasswordValid(password)) {
-                errors.push("Invalid password format. Password must be at least 4 characters.");
-            }
-        }
-        
-        // If there are validation errors, return them
-        if (errors.length > 0) {
-            return res.status(400).json({ 
-                error: "Validation errors",
-                errors: errors
-            });
-        }
-        
-        // Store old username and status before update (for socket disconnection and task removal)
-        let oldUsername = null;
-        let oldStatus = null;
-        if (username !== undefined || status !== undefined) {
-            const userBeforeUpdate = await User.findById(userId);
-            const userBeforeObj = userBeforeUpdate.toObject ? userBeforeUpdate.toObject() : userBeforeUpdate;
-            if (username !== undefined) {
-                oldUsername = userBeforeObj.username;
-            }
-            if (status !== undefined) {
-                oldStatus = userBeforeObj.status;
-            }
-        }
-        
-        // Fetch user document once and update all fields together to avoid race conditions
-        const userDoc = await User.findById(userId);
-        if (!userDoc) {
-            return res.status(404).json({ error: "User not found" });
-        }
-        
-        // Check if user is transitioning from ACTIVE to INACTIVE
-        const isBecomingInactive = status !== undefined && 
-                                   status === USER_STATUS.INACTIVE && 
-                                   oldStatus === USER_STATUS.ACTIVE;
-        
-        // Update all fields on the same document instance
-        if (status !== undefined) {
-            userDoc.status = status;
-        }
-        if (role !== undefined) {
-            userDoc.role = role;
-        }
-        if (username !== undefined) {
-            userDoc.username = username.toLowerCase();
-        }
-        if (password !== undefined) {
-            userDoc.password = password;
-        }
-        
-        await userDoc.save();
-        
-        // If user is becoming inactive, remove them from all task participations
-        if (isBecomingInactive) {
-            try {
-                const removedCount = await Task.removeUserFromAllTasks(userId);
-                console.log(`[Inactive User Privacy] Removed user ${userId} from ${removedCount} task participation(s)`);
-            } catch (err) {
-                console.error(`[Inactive User Privacy] Error removing user ${userId} from tasks:`, err);
-                // Don't fail the request if task removal fails, but log the error
-            }
-        }
-        
-        // Get updated user
-        const updatedUser = await User.findById(userId);
-        if (!updatedUser) {
-            return res.status(404).json({ error: "User not found after update" });
-        }
-        
-        // Handle both Mongoose document and plain object
-        const userObj = updatedUser.toObject ? updatedUser.toObject() : updatedUser;
-        const finalStatus = userObj.status;
-        const finalUsername = userObj.username;
-        
-        const socketInstance = req.app.get("socketInstance");
-        
-        // If user was set to inactive, force disconnect immediately
-        if (status !== undefined && finalStatus === USER_STATUS.INACTIVE) {
-            if (socketInstance && finalUsername) {
-                socketInstance.disconnectUser(finalUsername);
-                console.log(`[Force Logout] Disconnected user ${finalUsername} due to account being set to inactive`);
-            }
-        }
-        
-        // Disconnect socket with old username if username changed
-        if (oldUsername && oldUsername !== finalUsername) {
-            if (socketInstance) {
-                socketInstance.disconnectUser(oldUsername);
-                console.log(`Disconnected socket for username change: ${oldUsername} -> ${finalUsername}`);
-            }
-        }
-        const finalUserId = String(userObj._id || userObj.id);
-        
-        res.json({ 
-            message: "Profile updated successfully",
-            userId: finalUserId,
-            profile: {
-                id: finalUserId,
-                username: userObj.username,
-                status: userObj.status,
-                role: userObj.role
-            }
-        });
-    } catch (err) {
-        console.error("Error updating user profile:", err);
-        
-        // Handle duplicate username error
-        if (err.message === "Username already exists") {
-            return res.status(400).json({ error: "Username already exists" });
-        }
-        
-        return res.status(500).json({ error: "Server error" });
+  try {
+    const { userId } = req.params;
+    const { status, role, username, password } = req.body ?? {};
+    const changes = { status, role, username, password };
+
+    if (!userId) {
+      return res.status(400).json({ error: "User ID is required" });
     }
+
+    const before = toPlainObject(await User.findById(userId));
+    if (!before) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const errors = await validateProfileChanges(changes, userId);
+    if (errors.length > 0) {
+      return res.status(400).json({ error: "Validation errors", errors });
+    }
+
+    const after = await User.updateProfileById(userId, changes);
+    if (!after) {
+      return res.status(404).json({ error: "User not found after update" });
+    }
+
+    if (
+      status === USER_STATUS.INACTIVE &&
+      before.status === USER_STATUS.ACTIVE
+    ) {
+      await removeInactiveUserFromTasks(userId);
+    }
+    disconnectStaleSockets(req, {
+      statusRequested: status !== undefined,
+      before,
+      after,
+    });
+
+    return res.json(buildUpdateResponse(after));
+  } catch (err) {
+    console.error("Error updating user profile:", err);
+    if (err.message === "Username already exists") {
+      return res.status(400).json({ error: "Username already exists" });
+    }
+    return res.status(500).json({ error: "Server error" });
+  }
 }
-
-// Export the middleware for use in routes
-export { requireAdmin };
-
